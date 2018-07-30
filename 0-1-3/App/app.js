@@ -74,11 +74,10 @@ myPEP.connectPDP(myPDP);
 
 //#endregion PolicyEnforcementPoint
 
-//#region PolicyAdministrationPoint
-
-//#endregion PolicyAdministrationPoint
-
 //#region PolicyExecutionPoint
+
+// TODO app -> PolicyExecutionPoint
+
 //#endregion PolicyExecutionPoint
 
 //#region Main

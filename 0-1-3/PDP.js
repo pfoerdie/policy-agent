@@ -41,21 +41,12 @@ function constructCypherQuery(odrlRequest) {
 
     // return collected results
     queryBlocks.push(`RETURN`);
-    /* *
-    queryBlocks.push(`policy.uid AS policy,`);
-    queryBlocks.push(`rule.uid AS rule,`);
-    queryBlocks.push(`target.uid AS target,`);
-    if (odrlRequest.assignee) queryBlocks.push(`assignee.uid AS assignee,`);
-    if (odrlRequest.assigner) queryBlocks.push(`assigner.uid AS assigner,`);
-    queryBlocks.push(`action.id AS action`);
-    /* */
     queryBlocks.push(`policy,`);
     queryBlocks.push(`rule,`);
     queryBlocks.push(`target,`);
     if (odrlRequest.assignee) queryBlocks.push(`assignee,`);
     if (odrlRequest.assigner) queryBlocks.push(`assigner,`);
-    queryBlocks.push(`action`);
-    /* */
+    queryBlocks.push(`action.id AS action`);
 
     // TODO hier ist noch vieeel potential 
 
