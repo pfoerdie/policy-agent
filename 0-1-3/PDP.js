@@ -14,41 +14,50 @@ function constructCypherQuery(odrlRequest) {
     let queryBlocks = [];
 
     // find the action and the target
-    queryBlocks.push(`MATCH (action:ODRL:Action {id: "${odrlRequest['action']}"})`);
-    queryBlocks.push(`MATCH (target:ODRL:${odrlRequest['target']['@type']} {uid: "${odrlRequest['target']['uid']}"})`);
+    queryBlocks.push(`MATCH (action:ODRL:Action {id: "${odrlRequest.action}"})`);
+    queryBlocks.push(`MATCH (target:ODRL:${odrlRequest.target['@type']} {uid: "${odrlRequest.target['uid']}"})`);
 
     // if assignee or assigner are present, find them too
-    if (odrlRequest['assignee'])
-        queryBlocks.push(`MATCH (assignee:ODRL:${odrlRequest['assignee']['@type']} {uid: "${odrlRequest['assignee']['uid']}"})`);
-    if (odrlRequest['assigner'])
-        queryBlocks.push(`MATCH (assigner:ODRL:${odrlRequest['assigner']['@type']} {uid: "${odrlRequest['assigner']['uid']}"})`);
+    if (odrlRequest.assignee)
+        queryBlocks.push(`MATCH (assignee:ODRL:${odrlRequest.assignee['@type']} {uid: "${odrlRequest.assignee['uid']}"})`);
+    if (odrlRequest.assigner)
+        queryBlocks.push(`MATCH (assigner:ODRL:${odrlRequest.assigner['@type']} {uid: "${odrlRequest.assigner['uid']}"})`);
 
     // search for every policy, that is related to that target and action
     queryBlocks.push(`MATCH (policy:ODRL:Policy)-[*]->(rule:ODRL:Rule)-[:target]->(target)`);
     queryBlocks.push(`WHERE ( (rule)-[:action]->(action) OR (rule)-[:action]->(:ODRL:Action)-[:value]->(action) )`);
 
     // filter further with by assignee reference ...
-    if (odrlRequest['assignee'])
+    if (odrlRequest.assignee)
         queryBlocks.push(`AND ( (rule)-[:assignee]->(assignee) OR NOT (rule)-[:assignee]->(:ODRL) )`);
     else
         queryBlocks.push(`AND NOT (rule)-[:assignee]->(:ODRL)`);
 
     // ... and assigner reference
-    if (odrlRequest['assigner'])
+    if (odrlRequest.assigner)
         queryBlocks.push(`AND ( (rule)-[:assigner]->(assigner) OR NOT (rule)-[:assigner]->(:ODRL) )`);
     else
         queryBlocks.push(`AND NOT (rule)-[:assigner]->(:ODRL)`);
 
     // return collected results
     queryBlocks.push(`RETURN`);
+    /* *
     queryBlocks.push(`policy.uid AS policy,`);
     queryBlocks.push(`rule.uid AS rule,`);
     queryBlocks.push(`target.uid AS target,`);
-    if (odrlRequest['assignee']) queryBlocks.push(`assignee.uid AS assignee,`);
-    if (odrlRequest['assigner']) queryBlocks.push(`assigner.uid AS assigner,`);
+    if (odrlRequest.assignee) queryBlocks.push(`assignee.uid AS assignee,`);
+    if (odrlRequest.assigner) queryBlocks.push(`assigner.uid AS assigner,`);
     queryBlocks.push(`action.id AS action`);
+    /* */
+    queryBlocks.push(`policy,`);
+    queryBlocks.push(`rule,`);
+    queryBlocks.push(`target,`);
+    if (odrlRequest.assignee) queryBlocks.push(`assignee,`);
+    if (odrlRequest.assigner) queryBlocks.push(`assigner,`);
+    queryBlocks.push(`action`);
+    /* */
 
-    // TODO hier ist vieeel potential noch
+    // TODO hier ist noch vieeel potential 
 
     return queryBlocks.join(" \n");
 } // PDP~constructCypherQuery
@@ -131,28 +140,28 @@ class PDP extends PolicyPoint {
          */
 
         /** @name PDP~odrlRequest.action */
-        let actionID = context.param.requestBody['action'] || context.param.requestSession['action'];
+        let actionID = context.param.action;
         if (typeof actionID !== 'string')
             throw new Error(this.toString('_request', null, `action is not well defined`));
 
-        context.data.odrlRequest['action'] = actionID;
+        context.data.odrlRequest.action = actionID;
 
         for (let targetPIP of this.data.connectedPIPs) {
             await targetPIP._enrichRequest(context);
         }
 
         /** @name PDP~odrlRequest.target */
-        let target = context.data.odrlRequest['target'];
+        let target = context.data.odrlRequest.target;
         if (!(target && typeof target['@type'] === 'string' && typeof target['uid'] === 'string'))
             throw new Error(this.toString('_request', null, `target is not well defined`));
 
         /** @name PDP~odrlRequest.assignee */
-        let assignee = context.data.odrlRequest['assignee'];
+        let assignee = context.data.odrlRequest.assignee;
         if (assignee && !(typeof assignee['@type'] === 'string' && typeof assignee['uid'] === 'string'))
             throw new Error(this.toString('_request', null, `assignee is not well defined`));
 
         /** @name PDP~odrlRequest.assigner */
-        let assigner = context.data.odrlRequest['assigner'];
+        let assigner = context.data.odrlRequest.assigner;
         if (assigner && !(typeof assigner['@type'] === 'string' && typeof assigner['uid'] === 'string'))
             throw new Error(this.toString('_request', null, `assigner is not well defined`));
 
@@ -166,7 +175,10 @@ class PDP extends PolicyPoint {
         // TODO PDP#_request -> neo4j requesten und ergebnis auswerten
         // evtl. weitere attributes anfordern
 
-        return context.data.odrlRequest['target'] ? context.data.requestCache.get(context.data.odrlRequest['target']['uid']) : null; // TODO PDP#_request -> temp
+        // TODO PDP#_request -> folgende Zeile ist temporär
+        Object.assign(context.data.result, context.data.odrlRequest['target'] ? context.data.requestCache.get(context.data.odrlRequest['target']['uid']) : {});
+
+        return context;
     } // PDP#_request
 
 } // PDP

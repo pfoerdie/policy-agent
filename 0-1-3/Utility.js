@@ -358,7 +358,7 @@ exports.EventEmitter = ((/* closure */) => {
  * @param {...string} [args] Optional function arguments.
  * @returns {string} A colorful describtion.
  */
-exports.toStringColorScheme = ((/* closure */) => {
+exports.toStringColorScheme = ((/* closure */) => { // TODO vllt in stringColorScheme umbenennen
     return (name, id, fn, args, msg, ts) => {
         try {
             let str = "";

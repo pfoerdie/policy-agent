@@ -50,7 +50,7 @@ class Context {
             data: {
                 enumerable: true,
                 value: Object.create({}, {
-                    odrlRequest: {
+                    odrlRequest: { // vllt in odrl umbenennen
                         value: {
                             action: null,
                             target: null,
@@ -58,10 +58,10 @@ class Context {
                             assigner: null
                         }
                     },
-                    requestCache: { // TODO vllt umbenennen
+                    requestCache: { // TODO vllt in cache umbenennen
                         value: new Map()
                     },
-                    responseBody: {
+                    result: {
                         value: {}
                     },
                     audits: {

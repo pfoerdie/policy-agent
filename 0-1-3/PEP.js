@@ -223,7 +223,7 @@ class PEP extends PolicyPoint {
      * @name PEP#request
      * @param {(Session|PolicyAgent~Context)} session The session for the context. If session is a Context itself, the session will be inherited.
      * @param {JSON} param The parametrization for the context.
-     * @returns // TODO jsDoc PEP#request -> @returns
+     * @returns {object} The result of the created context.
      * @async
      * @public
      */
@@ -235,24 +235,22 @@ class PEP extends PolicyPoint {
 
         let context = new Context(session, param);
 
-        try {
-            context.param.consoleOutput = true;
-            context.log(`context was created by ${this.toString('request', 'session, param')}`);
+        context.param.consoleOutput = true;
+        context.log(`context created by ${this.toString('request', 'session, param')}`);
 
-            for (let targetPDP of this.data.connectedPDPs) {
-                let result = await targetPDP._request(context);
-                // TODO PEP#request -> falls der PEP das result nicht auflösen kann, soll die for-Schleife weiterlaufen, sonst return result
+        for (let targetPDP of this.data.connectedPDPs) {
+            try {
+                await targetPDP._request(context);
                 context.log(this.toString('request', null, `context returned from ${targetPDP.toString()} successfully`));
-                return result;
+                return context.data.result;
+            } catch (err) {
+                context._audit('error', err instanceof Error ? err.message : err);
             }
-
-            context._audit('error', this.toString('request', null, `no connected PDP could resolve the request`));
-        } catch (err) {
-            context._audit('error', this.toString('request', null, err instanceof Error ? err.message : err));
-            throw err;
         }
 
-        throw new Error(this.toString('request', null, `no connected PDP could resolve the request`));
+        let errMsg = this.toString('request', null, `no connected PDP could resolve the request`); // NOTE PEP#request -> context closed
+        context._audit('error', errMsg);
+        throw new Error(errMsg);
     } // PEP#request
 
     /**
