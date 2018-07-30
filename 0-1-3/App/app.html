@@ -21,12 +21,12 @@
 
             socket.emit('request', {
                 'target': {
-                    '@type': "Asset",
+                    '@type': "data",
                     '@id': "/marzipan"
                 },
                 'assignee': {
-                    '@type': "Party",
-                    'uid': "/user/pfoerdie"
+                    '@type': "user",
+                    'uid': "pfoerdie"
                 },
                 'action': "use"
             }, (result) => {
