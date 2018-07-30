@@ -23,6 +23,8 @@ attributeStore = new PolicyAgent.DataStore.MongoDB("localhost:27017", "Attribute
  * NOTE start mongodb -> examplePIPdataBase
  * ./mongodb/mongodb-community-4.0.0/bin/mongod --dbpath=D:/Dokumente/NodeJS/mongodb/server/examplePIPdataBase
  * ./mongodb/mongodb-compass-community-1.14.5/MongoDBCompassCommunity.exe
+ * -> Ideapad
+ * /d/Programme/MongoDB/mongodb-community-4.0.0/bin/mongod --dbpath=D:/Programme/MongoDB/databases/examplePIPdataBase
  */
 attributeStore.ping().then(() => console.log(`examplePIPdataBase -> connected`)).catch(console.error);
 
@@ -37,6 +39,8 @@ policyStore = new PolicyAgent.DataStore.Neo4j('localhost', 'neo4j', 'odrl');
  * NOTE start neo4j
  * -> admin-shell
  * /d/Dokumente/NodeJS/neo4j/neo4j-community-3.4.0/bin/neo4j.bat
+ * -> Ideapad
+ * /d/Programme/Neo4j/neo4j-community-3.4.5/bin/neo4j.bat console
  */
 policyStore.ping().then(() => console.log(`examplePDPdataBase -> connected`)).catch(console.error);
 
