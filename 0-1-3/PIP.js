@@ -49,7 +49,7 @@ class PIP extends PolicyPoint {
 
         let attrs = ['target', 'assignee', 'assigner'];
         let queries = attrs.map((attr) => {
-            let prop = context.param.requestBody[attr] || context.param.requestSession[attr] || null;
+            let prop = context.param[attr] || null;
             return prop;
         });
 
@@ -74,8 +74,10 @@ class PIP extends PolicyPoint {
                     if (typeof type !== 'string' && typeof uid !== 'string')
                         throw new Error(`_odrl must define @type and uid`);
 
-                    delete result['_id'];
-                    delete result['_odrl'];
+                    for (let key in result) {
+                        if (key.startsWith('_'))
+                            delete result[key];
+                    }
 
                     if (!context.data.odrlRequest[attr])
                         context.data.odrlRequest[attr] = _odrl;

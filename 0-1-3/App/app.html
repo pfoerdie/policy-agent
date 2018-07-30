@@ -18,6 +18,7 @@
 
         socket.on('connect', (serverSocket) => {
             console.log('connected');
+            return 'comment out to make the test request';
 
             socket.emit('request', {
                 'target': {
@@ -26,7 +27,7 @@
                 },
                 'assignee': {
                     '@type': "user",
-                    'uid': "pfoerdie"
+                    '@id': "pfoerdie"
                 },
                 'action': "use"
             }, (result) => {

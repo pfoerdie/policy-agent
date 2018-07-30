@@ -53,7 +53,19 @@ myPDP.connectPIP(myPIP);
 //#region PolicyEnforcementPoint
 
 myPEP = new PolicyAgent.PEP({
-    cookieSecure: false
+    cookieSecure: false,
+    resolveHttpRequest: (requestUrl, requestBody) => ({
+        action: "read",
+        target: {
+            '@type': 'content',
+            '@id': requestUrl
+        },
+        assignee: requestBody.username && requestBody.password ? {
+            '@type': 'user',
+            'username': requestBody.username,
+            'password': requestBody.password
+        } : null
+    })
 });
 
 app.use(myPEP.expressRouter);

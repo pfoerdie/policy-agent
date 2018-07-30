@@ -44,6 +44,15 @@ class PEP extends PolicyPoint {
             cookieSecure: {
                 writable: true,
                 value: Utility.validParam('boolean', options.cookieSecure, true)
+            },
+            resolveHttpRequest: {
+                value: Utility.validParam('function', options.resolveHttpRequest, (requestUrl, requestBody) => ({
+                    action: "use",
+                    target: {
+                        '@type': 'Asset',
+                        '@id': requestUrl
+                    }
+                }))
             }
         });
 
@@ -117,25 +126,9 @@ class PEP extends PolicyPoint {
                 let session = request.session;
 
                 try {
-                    let param = {};
-
-                    param.target = {
-                        '@type': "content", // TODO PEP#expressRouter -> welchen @type nutzt man hier?
-                        '@id': request.url
-                    };
-
-                    if (request.body.username && request.body.password) {
-                        param.assignee = {
-                            '@type': "user",
-                            'username': request.body.username,
-                            'password': request.body.password
-                        };
-                    }
-
-                    param.assigner = request.body.assigner || null;
-                    param.action = request.body.action || 'read'; // TODO PEP#expressRouter -> welches ist die default action?
-
-                    let result = await this.request(session, param);
+                    let
+                        param = await this.param.resolveHttpRequest(request.url, request.body),
+                        result = await this.request(session, param);
 
                     // TODO PEP#expressRouter -> was passiert nun mit dem request?
 
@@ -165,7 +158,6 @@ class PEP extends PolicyPoint {
 
                 } catch (err) {
                     // TODO PEP#expressRouter -> Error handling
-                    console.error(err);
                     response.status(500).end();
                     /**
                      * INFO HTTP-Statuscodes
@@ -235,29 +227,32 @@ class PEP extends PolicyPoint {
      * @async
      * @public
      */
-    async request(session, param) {
+    async request(session, param = {}) {
         if (session instanceof Context)
-            session = session.session;
+            session = session.param.session;
 
         // TODO PEP#request -> falls der SessionMemoryStore die session nicht hat, muss ein error geworfen werden, denke ich
 
         let context = new Context(session, param);
-        context.param.consoleOutput = true;
-        context.log(`context was created by ${this.toString('request', 'session, param')}`);
 
-        for (let targetPDP of this.data.connectedPDPs) {
-            let result = await targetPDP._request(context);
-            // TODO PEP#request -> falls der PEP das result nicht auflösen kann, soll die for-Schleife weiterlaufen, sonst return result
-            context.log(this.toString('request', null, `context returned from ${targetPDP.toString()} successfully`));
-            return result;
+        try {
+            context.param.consoleOutput = true;
+            context.log(`context was created by ${this.toString('request', 'session, param')}`);
+
+            for (let targetPDP of this.data.connectedPDPs) {
+                let result = await targetPDP._request(context);
+                // TODO PEP#request -> falls der PEP das result nicht auflösen kann, soll die for-Schleife weiterlaufen, sonst return result
+                context.log(this.toString('request', null, `context returned from ${targetPDP.toString()} successfully`));
+                return result;
+            }
+
+            context._audit('error', this.toString('request', null, `no connected PDP could resolve the request`));
+        } catch (err) {
+            context._audit('error', this.toString('request', null, err instanceof Error ? err.message : err));
+            throw err;
         }
 
-        context._audit('error', this.toString('request', null, `no connected PDP could resolve the request`));
-
-        return {
-            '@type': "Error", // TODO überdenken
-            '@value': this.toString('request', null, `no connected PDP could resolve the request`)
-        };
+        throw new Error(this.toString('request', null, `no connected PDP could resolve the request`));
     } // PEP#request
 
     /**

@@ -15,17 +15,10 @@ const
 class Context {
     /**
      * @constructs Context
-     * @param {Session} session The session from which the context was created.
-     * @param {JSON} request  
+     * @param {(Session|object)} session The session from which the context was created.
+     * @param {{action: string, target: JSON, assignee: (JSON|undefined), assigner: (JSON|undefined)}} param The parametrization for the context.
      */
-    constructor(requestSession, requestBody) {
-
-        if (!requestSession || typeof requestSession !== 'object')
-            throw new Error(this.toString('constructor', 'requestSession, requestBody', `invalid requestSession`));
-        if (!requestBody || typeof requestBody !== 'object')
-            throw new Error(this.toString('constructor', 'requestSession, requestBody', `invalid requestBody`));
-
-        // TODO Context#constructor -> müssen requestSession und requestBody besser überprüft werden?
+    constructor(session, param) {
 
         Object.defineProperties(this, {
             param: {
@@ -33,11 +26,20 @@ class Context {
                     id: {
                         value: UUID()
                     },
-                    requestSession: {
-                        value: requestSession
+                    session: {
+                        value: Utility.validParam('object', session)
                     },
-                    requestBody: {
-                        value: requestBody
+                    action: {
+                        value: Utility.validParam('string', param['action'], session['action'])
+                    },
+                    target: {
+                        value: Utility.validParam('object', param['target'], session['target'])
+                    },
+                    assignee: {
+                        value: Utility.validParam('object', param['assignee'], session['assignee'], null)
+                    },
+                    assigner: {
+                        value: Utility.validParam('object', param['assigner'], session['assigner'], null)
                     },
                     consoleOutput: {
                         writable: true,
@@ -50,13 +52,13 @@ class Context {
                 value: Object.create({}, {
                     odrlRequest: {
                         value: {
-                            'action': null,
-                            'target': null,
-                            'assignee': null,
-                            'assigner': null
+                            action: null,
+                            target: null,
+                            assignee: null,
+                            assigner: null
                         }
                     },
-                    requestCache: {
+                    requestCache: { // TODO vllt umbenennen
                         value: new Map()
                     },
                     responseBody: {
@@ -69,9 +71,9 @@ class Context {
             }
         });
 
-        this.param.requestSession.touch();
+        this.param.session.touch();
 
-        this.log(`context constructed @${Utility.toStringColorScheme('Session', this.param.requestSession.id)}`);
+        this.log(`context constructed @${Utility.toStringColorScheme('Session', this.param.session.id)}`);
     } // Context#constructor
 
     /**
@@ -84,6 +86,8 @@ class Context {
     _audit(topic, ...args) {
         if (typeof topic !== 'string')
             throw new Error(this.toString('_audit', 'topic, ...args', `topic has to be a string`));
+
+        topic = topic.toLowerCase();
 
         let entry = [topic, Date.now(), ...args];
 
