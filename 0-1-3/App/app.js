@@ -27,7 +27,7 @@ attributeStore = new PolicyAgent.DataStore.MongoDB("localhost:27017", "Attribute
  * -> Ideapad
  * /d/Programme/MongoDB/mongodb-community-4.0.0/bin/mongod --dbpath=D:/Programme/MongoDB/databases/examplePIPdataBase
  */
-attributeStore.ping().then(() => console.log(`examplePIPdataBase -> connected`)).catch(console.error);
+// attributeStore.ping().then(() => console.log(`examplePIPdataBase -> connected`)).catch(console.error);
 
 myPIP = new PolicyAgent.PIP(attributeStore);
 
@@ -43,7 +43,7 @@ policyStore = new PolicyAgent.DataStore.Neo4j('localhost', 'neo4j', 'odrl');
  * -> Ideapad
  * /d/Programme/Neo4j/neo4j-community-3.4.5/bin/neo4j.bat console
  */
-policyStore.ping().then(() => console.log(`examplePDPdataBase -> connected`)).catch(console.error);
+// policyStore.ping().then(() => console.log(`examplePDPdataBase -> connected`)).catch(console.error);
 
 myPDP = new PolicyAgent.PDP(policyStore);
 myPDP.connectPIP(myPIP);

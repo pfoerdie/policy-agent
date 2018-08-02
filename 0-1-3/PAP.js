@@ -92,10 +92,8 @@ class PAP extends PolicyPoint {
                         }
                     case 'Asset':
                         // NOTE PAP#loadODRL -> Asset#hasPolicy is not part of the database
-                        if (typeof node['partOf'] === 'string') {
-                            queryBlocks.push(`MERGE (${mergeNode(node)})-[:partOf]->(:ODRL {uid: "${node['partOf']}"})`);
-                        } else if (Array.isArray(node['partOf'])) {
-                            node['partOf'].forEach((elem) => {
+                        if (node['partOf']) {
+                            Utility.toArray(node['partOf']).forEach((elem) => {
                                 if (typeof elem === 'string') {
                                     // TODO PAP#loadODRL -> Asset#partOf
                                 }

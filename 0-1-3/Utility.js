@@ -233,6 +233,15 @@ exports.promify = ((/* closure */) => {
     }
 })(/* closure */); // exports.promify
 
+/**
+ * @function toArray
+ * @param {*} val
+ * @returns {array}
+ */
+exports.toArray = ((/* closure */) => {
+    return (val) => Array.isArray(val) ? val : val !== undefined ? [val] : [];
+})(/* closure */); // exports.toArray
+
 
 /**
  * Filters a valid parameter from a list of proposed parameters.
@@ -243,14 +252,30 @@ exports.promify = ((/* closure */) => {
  * @throws If no valid parameter has been found.
  */
 exports.validParam = ((/* closure */) => {
+    const RE_arrValidator = /^array<(.*)>$/;
+
     return (valid, ...params) => {
         let validator;
 
-        if (valid === true || valid === '*' || valid === 'any')
-            validator = (param) => (param !== undefined);
-        else if (typeof valid === 'string') {
-            valid = valid.split('|');
-            validator = (param) => valid.includes(typeof param);
+        if (typeof valid === 'boolean') {
+            validator = param => valid;
+        } else if (typeof valid === 'string') {
+            valid = valid.toLowerCase();
+            if (valid === '*' || valid === 'any') {
+                validator = param => param !== undefined;
+            } else {
+                let arrValidator = RE_arrValidator.exec(valid);
+
+                if (arrValidator) {
+                    valid = arrValidator[1].split('|');
+                    let arrIsValid = valid.includes('array');
+                    validator = param => Array.isArray(param) && param.every(val => valid.includes(typeof val) || (arrIsValid && Array.isArray(val)));
+                } else {
+                    valid = valid.split('|');
+                    let arrIsValid = valid.includes('array');
+                    validator = param => valid.includes(typeof param) || (arrIsValid && Array.isArray(param));
+                }
+            }
         } else if (typeof valid === 'function')
             validator = valid;
         else
