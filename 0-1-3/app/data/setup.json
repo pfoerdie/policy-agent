@@ -1,5 +1,5 @@
 {
-    "@context": null,
+    "@context": "http://www.w3.org/ns/odrl/2/",
     "@graph": [
         {
             "@type": "Asset",

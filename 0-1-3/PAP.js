@@ -9,6 +9,138 @@ const
     PolicyPoint = require(Path.join(__dirname, "PolicyPoint.js")),
     DataStore = require(Path.join(__dirname, "DataStore.js"));
 
+function constructLoadQuery(odrl) {
+    if (typeof odrl !== 'object' || typeof odrl['@type'] !== 'string')
+        throw `invalid odrl`;
+
+    let queryBlocks = [];
+
+    if (odrl['@type'] === 'Action') {
+        queryBlocks.push(`MERGE (n:ODRL:Action {id: "${odrl['id']}"})`);
+    } else {
+        queryBlocks.push(`MERGE (n:ODRL:${odrl['@type']} {uid: "${odrl['uid']}"})`);
+    }
+
+    switch (odrl['@type']) {
+
+        case 'Action':
+            if (odrl['includedIn']) {
+                // TODO PAP#loadODRL -> Action#includedIn
+            }
+            if (odrl['implies']) {
+                // TODO PAP#loadODRL -> Action#implies
+            }
+            break; // Action
+
+        case 'AssetCollection':
+            if (odrl['refinement']) {
+                // TODO PAP#loadODRL -> AssetCollection#refinement
+            }
+        case 'Asset':
+            // NOTE PAP#loadODRL -> Asset#hasPolicy is not part of the database
+            if (odrl['partOf']) {
+                // TODO PAP#loadODRL -> Asset#partOf
+            }
+            break; // Asset
+
+        case 'PartyCollection':
+            if (odrl['refinement']) {
+                // TODO PAP#loadODRL -> PartyCollection#refinement
+            }
+        case 'Party':
+            if (odrl['partOf']) {
+                // TODO PAP#loadODRL -> Party#partOf
+            }
+            break; // Party
+
+        case 'Policy':
+            if (odrl['inheritFrom']) {
+                // TODO PAP#loadODRL -> Policy#inheritFrom
+            }
+            if (odrl['conflict']) {
+                // TODO PAP#loadODRL -> Policy#conflict
+            }
+            if (odrl['permission']) {
+                // TODO PAP#loadODRL -> Policy#permission
+            }
+            if (odrl['obligation']) {
+                // TODO PAP#loadODRL -> Policy#obligation
+            }
+            if (odrl['prohibition']) {
+                // TODO PAP#loadODRL -> Policy#prohibition
+            }
+            break; // Policy
+
+        case 'Permission':
+            if (odrl['duty']) {
+                // TODO PAP#loadODRL -> Permission#duty
+            }
+        case 'Duty':
+            if (odrl['consequence'] && odrl['@type'] === 'Duty') {
+                // TODO PAP#loadODRL -> Duty#consequence
+            }
+        case 'Prohibition':
+            if (odrl['remedy'] && odrl['@type'] === 'Prohibition') {
+                // TODO PAP#loadODRL -> Prohibition#remedy
+            }
+        case 'Rule':
+            if (odrl['failure']) {
+                // TODO PAP#loadODRL -> Rule#failure
+            }
+            if (odrl['action']) {
+                // TODO PAP#loadODRL -> Rule#action
+            }
+            if (odrl['target']) {
+                // TODO PAP#loadODRL -> Rule#target
+            }
+            if (odrl['assignee']) {
+                // TODO PAP#loadODRL -> Rule#assignee
+            }
+            if (odrl['assigner']) {
+                // TODO PAP#loadODRL -> Rule#assigner
+            }
+            if (odrl['constraint']) {
+                // TODO PAP#loadODRL -> Rule#constraint
+            }
+            break; // Rule
+
+        case 'Constraint':
+            if (odrl['operator']) {
+                // TODO PAP#loadODRL -> Constraint#operator
+            }
+            if (odrl['leftOperand']) {
+                // TODO PAP#loadODRL -> Constraint#leftOperand
+            }
+            if (odrl['rightOperand']) {
+                // TODO PAP#loadODRL -> Constraint#leftOperand
+            }
+            break; // Constraint
+
+        case 'LogicalConstraint':
+            if (odrl['operand']) {
+                // TODO PAP#loadODRL -> LogicalConstraint#operand
+            }
+            break; // LogicalConstraint
+
+
+        case 'ConflictTerm':
+        case 'Operator':
+        case 'LeftOperand':
+        case 'RightOperand':
+            // NOTE PAP#loadODRL-> odrl-spec has no properties for these nodes
+            break;
+
+        default:
+            throw `invalid type '${odrl['@type']}'`;
+
+    } // switch
+
+    queryBlocks.push(`WITH n SET n.blank = null`);
+
+    return queryBlocks.join(" \n");
+
+} // PAP~constructLoadQueries
+
 /**
  * Policy Administration Point
  * @name PAP
@@ -29,186 +161,24 @@ class PAP extends PolicyPoint {
     } // PAP#constructor
 
     async loadODRL(odrlJSON = {}) {
-        if (Array.isArray(odrlJSON['@graph'])) {
+        if (odrlJSON['@graph']) {
+            if (odrlJSON['@context'] !== "http://www.w3.org/ns/odrl/2/")
+                throw new Error(this.toString('loadODRL', 'odrlJSON', `odrlJSON.@context has to be "http://www.w3.org/ns/odrl/2/"`));
+            if (!Array.isArray(odrlJSON['@graph']))
+                throw new Error(this.toString('loadODRL', 'odrlJSON', `odrlJSON.@graph has to be an array`));
 
-            let
-                nodenameMap = new Map(),
-                queryBlocks = [];
+            let cypherQueries;
 
-            /**
-             * Instanty pushes a cypher query to merge with the node in the store the first time a node gets requested.
-             * @name PAP#loadODRL~mergeNode
-             * @param {{@type: string, id: (string|undefined), uid: (undefined|string)}} node The requested node.
-             * @returns {string} The name of the node to use in the cypher query.
-             */
-            function mergeNode(node) {
-                let nodename;
+            try {
+                cypherQueries = odrlJSON['@graph'].map(constructLoadQuery);
+            } catch (errMsg) {
+                throw new Error(this.toString('loadODRL', 'odrlJSON', errMsg));
+            }
 
-                if (typeof node === 'string') {
-                    if (nodenameMap.has(node)) {
-                        nodename = nodenameMap.get(node);
-                    } else {
-                        nodename = "n" + nodenameMap.size();
-                        queryBlocks.push(`MATCH (${nodename}:ODRL {${node.startsWith('id:') ? 'id' : 'uid'}: "${node.replace(/u?id:/, "")}"})`);
-                        nodenameMap.set(node, nodename);
-                    }
-                } else if (node['@type'] === 'Action') {
-                    let mapID = "id:" + node['id'];
+            console.log(cypherQueries);
 
-                    if (nodenameMap.has(mapID)) {
-                        nodename = nodenameMap.get(mapID);
-                    } else {
-                        nodename = "n" + nodenameMap.size();
-                        queryBlocks.push(`MERGE (${nodename}:ODRL:Action {id: "${node['id']}"})`);
-                        nodenameMap.set(mapID, nodename);
-                    }
-                } else {
-                    let mapID = "uid:" + node['uid'];
-
-                    if (nodenameMap.has(mapID)) {
-                        nodename = nodenameMap.get(mapID);
-                    } else {
-                        nodename = "n" + nodenameMap.size();
-                        queryBlocks.push(`MERGE (${nodename}:ODRL:${node['@type']} {uid: "${node['uid']}"})`);
-                        nodenameMap.set(mapID, nodename);
-                    }
-                }
-
-                return nodename;
-            } // PAP#loadODRL~mergeNode
-
-            // TODO PAP#loadODRL -> hier muss ne gute Lösung her, um die Queries aufzubauen -> vllt mithilfe von rekursiven Funktionen
-
-            // first merge all nodes in the graph
-            odrlJSON['@graph'].forEach(mergeNode);
-
-            // then connect the nodes as defined
-            odrlJSON['@graph'].forEach((node, index) => {
-                switch (node['@type']) {
-
-                    case 'AssetCollection':
-                        if (node['refinement']) {
-                            // TODO PAP#loadODRL -> AssetCollection#refinement
-                        }
-                    case 'Asset':
-                        // NOTE PAP#loadODRL -> Asset#hasPolicy is not part of the database
-                        if (node['partOf']) {
-                            Utility.toArray(node['partOf']).forEach((elem) => {
-                                if (typeof elem === 'string') {
-                                    queryBlocks.push(`MERGE (${mergeNode(elem)})-[:partOf]->(:ODRL:AssetCollection {uid: "${elem}"})`);
-                                    // TODO PAP#loadODRL -> Asset#partOf -> überprüfen
-                                }
-                            });
-                        }
-                        break; // Asset
-
-                    case 'PartyCollection':
-                        if (node['refinement']) {
-                            // TODO PAP#loadODRL -> PartyCollection#refinement
-                        }
-                    case 'Party':
-                        if (node['partOf']) {
-                            // TODO PAP#loadODRL -> Party#partOf
-                        }
-                        break; // Party
-
-                    case 'Policy':
-                        if (node['inheritFrom']) {
-                            // TODO PAP#loadODRL -> Policy#inheritFrom
-                        }
-                        if (node['conflict']) {
-                            // TODO PAP#loadODRL -> Policy#conflict
-                        }
-                        if (node['permission']) {
-                            // TODO PAP#loadODRL -> Policy#permission
-                        }
-                        if (node['obligation']) {
-                            // TODO PAP#loadODRL -> Policy#obligation
-                        }
-                        if (node['prohibition']) {
-                            // TODO PAP#loadODRL -> Policy#prohibition
-                        }
-                        break; // Policy
-
-                    case 'Permission':
-                        if (node['duty']) {
-                            // TODO PAP#loadODRL -> Permission#duty
-                        }
-                    case 'Duty':
-                        if (node['consequence'] && node['@type'] === 'Duty') {
-                            // TODO PAP#loadODRL -> Duty#consequence
-                        }
-                    case 'Prohibition':
-                        if (node['remedy'] && node['@type'] === 'Prohibition') {
-                            // TODO PAP#loadODRL -> Prohibition#remedy
-                        }
-                    case 'Rule':
-                        if (node['failure']) {
-                            // TODO PAP#loadODRL -> Rule#failure
-                        }
-                        if (node['action']) {
-                            // TODO PAP#loadODRL -> Rule#action
-                        }
-                        if (node['target']) {
-                            // TODO PAP#loadODRL -> Rule#target
-                        }
-                        if (node['assignee']) {
-                            // TODO PAP#loadODRL -> Rule#assignee
-                        }
-                        if (node['assigner']) {
-                            // TODO PAP#loadODRL -> Rule#assigner
-                        }
-                        if (node['constraint']) {
-                            // TODO PAP#loadODRL -> Rule#constraint
-                        }
-                        break; // Rule
-
-                    case 'Action':
-                        if (node['includedIn']) {
-                            // TODO PAP#loadODRL -> Action#includedIn
-                        }
-                        if (node['implies']) {
-                            // TODO PAP#loadODRL -> Action#implies
-                        }
-                        break; // Action
-
-                    case 'Constraint':
-                        if (node['operator']) {
-                            // TODO PAP#loadODRL -> Constraint#operator
-                        }
-                        if (node['leftOperand']) {
-                            // TODO PAP#loadODRL -> Constraint#leftOperand
-                        }
-                        if (node['rightOperand']) {
-                            // TODO PAP#loadODRL -> Constraint#leftOperand
-                        }
-                        break; // Constraint
-
-                    case 'LogicalConstraint':
-                        if (node['operand']) {
-                            // TODO PAP#loadODRL -> LogicalConstraint#operand
-                        }
-                        break; // LogicalConstraint
-
-
-                    case 'ConflictTerm':
-                    case 'Operator':
-                    case 'LeftOperand':
-                    case 'RightOperand':
-                        // NOTE PAP#loadODRL-> odrl has no properties for these nodes
-                        break; // RightOperand
-
-                } // switch
-            });
-
-            console.log(queryBlocks.join(" \n"));
-            // this.param.policyStore._execute(queryBlocks.join(" \n")).then(console.log).catch(console.error);
-
-        } // if
-    } // PAP#loadODRL
-
-    async loadODRL(odrlJSON = {}) {
-
+            // TODO PAP#loadODRL -> weitermachen
+        }
     } // PAP#loadODRL
 
 } // PAP
