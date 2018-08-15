@@ -28,14 +28,6 @@ class PAP extends PolicyPoint {
         });
     } // PAP#constructor
 
-    /**
-     * @name PAP#ready
-     * @inheritdoc
-     */
-    get ready() {
-        return super.ready;
-    } // PAP#ready<getter>
-
     async loadODRL(odrlJSON = {}) {
         if (Array.isArray(odrlJSON['@graph'])) {
 
@@ -52,7 +44,15 @@ class PAP extends PolicyPoint {
             function mergeNode(node) {
                 let nodename;
 
-                if (node['@type'] === 'Action') {
+                if (typeof node === 'string') {
+                    if (nodenameMap.has(node)) {
+                        nodename = nodenameMap.get(node);
+                    } else {
+                        nodename = "n" + nodenameMap.size();
+                        queryBlocks.push(`MATCH (${nodename}:ODRL {${node.startsWith('id:') ? 'id' : 'uid'}: "${node.replace(/u?id:/, "")}"})`);
+                        nodenameMap.set(node, nodename);
+                    }
+                } else if (node['@type'] === 'Action') {
                     let mapID = "id:" + node['id'];
 
                     if (nodenameMap.has(mapID)) {
@@ -95,7 +95,8 @@ class PAP extends PolicyPoint {
                         if (node['partOf']) {
                             Utility.toArray(node['partOf']).forEach((elem) => {
                                 if (typeof elem === 'string') {
-                                    // TODO PAP#loadODRL -> Asset#partOf
+                                    queryBlocks.push(`MERGE (${mergeNode(elem)})-[:partOf]->(:ODRL:AssetCollection {uid: "${elem}"})`);
+                                    // TODO PAP#loadODRL -> Asset#partOf -> überprüfen
                                 }
                             });
                         }
@@ -204,6 +205,10 @@ class PAP extends PolicyPoint {
             // this.param.policyStore._execute(queryBlocks.join(" \n")).then(console.log).catch(console.error);
 
         } // if
+    } // PAP#loadODRL
+
+    async loadODRL(odrlJSON = {}) {
+
     } // PAP#loadODRL
 
 } // PAP

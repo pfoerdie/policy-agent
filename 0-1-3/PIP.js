@@ -29,14 +29,6 @@ class PIP extends PolicyPoint {
     } // PIP#constructor
 
     /**
-     * @name PIP#ready
-     * @inheritdoc
-     */
-    get ready() {
-        return super.ready;
-    } // PIP#ready<getter>
-
-    /**
      * Enriches the odrlRequest attribute of a context.
      * @name PIP#_enrichRequest
      * @param {Context} context The Context to enrich.

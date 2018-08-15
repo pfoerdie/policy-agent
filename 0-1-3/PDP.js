@@ -116,8 +116,8 @@ class PDP extends PolicyPoint {
      * @returns {*} // TODO jsDoc PDP#_request -> @returns
      */
     async _request(context) {
-        if (!this.ready)
-            throw new Error(this.toString('_request', null, `PDP is not ready jet`));
+        if (this.data.connectedPIPs.length === 0)
+            throw new Error(this.toString('_request', null, `no PIPs are connected`));
 
         context.log(`context reached ${this.toString('_request')}`);
 

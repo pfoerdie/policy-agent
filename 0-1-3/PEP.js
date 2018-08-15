@@ -89,19 +89,6 @@ class PEP extends PolicyPoint {
     } // PEP#constructor
 
     /**
-     * @name PEP#ready
-     * @inheritdoc
-     */
-    get ready() {
-        if (this.data.connectedPDPs.length === 0) {
-            console.warn(this.toString('ready', null, `there are no connected PDPs`));
-            return false;
-        }
-
-        return super.ready;
-    } // PEP#ready<getter>
-
-    /**
      * A router for an express app that enforces all requests.
      * @name PEP#expressRouter
      * @type {function}
@@ -121,7 +108,8 @@ class PEP extends PolicyPoint {
             this.data.expressRouter.use(this.data.expressSession);
 
             this.data.expressRouter.use(async (request, response, next) => {
-                if (!this.ready) return next();
+                if (this.data.connectedPDPs.length === 0)
+                    return next();
 
                 let session = request.session;
 

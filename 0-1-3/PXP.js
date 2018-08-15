@@ -37,14 +37,6 @@ class PXP extends PolicyPoint {
         });
     } // PXP#constructor
 
-    /**
-     * @name PXP#ready
-     * @inheritdoc
-     */
-    get ready() {
-        return super.ready;
-    } // PXP#ready<getter>
-
     _executeRequest(context) {
         // IDEA PXP#_executeRequest -> FRAGE: wann wird der PXP eigentlich durchlaufen? und wo wird er angehängt? am PDP vllt und nach permission aufgerufen ...
     } // PXP#_executeRequest

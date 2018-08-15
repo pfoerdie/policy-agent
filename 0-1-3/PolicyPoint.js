@@ -75,16 +75,6 @@ class PolicyPoint {
     } // PolicyPoint#id<getter>
 
     /**
-     * Indicates whether the instance is ready or not.
-     * @name PolicyPoint#ready
-     * @type {boolean}
-     * @public
-     */
-    get ready() {
-        return true;
-    } // PolicyPoint#ready<getter>
-
-    /**
      * Replaces the nativ string representation of an object by a simple string notation of the policy point.
      * @name PolicyPoint#toString
      * @returns {string} String notation for the policy point.
