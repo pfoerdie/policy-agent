@@ -37,6 +37,7 @@
             "uid": "/policy/public_access",
             "permission": [
                 {
+                    "@type": "Permission",
                     "action": "read",
                     "target": "/assetcollection/public"
                 }
@@ -51,6 +52,7 @@
             "uid": "/policy/user_access",
             "permission": [
                 {
+                    "@type": "Permission",
                     "action": "read",
                     "target": "/asset/index.html",
                     "assignee": "/partycollection/user"

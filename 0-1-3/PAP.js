@@ -36,7 +36,7 @@ function generateLoadQuery(odrl, name) {
 
             if (odrl['id'] !== 'use' && odrl['id'] !== 'transfer') {
                 if (typeof odrl['includedIn'] === 'string') {
-                    const includedIn_name = name + "_includedIn";
+                    const includedIn_name = name + "incl";
                     queryBlocks.push(`MERGE (${includedIn_name}:ODRL:Action {id: "${odrl['includedIn']}"})`);
                     queryBlocks.push(`ON CREATE SET ${includedIn_name}.blank = true`);
                     queryBlocks.push(`MERGE (${name})-[:includedIn]->(${includedIn_name})`);
@@ -47,7 +47,7 @@ function generateLoadQuery(odrl, name) {
 
             if (odrl['implies']) {
                 Utility.toArray(odrl['implies']).forEach((implies_elem, index) => {
-                    const implies_name = name + "_implies" + index;
+                    const implies_name = name + "impl" + index;
                     if (typeof implies_elem === 'string') {
                         queryBlocks.push(`MERGE (${implies_name}:ODRL:Action {id: "${implies_elem}"})`);
                         queryBlocks.push(`ON CREATE SET ${implies_name}.blank = true`);
@@ -65,16 +65,18 @@ function generateLoadQuery(odrl, name) {
         case 'AssetCollection':
 
             if (odrl['refinement']) {
-                // TODO
+                throw `not implementet jet`; // TODO implement
             }// ODRL~AssetCollection.refinement
 
-        // NOTE ODRL~AssetCollection -> no break
+            // NOTE ODRL~AssetCollection -> no break
+
+            queryBlocks.push(`SET ${name} :Asset`);
 
         case 'Asset':
 
             if (odrl['partOf']) {
                 Utility.toArray(odrl['partOf']).forEach((partOf_elem, index) => {
-                    const partOf_name = name + "_partOf" + index;
+                    const partOf_name = name + "part" + index;
                     if (typeof partOf_elem === 'string') {
                         queryBlocks.push(`MERGE (${partOf_name}:ODRL:AssetCollection {uid: "${partOf_elem}"})`);
                         queryBlocks.push(`ON CREATE SET ${partOf_name}.blank = true`);
@@ -92,16 +94,18 @@ function generateLoadQuery(odrl, name) {
         case 'PartyCollection':
 
             if (odrl['refinement']) {
-                // TODO 
+                throw `not implementet jet`; // TODO implement
             } // ODRL~PartyCollection.refinement
 
-        // NOTE ODRL~PartyCollection -> no break
+            // NOTE ODRL~PartyCollection -> no break
+
+            queryBlocks.push(`SET ${name} :Party`);
 
         case 'Party':
 
             if (odrl['partOf']) {
                 Utility.toArray(odrl['partOf']).forEach((partOf_elem, index) => {
-                    const partOf_name = name + "_partOf" + index;
+                    const partOf_name = name + "part" + index;
                     if (typeof partOf_elem === 'string') {
                         queryBlocks.push(`MERGE (${partOf_name}:ODRL:PartyCollection {uid: "${partOf_elem}"})`);
                         queryBlocks.push(`ON CREATE SET ${partOf_name}.blank = true`);
@@ -117,31 +121,58 @@ function generateLoadQuery(odrl, name) {
         case 'Policy':
 
             if (odrl['inheritFrom']) {
-                // TODO
+                throw `not implementet jet`; // TODO implement
             } // ODRL~Policy.inheritFrom
 
             if (odrl['conflict']) {
-                // TODO
+                throw `not implementet jet`; // TODO implement
             } // ODRL~Policy.conflict
 
             if (odrl['permission']) {
-                // TODO
+                Utility.toArray(odrl['permission']).forEach((permission_elem, index) => {
+                    const permission_name = name + "perm" + index;
+                    if (typeof permission_elem === 'string') {
+                        queryBlocks.push(`MERGE (${permission_name}:ODRL:Rule {uid: "${permission_elem}"})`);
+                        queryBlocks.push(`ON CREATE SET ${permission_name}.blank = true`);
+                    } else {
+                        queryBlocks.push(generateLoadQuery(permission_elem, permission_name));
+                    }
+                    queryBlocks.push(`MERGE (${name})-[:permission]->(${permission_name})`);
+                });
             } // ODRL~Policy.permission
 
             if (odrl['obligation']) {
-                // TODO 
+                Utility.toArray(odrl['obligation']).forEach((obligation_elem, index) => {
+                    const obligation_name = name + "obli" + index;
+                    if (typeof obligation_elem === 'string') {
+                        queryBlocks.push(`MERGE (${obligation_name}:ODRL:Rule {uid: "${obligation_elem}"})`);
+                        queryBlocks.push(`ON CREATE SET ${obligation_name}.blank = true`);
+                    } else {
+                        queryBlocks.push(generateLoadQuery(obligation_elem, obligation_name));
+                    }
+                    queryBlocks.push(`MERGE (${name})-[:obligation]->(${obligation_name})`);
+                });
             } // ODRL~Policy.obligation
 
             if (odrl['prohibition']) {
-                // TODO
+                Utility.toArray(odrl['prohibition']).forEach((prohibition_elem, index) => {
+                    const prohibition_name = name + "proh" + index;
+                    if (typeof prohibition_elem === 'string') {
+                        queryBlocks.push(`MERGE (${prohibition_name}:ODRL:Rule {uid: "${prohibition_elem}"})`);
+                        queryBlocks.push(`ON CREATE SET ${prohibition_name}.blank = true`);
+                    } else {
+                        queryBlocks.push(generateLoadQuery(prohibition_elem, prohibition_name));
+                    }
+                    queryBlocks.push(`MERGE (${name})-[:prohibition]->(${prohibition_name})`);
+                });
             } // ODRL~Policy.prohibition
 
             break; // ODRL~Policy
 
         case 'Permission':
 
-            if (odrl['duty']) {
-                // TODO
+            if (odrl['duty'] && odrl['@type'] === 'Permission') {
+                throw `not implementet jet`; // TODO implement
             } // ODRL~Policy.prohibition
 
         // NOTE ODRL~Permission -> no break
@@ -149,7 +180,7 @@ function generateLoadQuery(odrl, name) {
         case 'Duty':
 
             if (odrl['consequence'] && odrl['@type'] === 'Duty') {
-                // TODO 
+                throw `not implementet jet`; // TODO implement
             } // ODRL~Duty.consequence
 
         // NOTE ODRL~Duty -> no break
@@ -157,35 +188,72 @@ function generateLoadQuery(odrl, name) {
         case 'Prohibition':
 
             if (odrl['remedy'] && odrl['@type'] === 'Prohibition') {
-                // TODO
+                throw `not implementet jet`; // TODO implement
             } // ODRL~Prohibition.remedy
 
-        // NOTE ODRL~Prohibition -> no break
+            // NOTE ODRL~Prohibition -> no break
+
+            queryBlocks.push(`SET ${name} :Rule`);
 
         case 'Rule':
 
             if (odrl['failure']) {
-                // TODO
+                // TODO failure ist evtl nicht richtig, dies muss eine sub-property von failure sein
+                throw `not implementet jet`; // TODO implement
             } // ODRL~Rule.failure
 
             if (odrl['action']) {
-                // TODO
+                const action_name = name + "acti";
+                if (typeof odrl['action'] === 'string') {
+                    queryBlocks.push(`MERGE (${action_name}:ODRL:Action {id: "${odrl['action']}"})`);
+                    queryBlocks.push(`ON CREATE SET ${action_name}.blank = true`);
+                    queryBlocks.push(`MERGE (${name})-[:action]->(${action_name})`);
+                } else {
+                    throw `not implemented jet`; // TODO implement action with refinement
+                }
+            } else {
+                throw `Rule '${odrl['uid']}' must have an action`;
             } // ODRL~Rule.action
 
             if (odrl['target']) {
-                // TODO
+                const target_name = name + "targ";
+                if (typeof odrl['target'] === 'string') {
+                    queryBlocks.push(`MERGE (${target_name}:ODRL:Asset {uid: "${odrl['target']}"})`);
+                    queryBlocks.push(`ON CREATE SET ${target_name}.blank = true`);
+                } else {
+                    queryBlocks.push(generateLoadQuery(odrl['target'], target_name));
+                }
+                queryBlocks.push(`MERGE (${name})-[:target]->(${target_name})`);
             } // ODRL~Rule.target
 
             if (odrl['assignee']) {
-                // TODO
+                Utility.toArray(odrl['assignee']).forEach((assignee_elem, index) => {
+                    const assignee_name = name + "anee" + index;
+                    if (typeof assignee_elem === 'string') {
+                        queryBlocks.push(`MERGE (${assignee_name}:ODRL:Party {uid: "${assignee_elem}"})`);
+                        queryBlocks.push(`ON CREATE SET ${assignee_name}.blank = true`);
+                    } else {
+                        queryBlocks.push(generateLoadQuery(assignee_elem, assignee_name));
+                    }
+                    queryBlocks.push(`MERGE (${name})-[:assignee]->(${assignee_name})`);
+                });
             } // ODRL~Rule.assignee
 
             if (odrl['assigner']) {
-                // TODO
+                Utility.toArray(odrl['assigner']).forEach((assigner_elem, index) => {
+                    const assigner_name = name + "aner" + index;
+                    if (typeof assigner_elem === 'string') {
+                        queryBlocks.push(`MERGE (${assigner_name}:ODRL:Party {uid: "${assigner_elem}"})`);
+                        queryBlocks.push(`ON CREATE SET ${assigner_name}.blank = true`);
+                    } else {
+                        queryBlocks.push(generateLoadQuery(assigner_elem, assigner_name));
+                    }
+                    queryBlocks.push(`MERGE (${name})-[:assigner]->(${assigner_name})`);
+                });
             } // ODRL~Rule.assigner
 
             if (odrl['constraint']) {
-                // TODO
+                throw `not implementet jet`; // TODO implement
             } // ODRL~Rule.constraint
 
             break; // ODRL~Rule
@@ -193,15 +261,15 @@ function generateLoadQuery(odrl, name) {
         case 'Constraint':
 
             if (odrl['operator']) {
-                // TODO
+                throw `not implementet jet`; // TODO implement
             } // ODRL~Constraint.operator
 
             if (odrl['leftOperand']) {
-                // TODO
+                throw `not implementet jet`; // TODO implement
             } // ODRL~Constraint.leftOperand
 
             if (odrl['rightOperand']) {
-                // TODO
+                throw `not implementet jet`; // TODO implement
             } // ODRL~Constraint.rightOperand
 
             break; // ODRL~Constraint
@@ -209,7 +277,7 @@ function generateLoadQuery(odrl, name) {
         case 'LogicalConstraint':
 
             if (odrl['operand']) {
-                // TODO
+                throw `not implementet jet`; // TODO implement
             } // ODRL~LogicalConstraint.operand
 
             break; // ODRL~LogicalConstraint
@@ -218,10 +286,13 @@ function generateLoadQuery(odrl, name) {
         case 'Operator':
         case 'LeftOperand':
         case 'RightOperand':
+
             // NOTE ODRL ~ConflictTerm, ~Operator, ~LeftOperand and ~RightOperand have no properties
+
             break;
 
         default:
+
             throw `invalid type '${odrl['@type']}'`;
 
     } // switch
@@ -260,14 +331,15 @@ class PAP extends PolicyPoint {
             let cypherQueries;
 
             try {
-                cypherQueries = odrlJSON['@graph'].map((elem, index) => generateLoadQuery(elem, 'n' + index));
+                cypherQueries = odrlJSON['@graph'].map((elem, index) => generateLoadQuery(elem, "n" + index));
             } catch (errMsg) {
                 throw new Error(this.toString('loadODRL', 'odrlJSON', errMsg));
             }
 
-            console.log(cypherQueries);
+            console.log(cypherQueries.join(" \n"));
 
             // TODO PAP#loadODRL -> weitermachen
+            // TODO am Ende alle blank-Nodes löschen
         }
     } // PAP#loadODRL
 
