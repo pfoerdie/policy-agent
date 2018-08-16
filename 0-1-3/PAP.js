@@ -9,125 +9,216 @@ const
     PolicyPoint = require(Path.join(__dirname, "PolicyPoint.js")),
     DataStore = require(Path.join(__dirname, "DataStore.js"));
 
-function constructLoadQuery(odrl) {
+function generateLoadQuery(odrl, name) {
+    /** {@link https://www.w3.org/TR/odrl-model/#infoModel ODRL Information Model} */
+
     if (typeof odrl !== 'object' || typeof odrl['@type'] !== 'string')
         throw `invalid odrl`;
 
     let queryBlocks = [];
 
+    //  NOTE always use MERGE queries, never MATCH
+
     if (odrl['@type'] === 'Action') {
-        queryBlocks.push(`MERGE (n:ODRL:Action {id: "${odrl['id']}"})`);
+        if (typeof odrl['id'] !== 'string')
+            throw `Action must have an id`;
+
+        queryBlocks.push(`MERGE (${name}:ODRL:Action {id: "${odrl['id']}"})`);
+    } else if (typeof odrl['uid'] === 'string') {
+        queryBlocks.push(`MERGE (${name}:ODRL:${odrl['@type']} {uid: "${odrl['uid']}"})`);
     } else {
-        queryBlocks.push(`MERGE (n:ODRL:${odrl['@type']} {uid: "${odrl['uid']}"})`);
+        queryBlocks.push(`MERGE (${name}:ODRL:${odrl['@type']})`);
     }
 
     switch (odrl['@type']) {
 
         case 'Action':
-            if (odrl['includedIn']) {
-                // TODO PAP#loadODRL -> Action#includedIn
-            }
+
+            if (odrl['id'] !== 'use' && odrl['id'] !== 'transfer') {
+                if (typeof odrl['includedIn'] === 'string') {
+                    const includedIn_name = name + "_includedIn";
+                    queryBlocks.push(`MERGE (${includedIn_name}:ODRL:Action {id: "${odrl['includedIn']}"})`);
+                    queryBlocks.push(`ON CREATE SET ${includedIn_name}.blank = true`);
+                    queryBlocks.push(`MERGE (${name})-[:includedIn]->(${includedIn_name})`);
+                } else {
+                    throw `Action '${odrl['id']}' must have an includedIn`;
+                }
+            } // ODRL~Action.includedIn
+
             if (odrl['implies']) {
-                // TODO PAP#loadODRL -> Action#implies
-            }
-            break; // Action
+                Utility.toArray(odrl['implies']).forEach((implies_elem, index) => {
+                    const implies_name = name + "_implies" + index;
+                    if (typeof implies_elem === 'string') {
+                        queryBlocks.push(`MERGE (${implies_name}:ODRL:Action {id: "${implies_elem}"})`);
+                        queryBlocks.push(`ON CREATE SET ${implies_name}.blank = true`);
+                    } else {
+                        queryBlocks.push(generateLoadQuery(implies_elem), implies_name);
+                    }
+                    queryBlocks.push(`MERGE (${name})-[:implies]->(${implies_name})`);
+                });
+            } // ODRL~Action.implies
+
+            // NOTE ODRL~Action.refinement is only defined in requests to submit arguments
+
+            break; // ODRL~Action
 
         case 'AssetCollection':
+
             if (odrl['refinement']) {
-                // TODO PAP#loadODRL -> AssetCollection#refinement
-            }
+                // TODO
+            }// ODRL~AssetCollection.refinement
+
+        // NOTE ODRL~AssetCollection -> no break
+
         case 'Asset':
-            // NOTE PAP#loadODRL -> Asset#hasPolicy is not part of the database
+
             if (odrl['partOf']) {
-                // TODO PAP#loadODRL -> Asset#partOf
-            }
-            break; // Asset
+                Utility.toArray(odrl['partOf']).forEach((partOf_elem, index) => {
+                    const partOf_name = name + "_partOf" + index;
+                    if (typeof partOf_elem === 'string') {
+                        queryBlocks.push(`MERGE (${partOf_name}:ODRL:AssetCollection {uid: "${partOf_elem}"})`);
+                        queryBlocks.push(`ON CREATE SET ${partOf_name}.blank = true`);
+                    } else {
+                        queryBlocks.push(generateLoadQuery(partOf_elem), partOf_name);
+                    }
+                    queryBlocks.push(`MERGE (${name})-[:partOf]->(${partOf_name})`);
+                });
+            } // ODRL~Asset.partOf
+
+            // NOTE ODRL~Asset.hasPolicy is only defined in requests
+
+            break; // ODRL~Asset
 
         case 'PartyCollection':
+
             if (odrl['refinement']) {
-                // TODO PAP#loadODRL -> PartyCollection#refinement
-            }
+                // TODO 
+            } // ODRL~PartyCollection.refinement
+
+        // NOTE ODRL~PartyCollection -> no break
+
         case 'Party':
+
             if (odrl['partOf']) {
-                // TODO PAP#loadODRL -> Party#partOf
-            }
-            break; // Party
+                Utility.toArray(odrl['partOf']).forEach((partOf_elem, index) => {
+                    const partOf_name = name + "_partOf" + index;
+                    if (typeof partOf_elem === 'string') {
+                        queryBlocks.push(`MERGE (${partOf_name}:ODRL:PartyCollection {uid: "${partOf_elem}"})`);
+                        queryBlocks.push(`ON CREATE SET ${partOf_name}.blank = true`);
+                    } else {
+                        queryBlocks.push(generateLoadQuery(partOf_elem), partOf_name);
+                    }
+                    queryBlocks.push(`MERGE (${name})-[:partOf]->(${partOf_name})`);
+                });
+            } // ODRL~Party.partOf
+
+            break; // ODRL~Party
 
         case 'Policy':
+
             if (odrl['inheritFrom']) {
-                // TODO PAP#loadODRL -> Policy#inheritFrom
-            }
+                // TODO
+            } // ODRL~Policy.inheritFrom
+
             if (odrl['conflict']) {
-                // TODO PAP#loadODRL -> Policy#conflict
-            }
+                // TODO
+            } // ODRL~Policy.conflict
+
             if (odrl['permission']) {
-                // TODO PAP#loadODRL -> Policy#permission
-            }
+                // TODO
+            } // ODRL~Policy.permission
+
             if (odrl['obligation']) {
-                // TODO PAP#loadODRL -> Policy#obligation
-            }
+                // TODO 
+            } // ODRL~Policy.obligation
+
             if (odrl['prohibition']) {
-                // TODO PAP#loadODRL -> Policy#prohibition
-            }
-            break; // Policy
+                // TODO
+            } // ODRL~Policy.prohibition
+
+            break; // ODRL~Policy
 
         case 'Permission':
+
             if (odrl['duty']) {
-                // TODO PAP#loadODRL -> Permission#duty
-            }
+                // TODO
+            } // ODRL~Policy.prohibition
+
+        // NOTE ODRL~Permission -> no break
+
         case 'Duty':
+
             if (odrl['consequence'] && odrl['@type'] === 'Duty') {
-                // TODO PAP#loadODRL -> Duty#consequence
-            }
+                // TODO 
+            } // ODRL~Duty.consequence
+
+        // NOTE ODRL~Duty -> no break
+
         case 'Prohibition':
+
             if (odrl['remedy'] && odrl['@type'] === 'Prohibition') {
-                // TODO PAP#loadODRL -> Prohibition#remedy
-            }
+                // TODO
+            } // ODRL~Prohibition.remedy
+
+        // NOTE ODRL~Prohibition -> no break
+
         case 'Rule':
+
             if (odrl['failure']) {
-                // TODO PAP#loadODRL -> Rule#failure
-            }
+                // TODO
+            } // ODRL~Rule.failure
+
             if (odrl['action']) {
-                // TODO PAP#loadODRL -> Rule#action
-            }
+                // TODO
+            } // ODRL~Rule.action
+
             if (odrl['target']) {
-                // TODO PAP#loadODRL -> Rule#target
-            }
+                // TODO
+            } // ODRL~Rule.target
+
             if (odrl['assignee']) {
-                // TODO PAP#loadODRL -> Rule#assignee
-            }
+                // TODO
+            } // ODRL~Rule.assignee
+
             if (odrl['assigner']) {
-                // TODO PAP#loadODRL -> Rule#assigner
-            }
+                // TODO
+            } // ODRL~Rule.assigner
+
             if (odrl['constraint']) {
-                // TODO PAP#loadODRL -> Rule#constraint
-            }
-            break; // Rule
+                // TODO
+            } // ODRL~Rule.constraint
+
+            break; // ODRL~Rule
 
         case 'Constraint':
+
             if (odrl['operator']) {
-                // TODO PAP#loadODRL -> Constraint#operator
-            }
+                // TODO
+            } // ODRL~Constraint.operator
+
             if (odrl['leftOperand']) {
-                // TODO PAP#loadODRL -> Constraint#leftOperand
-            }
+                // TODO
+            } // ODRL~Constraint.leftOperand
+
             if (odrl['rightOperand']) {
-                // TODO PAP#loadODRL -> Constraint#leftOperand
-            }
-            break; // Constraint
+                // TODO
+            } // ODRL~Constraint.rightOperand
+
+            break; // ODRL~Constraint
 
         case 'LogicalConstraint':
-            if (odrl['operand']) {
-                // TODO PAP#loadODRL -> LogicalConstraint#operand
-            }
-            break; // LogicalConstraint
 
+            if (odrl['operand']) {
+                // TODO
+            } // ODRL~LogicalConstraint.operand
+
+            break; // ODRL~LogicalConstraint
 
         case 'ConflictTerm':
         case 'Operator':
         case 'LeftOperand':
         case 'RightOperand':
-            // NOTE PAP#loadODRL-> odrl-spec has no properties for these nodes
+            // NOTE ODRL ~ConflictTerm, ~Operator, ~LeftOperand and ~RightOperand have no properties
             break;
 
         default:
@@ -135,11 +226,10 @@ function constructLoadQuery(odrl) {
 
     } // switch
 
-    queryBlocks.push(`WITH n SET n.blank = null`);
-
+    queryBlocks.push(`SET ${name}.blank = null`);
     return queryBlocks.join(" \n");
 
-} // PAP~constructLoadQueries
+} // PAP~generateLoadQuery
 
 /**
  * Policy Administration Point
@@ -170,7 +260,7 @@ class PAP extends PolicyPoint {
             let cypherQueries;
 
             try {
-                cypherQueries = odrlJSON['@graph'].map(constructLoadQuery);
+                cypherQueries = odrlJSON['@graph'].map((elem, index) => generateLoadQuery(elem, 'n' + index));
             } catch (errMsg) {
                 throw new Error(this.toString('loadODRL', 'odrlJSON', errMsg));
             }
