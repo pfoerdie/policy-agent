@@ -112,7 +112,7 @@ class PDP extends PolicyPoint {
     /**
      * After the PEP created a context for the request, it sends the context for decision to this function.
      * @name PDP#_request
-     * @param {context} context The context for the request.
+     * @param {Context} context The context for the request.
      * @returns {*} // TODO jsDoc PDP#_request -> @returns
      */
     async _request(context) {

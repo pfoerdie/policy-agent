@@ -27,7 +27,7 @@ function generateLoadQuery(odrl, name) {
     } else if (typeof odrl['uid'] === 'string') {
         queryBlocks.push(`MERGE (${name}:ODRL:${odrl['@type']} {uid: "${odrl['uid']}"})`);
     } else {
-        queryBlocks.push(`MERGE (${name}:ODRL:${odrl['@type']})`);
+        queryBlocks.push(`CREATE (${name}:ODRL:${odrl['@type']})`);
     }
 
     switch (odrl['@type']) {
@@ -336,10 +336,8 @@ class PAP extends PolicyPoint {
                 throw new Error(this.toString('loadODRL', 'odrlJSON', errMsg));
             }
 
-            console.log(cypherQueries.join(" \n"));
-
-            // TODO PAP#loadODRL -> weitermachen
-            // TODO am Ende alle blank-Nodes löschen
+            await this.param.policyStore._execute(cypherQueries.join(" \n"));
+            await this.param.policyStore._execute(`MATCH (n:ODRL {blank: true}) DETACH DELETE n`);
         }
     } // PAP#loadODRL
 

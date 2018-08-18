@@ -13,7 +13,7 @@ let
     app = Express(),
     server = HTTP.createServer(app),
     io = SocketIO(server),
-    myPEP, myPDP, myPIP, myPAP, policyStore, attributeStore;
+    myPEP, myPDP, myPIP, myPXP, policyStore, attributeStore;
 
 
 //#region PolicyInformationPoint
@@ -76,7 +76,7 @@ myPEP.connectPDP(myPDP);
 
 //#region PolicyExecutionPoint
 
-// TODO app -> PolicyExecutionPoint
+myPXP = new PolicyAgent.PXP(policyStore, attributeStore);
 
 //#endregion PolicyExecutionPoint
 
