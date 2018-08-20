@@ -26,7 +26,7 @@ class Context extends SystemComponent {
         V8n().object().check(session);
         V8n().object().check(param);
 
-        // TODO session und param mit V8n optional und schema überprüfen
+        // TODO session und param mit V8n .optional und .schema überprüfen
         // TODO zusätzlich jsDoc vervollständigen
 
         Object.assign(this.param, param, session);

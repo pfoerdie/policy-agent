@@ -10,7 +10,7 @@ const
     _private = new WeakMap();
 
 /**
- * Policy Execution Point
+ * Policy Information Point
  * @name PIP
  * @extends PolicyAgent~SystemComponent
  */

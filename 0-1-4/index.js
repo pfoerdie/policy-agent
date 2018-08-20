@@ -6,17 +6,16 @@
 const
     Path = require('path'),
     SystemComponent = require(Path.join(__dirname, "SystemComponent.js")),
-    Context = require(Path.join(__dirname, "Context.js"));
+    Context = require(Path.join(__dirname, "Context.js")),
+    DataStore = require(Path.join(__dirname, "DataStore.js"));
 
 (async (/* TESTING */) => {
 
-    let c = new Context();
+    let test = new DataStore.MongoDB();
 
-    // NOTE was cooleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeees
-
-    // c.throw('test', 'lorem ipsum');
 
     return 0;
+    // NOTE was cooleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeees
 
 })(/* TESTING */).then(console.log).catch(console.error);
 

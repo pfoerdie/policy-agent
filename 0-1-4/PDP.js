@@ -10,7 +10,7 @@ const
     _private = new WeakMap();
 
 /**
- * Policy Execution Point
+ * Policy Decision Point
  * @name PDP
  * @extends PolicyAgent~SystemComponent
  */
