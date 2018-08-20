@@ -6,8 +6,7 @@
 const
     Path = require('path'),
     SystemComponent = require(Path.join(__dirname, "SystemComponent.js")),
-    V8n = require('v8n'),
-    _private = new WeakMap();
+    V8n = require('v8n');
 
 /**
  * @name Context
@@ -23,8 +22,12 @@ class Context extends SystemComponent {
     constructor(session, param) {
         super();
 
-        V8n().object().check(session);
-        V8n().object().check(param);
+        try { // argument validation
+            V8n().object().check(session);
+            V8n().object().check(param);
+        } catch (err) {
+            this.throw('constructor', err);
+        }
 
         // TODO session und param mit V8n .optional und .schema überprüfen
         // TODO zusätzlich jsDoc vervollständigen

@@ -6,6 +6,7 @@
 const
     Path = require('path'),
     SystemComponent = require(Path.join(__dirname, "SystemComponent.js")),
+    PDP = require(Path.join(__dirname, "PDP.js")),
     V8n = require('v8n');
 
 /**
@@ -20,6 +21,12 @@ class PEP extends SystemComponent {
      */
     constructor() {
         super();
+
+        try { // argument validation
+
+        } catch (err) {
+            this.throw('constructor', err);
+        }
 
         Object.defineProperties(this.param, {
 

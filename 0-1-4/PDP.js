@@ -6,6 +6,8 @@
 const
     Path = require('path'),
     SystemComponent = require(Path.join(__dirname, "SystemComponent.js")),
+    DataStore = require(Path.join(__dirname, "DataStore.js")),
+    PIP = require(Path.join(__dirname, "PIP.js")),
     V8n = require('v8n');
 
 /**
@@ -15,18 +17,29 @@ const
  */
 class PDP extends SystemComponent {
     /**
+     * @param {PolicyAgent~DataStore.Neo4j} policyStore
      * @constructs PDP
      * @public
      */
-    constructor() {
+    constructor(policyStore) {
         super();
 
-        Object.defineProperties(this.param, {
+        try { // argument validation
+            V8n().ofClass(DataStore.Neo4j).check(policyStore);
+        } catch (err) {
+            this.throw('constructor', err);
+        }
 
+        Object.defineProperties(this.param, {
+            policyStore: {
+                value: policyStore
+            }
         });
 
         Object.defineProperties(this.data, {
-
+            connectedPIPs: {
+                value: []
+            }
         });
     } // PDP#constructor
 

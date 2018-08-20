@@ -73,7 +73,11 @@ class SystemComponent {
     log(funcName, message) {
         const _attr = _private.get(this);
 
-        V8n().string().check(funcName);
+        try {
+            V8n().string().check(funcName);
+        } catch (err) {
+            this.throw('log', err);
+        }
 
         console.log(
             Color.blue(_attr.className) +
@@ -94,7 +98,11 @@ class SystemComponent {
     throw(funcName, error) {
         const _attr = _private.get(this);
 
-        V8n().string().check(funcName);
+        try {
+            V8n().string().check(funcName);
+        } catch (err) {
+            this.throw('throw', err);
+        }
 
         error = (error instanceof Error) ? error : new Error(error.toString().trim());
 

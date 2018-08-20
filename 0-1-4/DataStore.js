@@ -72,9 +72,13 @@ class Neo4jStore extends DataStore {
 
         super();
 
-        V8n().string().check(host);
-        V8n().string().check(user);
-        V8n().string().check(password);
+        try { // argument validation
+            V8n().string().check(host);
+            V8n().string().check(user);
+            V8n().string().check(password);
+        } catch (err) {
+            this.throw('constructor', err);
+        }
 
         Object.defineProperties(this.param, {
             host: {
@@ -123,10 +127,18 @@ class Neo4jStore extends DataStore {
             session = this.data.driver.session(),
             result = null;
 
+        try { // argument validation
+            V8n().passesAnyOf(
+                V8n().string(),
+                V8n().array().every.string()
+            ).check(query);
+        } catch (err) {
+            this.throw('_execute', err);
+        }
+
         if (V8n().string().test(query)) {
             result = await session.run(query);
         } else {
-            V8n().array().every.string().check(query);
             result = await Promise.all(query.map(singleQuery => session.run(singleQuery)));
         }
 
@@ -159,8 +171,12 @@ class MongoStore extends DataStore {
 
         super();
 
-        V8n().string().check(host);
-        V8n().string().check(dbName);
+        try { // argument validation
+            V8n().string().check(host);
+            V8n().string().check(dbName);
+        } catch (err) {
+            this.throw('constructor', err);
+        }
 
         Object.defineProperties(this.param, {
             host: {
@@ -194,6 +210,12 @@ class MongoStore extends DataStore {
             dataBase = client.db(this.param.dbName),
             result;
 
+        try { // argument validation
+
+        } catch (err) {
+            this.throw('_retrieve', err);
+        }
+
         // TODO implementieren -> an Neo4jStore#_execute orientieren
 
     } // MongoStore#_retrieve
@@ -206,6 +228,12 @@ class MongoStore extends DataStore {
             client = await MongoStore_createClient.call(this),
             dataBase = client.db(this.param.dbName),
             result;
+
+        try { // argument validation
+
+        } catch (err) {
+            this.throw('_submit', err);
+        }
 
         // TODO implementieren
 
