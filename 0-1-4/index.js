@@ -11,8 +11,8 @@ const
 
 (async (/* TESTING */) => {
 
-    let test = new DataStore.MongoDB();
-
+    const attributeStore = new DataStore.MongoDB(undefined, 'AttributeStore');
+    const policyStore = new DataStore.Neo4j(undefined, undefined, 'odrl');
 
     return 0;
     // NOTE was cooleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeees

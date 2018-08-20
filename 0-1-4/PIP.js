@@ -6,8 +6,7 @@
 const
     Path = require('path'),
     SystemComponent = require(Path.join(__dirname, "SystemComponent.js")),
-    V8n = require('v8n'),
-    _private = new WeakMap();
+    V8n = require('v8n');
 
 /**
  * Policy Information Point
