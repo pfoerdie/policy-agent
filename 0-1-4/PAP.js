@@ -29,7 +29,7 @@ class PAP extends SystemComponent {
             this.throw('constructor', err);
         }
 
-        Object.defineProperties(this.param, {
+        Object.defineProperties(this.data, {
             policyStore: {
                 value: policyStore
             }

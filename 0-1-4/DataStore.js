@@ -26,18 +26,19 @@ class DataStore extends SystemComponent {
         if (!new.target || new.target === DataStore)
             this.throw('constructor', "function is abstract");
 
+        let connected = false;
+
         Object.defineProperties(this.data, {
             connected: {
-                writable: true,
-                value: false
+                get: () => connected
             }
         });
 
         setImmediate(() => {
             this.ping().then((result) => {
-                this.data.connected = true;
+                connected = true;
             }).catch((err) => {
-                this.data.connected = false;
+                this.throw('constructor', `connection failed`);
             });
         });
     } // DataStore#constructor
@@ -80,21 +81,12 @@ class Neo4jStore extends DataStore {
             this.throw('constructor', err);
         }
 
-        Object.defineProperties(this.param, {
+        Object.defineProperties(this.data, {
             host: {
                 value: host
             },
-            user: {
-                value: user
-            },
-            password: {
-                value: password
-            }
-        });
-
-        Object.defineProperties(this.data, {
             driver: {
-                value: Neo4j.driver(`bolt://${this.param.host}`, Neo4j.auth.basic(this.param.user, this.param.password))
+                value: Neo4j.driver(`bolt://${host}`, Neo4j.auth.basic(user, password))
             }
         });
 
@@ -128,6 +120,8 @@ class Neo4jStore extends DataStore {
             result = null;
 
         try { // argument validation
+            V8n().exact(true).check(this.data.connected); // TODO drüber nachdenken
+
             V8n().passesAnyOf(
                 V8n().string(),
                 V8n().array().every.string()
@@ -149,7 +143,7 @@ class Neo4jStore extends DataStore {
 
 function MongoStore_createClient() {
     return new Promise((resolve, reject) => {
-        MongoDB.connect(`mongodb://${this.param.host}`, { useNewUrlParser: true }, (err, result) => {
+        MongoDB.connect(`mongodb://${this.data.host}`, { useNewUrlParser: true }, (err, result) => {
             if (err) reject(err);
             else resolve(result);
         });
@@ -178,7 +172,7 @@ class MongoStore extends DataStore {
             this.throw('constructor', err);
         }
 
-        Object.defineProperties(this.param, {
+        Object.defineProperties(this.data, {
             host: {
                 value: host
             },
@@ -207,7 +201,7 @@ class MongoStore extends DataStore {
     async _retrieve(query) {
         let
             client = await MongoStore_createClient.call(this),
-            dataBase = client.db(this.param.dbName),
+            dataBase = client.db(this.data.dbName),
             result;
 
         try { // argument validation
@@ -226,7 +220,7 @@ class MongoStore extends DataStore {
     async _submit(query) {
         let
             client = await MongoStore_createClient.call(this),
-            dataBase = client.db(this.param.dbName),
+            dataBase = client.db(this.data.dbName),
             result;
 
         try { // argument validation

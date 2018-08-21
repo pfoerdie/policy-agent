@@ -6,6 +6,7 @@
 const
     Path = require('path'),
     SystemComponent = require(Path.join(__dirname, "SystemComponent.js")),
+    Context = require(Path.join(__dirname, "Context.js")),
     DataStore = require(Path.join(__dirname, "DataStore.js")),
     V8n = require('v8n');
 
@@ -29,7 +30,7 @@ class PIP extends SystemComponent {
             this.throw('constructor', err);
         }
 
-        Object.defineProperties(this.param, {
+        Object.defineProperties(this.data, {
             attributeStore: {
                 value: attributeStore
             }

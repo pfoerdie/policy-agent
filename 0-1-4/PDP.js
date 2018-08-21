@@ -6,6 +6,7 @@
 const
     Path = require('path'),
     SystemComponent = require(Path.join(__dirname, "SystemComponent.js")),
+    Context = require(Path.join(__dirname, "Context.js")),
     DataStore = require(Path.join(__dirname, "DataStore.js")),
     PIP = require(Path.join(__dirname, "PIP.js")),
     V8n = require('v8n');
@@ -30,13 +31,10 @@ class PDP extends SystemComponent {
             this.throw('constructor', err);
         }
 
-        Object.defineProperties(this.param, {
+        Object.defineProperties(this.data, {
             policyStore: {
                 value: policyStore
-            }
-        });
-
-        Object.defineProperties(this.data, {
+            },
             connectedPIPs: {
                 value: []
             }

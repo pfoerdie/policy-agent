@@ -7,11 +7,25 @@ const
     UUID = require('uuid/v4'),
     Color = require('colors'),
     V8n = require('v8n'),
-    _private = new WeakMap();
+    systemAttributes = new WeakMap();
 
 V8n.extend({
     ofClass: (expectedClass) => value => value instanceof expectedClass,
-    function: () => value => typeof value === 'function'
+    function: () => value => typeof value === 'function',
+    JSON: () => value => {
+        try {
+            V8n().object().check(value);
+
+            JSON.stringify(value, (key, value) => {
+                V8n().not.function().check(value);
+                return value;
+            });
+
+            return true;
+        } catch (err) {
+            return false;
+        }
+    }
 });
 
 /**
@@ -30,15 +44,7 @@ class SystemComponent {
 
         Object.defineProperties(this, {
             /** 
-             * An object that represents all parametrization of the instance.
-             * @name SystemComponent#param
-             * @type {object}
-             */
-            param: {
-                value: {}
-            },
-            /** 
-             * An object that represents all generated data of the instance.
+             * An object that holds all data of the instance.
              * @name SystemComponent#data
              * @type {object}
              */
@@ -47,7 +53,7 @@ class SystemComponent {
             }
         });
 
-        _private.set(this, {
+        systemAttributes.set(this, {
             className: new.target.name,
             instanceID: UUID()
         });
@@ -60,7 +66,7 @@ class SystemComponent {
      * @public
      */
     get id() {
-        return _private.get(this).instanceID;
+        return systemAttributes.get(this).instanceID;
     } // SystemComponent#id<getter>
 
     /**
@@ -71,7 +77,7 @@ class SystemComponent {
      * @package
      */
     log(funcName, message) {
-        const _attr = _private.get(this);
+        const _attr = systemAttributes.get(this);
 
         try {
             V8n().string().check(funcName);
@@ -92,11 +98,11 @@ class SystemComponent {
      * @name SystemComponent#throw
      * @param {string} funcName The name of the function for this log entry.
      * @param {(Error|*)} error If no error is submitted, the arguments will be used to create an error.
-     * @throws {Error}
+     * @throws {Error} Always throws an error.
      * @package
      */
     throw(funcName, error) {
-        const _attr = _private.get(this);
+        const _attr = systemAttributes.get(this);
 
         try {
             V8n().string().check(funcName);
@@ -115,6 +121,10 @@ class SystemComponent {
 
         throw error;
     } // SystemComponent#throw
+
+    toString() {
+        return `${_attr.className}<${_attr.instanceID}>`;
+    } // SystemComponent#toString
 
 } // SystemComponent
 
