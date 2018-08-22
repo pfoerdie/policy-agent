@@ -117,7 +117,7 @@ class Context extends SystemComponent {
                         value: decisionPoint.data.informationPoint
                     },
                     execution: {
-                        value: executionPoint ? executionPoint : enforcementPoint
+                        value: executionPoint || enforcementPoint
                     }
                 })
             }

@@ -133,9 +133,12 @@ class SystemComponent {
     } // SystemComponent#throw
 
     toString(funcName) {
+        const _attr = systemAttributes.get(this);
+
         let str = `${_attr.className}<${_attr.instanceID}>`;
         if (funcName && typeof funcName === 'string')
             str += `.${funcName}`;
+
         return str;
     } // SystemComponent#toString
 

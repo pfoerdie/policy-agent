@@ -7,6 +7,16 @@ const
     PEP = PolicyAgent.PEP,
     PAP = PolicyAgent.PAP;
 
+const
+    HTTP = require('http'),
+    Express = require('express'),
+    SocketIO = require('socket.io');
+
+/**
+ * NOTE start Neo4j and MongoDB:
+ * /d/Programme/Neo4j/neo4j-community-3.4.5/bin/neo4j.bat console
+ * /d/Programme/MongoDB/mongodb-community-4.0.0/bin/mongod --dbpath=D:/Programme/MongoDB/databases/examplePIPdataBase
+ */
 
 (async (/* TESTING */) => {
 
@@ -19,6 +29,18 @@ const
         myPAP = new PAP(policyStore);
 
     myPEP.connectPDP(myPDP);
+
+    /* */
+    let
+        app = Express(),
+        server = HTTP.createServer(app),
+        io = SocketIO(server);
+    /* *
+    app.use(PEP.express());
+    io.use(PEP.socketIO());
+    /* *
+    server.listen(80, () => console.log('HTTP-Server -> listening'));
+    /* */
 
     return 0;
     // NOTE was cooleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeees

@@ -35,10 +35,13 @@ class DataStore extends SystemComponent {
         });
 
         setImmediate(() => {
-            this.ping().then((result) => {
+            this.ping().then(() => {
                 DataStore_connected = true;
-            }).catch((err) => {
-                this.throw('constructor', `connection failed`);
+                this.log(undefined, `connected`);
+            }).catch(() => {
+                try {
+                    this.throw(undefined, `connection failed`);
+                } catch (err) { /* do nothing */ }
             });
         });
     } // DataStore#constructor
@@ -46,7 +49,7 @@ class DataStore extends SystemComponent {
     /**
      * @name DataStore#ping
      * @throws {Error} Throw an error on failed ping.
-     * @returns {*} Optionally a summary of the ping.
+     * @returns {*} Whatever seems suitable for a ping summary.
      * @async
      * @abstract
      */
@@ -74,9 +77,9 @@ class Neo4jStore extends DataStore {
         super();
 
         if (V8n().not.arrSchema([
-            V8n().string(), // host
-            V8n().string(), // user
-            V8n().string() // password
+            V8n().optional(V8n().string()), // host
+            V8n().optional(V8n().string()), // user
+            V8n().optional(V8n().string()) // password
         ]).test(arguments)) {
             this.throw('constructor', new TypeError(`invalid arguments`));
         } // argument validation
@@ -167,8 +170,8 @@ class MongoStore extends DataStore {
         super();
 
         if (V8n().not.arrSchema([
-            V8n().string(), // host
-            V8n().string() // dbName
+            V8n().optional(V8n().string()), // host
+            V8n().optional(V8n().string()) // dbName
         ]).test(arguments)) {
             this.throw('constructor', new TypeError(`invalid arguments`));
         } // argument validation
@@ -187,14 +190,14 @@ class MongoStore extends DataStore {
      * Creates a client to MongoDB to test the connection.
      * @name MongoStore#ping
      * @throws {Error} Throws if the connection failed.
-     * @returns {string} Just some placeholder string.
+     * @returns {object} Server info.
      * @async
      */
     async ping() {
         let client = await MongoStore_createClient.call(this);
         client.close();
 
-        return "ping successful";
+        return client['s']['options']['servers'][0];
     } // MongoStore#ping
 
     /**
