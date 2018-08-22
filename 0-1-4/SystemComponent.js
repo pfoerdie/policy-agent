@@ -10,17 +10,34 @@ const
     systemAttributes = new WeakMap();
 
 V8n.extend({
-    ofClass: (expectedClass) => value => value instanceof expectedClass,
-    function: () => value => typeof value === 'function',
+    ofClass: (...validClasses) => value => {
+        for (let expectedClass of validClasses) {
+            if (value instanceof expectedClass)
+                return true;
+        }
+        return false;
+    },
+    componentType: (expectedType) => value =>
+        value instanceof SystemComponent &&
+        systemAttributes.get(value).type === expectedType,
+    function: () => value =>
+        typeof value === 'function',
+    arrSchema: (schema) => value => {
+        try {
+            for (let index in schema) {
+                schema[index].check(value[index]);
+            }
+            return true;
+        } catch (err) {
+            return false;
+        }
+    },
     JSON: () => value => {
         try {
-            V8n().object().check(value);
-
             JSON.stringify(value, (key, value) => {
                 V8n().not.function().check(value);
                 return value;
             });
-
             return true;
         } catch (err) {
             return false;
@@ -38,9 +55,11 @@ class SystemComponent {
      * @package
      * @abstract
      */
-    constructor() {
+    constructor(type) {
         if (!new.target || new.target === SystemComponent)
             throw new Error(`SystemComponent is an abstract class`);
+        if (typeof type !== 'string')
+            throw new Error(`SystemComponent needs a type`);
 
         Object.defineProperties(this, {
             /** 
@@ -54,6 +73,7 @@ class SystemComponent {
         });
 
         systemAttributes.set(this, {
+            type: type,
             className: new.target.name,
             instanceID: UUID()
         });
@@ -73,24 +93,20 @@ class SystemComponent {
      * This function is used to log events on this component.
      * @name SystemComponent#log
      * @param {string} funcName The name of the function for this log entry.
-     * @param {(string|*)} message If no string is submitted, the arguments will be used with the toString method.
+     * @param {...(string|*)} messages If no string is submitted, the arguments will be used with the toString method.
      * @package
      */
-    log(funcName, message) {
+    log(funcName, ...messages) {
         const _attr = systemAttributes.get(this);
 
-        try {
-            V8n().string().check(funcName);
-        } catch (err) {
-            this.throw('log', err);
+        let logMsg = Color.blue(_attr.className) + Color.grey("<") + Color.magenta(_attr.instanceID) + Color.grey(">");
+        if (funcName && typeof funcName === 'string')
+            logMsg += Color.grey(".") + Color.cyan(funcName.trim());
+        for (let msg of messages) {
+            logMsg += "\n" + Color.grey("-> ") + msg.toString().trim();
         }
 
-        console.log(
-            Color.blue(_attr.className) +
-            Color.grey("<") + Color.magenta(_attr.instanceID) + Color.grey(">.") +
-            Color.cyan(funcName) + "\n" +
-            Color.grey("-> ") + message.toString().trim()
-        );
+        console.log(logMsg);
     } // SystemComponent#log
 
     /**
@@ -104,26 +120,22 @@ class SystemComponent {
     throw(funcName, error) {
         const _attr = systemAttributes.get(this);
 
-        try {
-            V8n().string().check(funcName);
-        } catch (err) {
-            this.throw('throw', err);
-        }
-
         error = (error instanceof Error) ? error : new Error(error.toString().trim());
 
-        console.error(
-            Color.blue(_attr.className) +
-            Color.grey("<") + Color.magenta(_attr.instanceID) + Color.grey(">.") +
-            Color.cyan(funcName) + "\n" +
-            Color.grey("-> ") + error.toString()
-        );
+        let errMsg = Color.blue(_attr.className) + Color.grey("<") + Color.magenta(_attr.instanceID) + Color.grey(">");
+        if (funcName && typeof funcName === 'string')
+            errMsg += Color.grey(".") + Color.cyan(funcName.trim());
+        errMsg += "\n" + Color.grey("-> ") + error.toString().trim();
 
+        console.error(errMsg);
         throw error;
     } // SystemComponent#throw
 
-    toString() {
-        return `${_attr.className}<${_attr.instanceID}>`;
+    toString(funcName) {
+        let str = `${_attr.className}<${_attr.instanceID}>`;
+        if (funcName && typeof funcName === 'string')
+            str += `.${funcName}`;
+        return str;
     } // SystemComponent#toString
 
 } // SystemComponent

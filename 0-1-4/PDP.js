@@ -23,13 +23,13 @@ class PDP extends SystemComponent {
      * @public
      */
     constructor(policyStore) {
-        super();
+        super('PDP');
 
-        try { // argument validation
-            V8n().ofClass(DataStore.Neo4j).check(policyStore);
-        } catch (err) {
-            this.throw('constructor', err);
-        }
+        if (V8n().not.arrSchema([
+            V8n().ofClass(DataStore.Neo4j) // policyStore
+        ]).test(arguments)) {
+            this.throw('constructor', new TypeError(`invalid arguments`));
+        } // argument validation
 
         Object.defineProperties(this.data, {
             policyStore: {

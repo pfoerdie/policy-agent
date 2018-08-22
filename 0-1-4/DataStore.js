@@ -21,22 +21,22 @@ class DataStore extends SystemComponent {
      * @abstract
      */
     constructor() {
-        super();
+        super('DataStore');
 
         if (!new.target || new.target === DataStore)
             this.throw('constructor', "function is abstract");
 
-        let connected = false;
+        let DataStore_connected = false;
 
         Object.defineProperties(this.data, {
             connected: {
-                get: () => connected
+                get: () => DataStore_connected
             }
         });
 
         setImmediate(() => {
             this.ping().then((result) => {
-                connected = true;
+                DataStore_connected = true;
             }).catch((err) => {
                 this.throw('constructor', `connection failed`);
             });
@@ -73,13 +73,13 @@ class Neo4jStore extends DataStore {
 
         super();
 
-        try { // argument validation
-            V8n().string().check(host);
-            V8n().string().check(user);
-            V8n().string().check(password);
-        } catch (err) {
-            this.throw('constructor', err);
-        }
+        if (V8n().not.arrSchema([
+            V8n().string(), // host
+            V8n().string(), // user
+            V8n().string() // password
+        ]).test(arguments)) {
+            this.throw('constructor', new TypeError(`invalid arguments`));
+        } // argument validation
 
         Object.defineProperties(this.data, {
             host: {
@@ -115,20 +115,21 @@ class Neo4jStore extends DataStore {
      * @async
      */
     async _execute(query) {
+        if (!this.data.connected)
+            this.throw('_execute', new Error(`not connected`));
+
         let
             session = this.data.driver.session(),
             result = null;
 
-        try { // argument validation
-            V8n().exact(true).check(this.data.connected); // TODO drüber nachdenken
-
+        if (V8n().not.arrSchema([
             V8n().passesAnyOf(
                 V8n().string(),
                 V8n().array().every.string()
-            ).check(query);
-        } catch (err) {
-            this.throw('_execute', err);
-        }
+            ) // query
+        ]).test(arguments)) {
+            this.throw('_execute', new TypeError(`invalid arguments`));
+        } // argument validation
 
         if (V8n().string().test(query)) {
             result = await session.run(query);
@@ -165,12 +166,12 @@ class MongoStore extends DataStore {
 
         super();
 
-        try { // argument validation
-            V8n().string().check(host);
-            V8n().string().check(dbName);
-        } catch (err) {
-            this.throw('constructor', err);
-        }
+        if (V8n().not.arrSchema([
+            V8n().string(), // host
+            V8n().string() // dbName
+        ]).test(arguments)) {
+            this.throw('constructor', new TypeError(`invalid arguments`));
+        } // argument validation
 
         Object.defineProperties(this.data, {
             host: {
@@ -195,20 +196,24 @@ class MongoStore extends DataStore {
 
         return "ping successful";
     } // MongoStore#ping
+
     /**
      * TODO jsDoc
      */
     async _retrieve(query) {
+        if (!this.data.connected)
+            this.throw('_retrieve', new Error(`not connected`));
+
         let
             client = await MongoStore_createClient.call(this),
             dataBase = client.db(this.data.dbName),
             result;
 
-        try { // argument validation
-
-        } catch (err) {
-            this.throw('_retrieve', err);
-        }
+        if (V8n().not.arrSchema([
+            // TODO query
+        ]).test(arguments)) {
+            this.throw('_retrieve', new TypeError(`invalid arguments`));
+        } // argument validation
 
         // TODO implementieren -> an Neo4jStore#_execute orientieren
 
@@ -218,16 +223,19 @@ class MongoStore extends DataStore {
      * TODO jsDoc
      */
     async _submit(query) {
+        if (!this.data.connected)
+            this.throw('_submit', new Error(`not connected`));
+
         let
             client = await MongoStore_createClient.call(this),
             dataBase = client.db(this.data.dbName),
             result;
 
-        try { // argument validation
-
-        } catch (err) {
-            this.throw('_submit', err);
-        }
+        if (V8n().not.arrSchema([
+            // TODO query
+        ]).test(arguments)) {
+            this.throw('_submit', new TypeError(`invalid arguments`));
+        } // argument validation
 
         // TODO implementieren
 

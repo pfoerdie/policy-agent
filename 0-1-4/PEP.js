@@ -21,13 +21,13 @@ class PEP extends SystemComponent {
      * @public
      */
     constructor() {
-        super();
+        super('PEP');
 
-        try { // argument validation
-
-        } catch (err) {
-            this.throw('constructor', err);
-        }
+        if (V8n().not.arrSchema([
+            // TODO
+        ]).test(arguments)) {
+            this.throw('constructor', new TypeError(`invalid arguments`));
+        } // argument validation
 
         Object.defineProperties(this.data, {
             actionCallbacks: {
@@ -49,6 +49,13 @@ class PEP extends SystemComponent {
         if (V8n().ofClass(Context).test(session))
             session = session.session;
 
+        if (V8n().not.arrSchema([
+            V8n().object(), // session
+            V8n().JSON() // param
+        ]).test(arguments)) {
+            this.throw('request', new TypeError(`invalid arguments`));
+        } // argument validation
+
         let context = new Context(session, param);
         context.log('constructor', `initialized by ${this.toString()}`);
 
@@ -62,25 +69,15 @@ class PEP extends SystemComponent {
      * @param {function} actionCallback Callback for the action.
      */
     defineAction(actionName, actionCallback) {
-        /**
-         * TODO
-         * es kann sein, dass das hier überhaupt nicht funktioniert,
-         * da so zB am expressRouter keine actionen definiert werden können.
-         * Und überhaupt, vllt ist dies auch die falsche Stelle.
-         * Aktionen müssen so auch für jeden PEP definiert werden,
-         * vllt sind diese allerdings eher spezifisch/relevant für den PDP,
-         * bzw PIP oder policyStore und attributeStore
-         */
-
-        try { // validate arguments
-            V8n().string().check(actionName);
-            V8n().function().check(actionCallback);
-        } catch (err) {
-            this.throw('defineAction', new TypeError("invalid arguments"));
-        }
+        if (V8n().not.arrSchema([
+            V8n().string(), // actionName
+            V8n().function() // actionCallback
+        ]).test(arguments)) {
+            this.throw('defineAction', new TypeError(`invalid arguments`));
+        } // argument validation
 
         if (this.data.actionCallbacks.has(actionName))
-            this.throw('defineAction', `action '${actionName}' has already been defined`);
+            this.throw('defineAction', `action '${actionName}' already defined`);
 
         this.data.actionCallbacks.set(actionName, actionCallback);
     } // PEP#defineAction

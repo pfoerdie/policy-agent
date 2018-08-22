@@ -22,13 +22,13 @@ class PIP extends SystemComponent {
      * @public
      */
     constructor(attributeStore) {
-        super();
+        super('PIP');
 
-        try { // argument validation
-            V8n().ofClass(DataStore.MongoDB).check(attributeStore);
-        } catch (err) {
-            this.throw('constructor', err);
-        }
+        if (V8n().not.arrSchema([
+            V8n().ofClass(DataStore.MongoDB), // attributeStore
+        ]).test(arguments)) {
+            this.throw('constructor', new TypeError(`invalid arguments`));
+        } // argument validation
 
         Object.defineProperties(this.data, {
             attributeStore: {

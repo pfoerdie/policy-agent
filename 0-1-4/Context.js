@@ -9,65 +9,48 @@ const
     V8n = require('v8n');
 
 /**
- * NOTE XACML Request Attributes:
- * - Resource    => Data, service or system component
- *      -> Session
- *      -> Cache?
- *      -> additional data for the request
- * 
- * - Action      => An operation on a resource
- *      -> die tatsächlichen Funktionen, die innerhalb eines Contexts aufgerufen werden können
- * 
- * - Environment => The set of attributes that are relevant to an authorization decision and are independent of a 
- *                  particular subject, resource or action
- *      -> DateTime
- * 
- * - Subject     => An actor whose attributes may be referenced by a predicate
- *      -> ODRL~Rule#action                                 <- ODRL~Action
- *      -> ODRL~Rule#relation (e.g. target)                 <- ODRL~Asset
- *      -> ODRL~Rule#function (e.g. assigner, assignee)     <- ODRL~Party
- * 
- *(- )
- */
-
-/**
  * @name Context
  * @extends PolicyAgent~SystemComponent
- * TODO vllt sollte der Context keine SystemComponent sein
  */
 class Context extends SystemComponent {
     /**
      * @constructs Context
      * @param {(Session|object)} session The session from which the context was created.
      * @param {JSON} param The parametrization for the context.
+     * @param {PolicyAgent~PEP} enforcementPoint
+     * @param {PolicyAgent~PDP} decisionPoint
+     * @param {PolicyAgent~PEP} [executionPoint]
      * @package
      */
-    constructor(session, param) {
-        super();
+    constructor(session, param, enforcementPoint, decisionPoint, executionPoint) {
+        super('Context');
 
-        try { // argument validation
-            V8n().object().check(session);
-            V8n().JSON().check(param);
-        } catch (err) {
-            this.throw('constructor', err);
-        }
+        if (V8n().not.arrSchema([
+            V8n().object(), // session
+            V8n().JSON(), // param
+            V8n().componentType('PEP'), // enforcementPoint
+            V8n().componentType('PDP'), // decisionPoint
+            V8n().optional(V8n().componentType('PEP')) // executionPoint
+        ]).test(arguments)) {
+            this.throw('constructor', new TypeError(`invalid arguments`));
+        } // argument validation
 
         /**
          * @name Context#data
          * @property {object} subject
-         * NOTE XACML request.subject
+         * NOTE XACML request.subject:
          * -> An actor whose attributes may be referenced by a predicate
          *    (Predicate := A statement about attributes whose truth can be evaluated)
          * @property {object} resource
-         * NOTE XACML request.resource
+         * NOTE XACML request.resource:
          * -> Data, service or system component
          * @property {object} environment
          * 
-         * NOTE XACML request.environment
+         * NOTE XACML request.environment:
          * -> The set of attributes that are relevant to an authorization decision 
          *    and are independent of a particular subject, resource or action
          * @property {object} action
-         * NOTE XACML request.action
+         * NOTE XACML request.action:
          * -> An operation on a resource
          */
         Object.defineProperties(this.data, {
@@ -108,6 +91,14 @@ class Context extends SystemComponent {
          * @name Context#data.resource
          * @property {Session} session
          * @property {Map} cache
+         * 
+         * - originator/addressor/despatcher
+         * - intermediary
+         * - recipient
+         * 
+         * -> relay / relais
+         * -> interstation / station
+         * -> stage
          */
         Object.defineProperties(this.data.resource, {
             session: {
@@ -115,6 +106,19 @@ class Context extends SystemComponent {
             },
             cache: {
                 value: new Map()
+            },
+            stage: {
+                value: Object.create({}, {
+                    enforcement: {
+                        value: enforcementPoint
+                    },
+                    decision: {
+                        value: decisionPoint
+                    },
+                    execution: {
+                        value: executionPoint ? executionPoint : enforcementPoint
+                    }
+                })
             }
         }); // Context#data.resource
 
