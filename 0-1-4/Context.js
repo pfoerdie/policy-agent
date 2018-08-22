@@ -1,5 +1,5 @@
 /**
- * @module PolicyAgent~Context
+ * @module PolicyAgent.Context
  * @author Simon Petrac
  */
 
@@ -10,16 +10,16 @@ const
 
 /**
  * @name Context
- * @extends PolicyAgent~SystemComponent
+ * @extends PolicyAgent.SystemComponent
  */
 class Context extends SystemComponent {
     /**
      * @constructs Context
      * @param {(Session|object)} session The session from which the context was created.
      * @param {JSON} param The parametrization for the context.
-     * @param {PolicyAgent~PEP} enforcementPoint
-     * @param {PolicyAgent~PDP} decisionPoint
-     * @param {PolicyAgent~PEP} [executionPoint]
+     * @param {PolicyAgent.PEP} enforcementPoint
+     * @param {PolicyAgent.PDP} decisionPoint
+     * @param {PolicyAgent.PEP} [executionPoint]
      * @package
      */
     constructor(session, param, enforcementPoint, decisionPoint, executionPoint) {
@@ -74,8 +74,9 @@ class Context extends SystemComponent {
          * @property {*} relation
          * @property {*} function
          * TODO jsDoc
+         * TODO vervollständigen anhand von param und session
          */
-        Object.defineProperties(this.data.subject, { // TODO
+        Object.defineProperties(this.data.subject, {
             action: {
                 value: null
             },
@@ -91,14 +92,11 @@ class Context extends SystemComponent {
          * @name Context#data.resource
          * @property {Session} session
          * @property {Map} cache
-         * 
-         * - originator/addressor/despatcher
-         * - intermediary
-         * - recipient
-         * 
-         * -> relay / relais
-         * -> interstation / station
-         * -> stage
+         * @property {object} stage
+         * @property {PolicyAgent.PEP} stage.enforcement 
+         * @property {PolicyAgent.PDP} stage.decision 
+         * @property {PolicyAgent.PIP} stage.information 
+         * @property {PolicyAgent.PEP} stage.execution
          */
         Object.defineProperties(this.data.resource, {
             session: {
@@ -114,6 +112,9 @@ class Context extends SystemComponent {
                     },
                     decision: {
                         value: decisionPoint
+                    },
+                    information: {
+                        value: decisionPoint.data.informationPoint
                     },
                     execution: {
                         value: executionPoint ? executionPoint : enforcementPoint
@@ -133,6 +134,25 @@ class Context extends SystemComponent {
         }); // Context#data.environment
 
     } // Context#constructor
+
+    /**
+     * TODO jsDoc
+     * TODO return
+     * NOTE XACML Authorization decision:
+     * - The result of evaluating applicable policy, returned by the PDP to the PEP. A function that
+     *   evaluates to “Permit”, “Deny”, “Indeterminate” or “NotApplicable", and (optionally) a set of
+     *   obligations and advice
+     */
+    async _requestDecision() {
+        await this.data.resource.stage.decision._request(this);
+    } // Context#_requestDecision
+
+    /**
+     * TODO jsDoc
+     * TODO implementation
+     */
+    async _enrichSubjects() {
+    } // Context#_enrichSubjects
 
 } // Context
 

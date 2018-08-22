@@ -1,5 +1,5 @@
 /**
- * @module PolicyAgent~PAP
+ * @module PolicyAgent.PAP
  * @author Simon Petrac
  */
 
@@ -12,11 +12,11 @@ const
 /**
  * Policy Administration Point
  * @name PAP
- * @extends PolicyAgent~SystemComponent
+ * @extends PolicyAgent.SystemComponent
  */
 class PAP extends SystemComponent {
     /**
-     * @param {PolicyAgent~DataStore.Neo4j} policyStore
+     * @param {PolicyAgent.DataStore.Neo4j} policyStore
      * @constructs PAP
      * @public
      */

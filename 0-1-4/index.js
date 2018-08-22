@@ -1,5 +1,5 @@
 /**
- * @module PolicyAgent~SystemComponent
+ * @module PolicyAgent
  * @author Simon Petrac
  */
 
@@ -13,8 +13,9 @@ const
     PEP = require(Path.join(__dirname, "PEP.js")),
     PAP = require(Path.join(__dirname, "PAP.js"));
 
-// TODO public Klassen bauen und exportieren
-
+/**
+ * TODO public Klassen bauen und exportieren
+ */
 exports['PIP'] = PIP;
 exports['PDP'] = PDP;
 exports['PEP'] = PEP;

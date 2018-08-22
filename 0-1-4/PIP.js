@@ -1,5 +1,5 @@
 /**
- * @module PolicyAgent~PIP
+ * @module PolicyAgent.PIP
  * @author Simon Petrac
  */
 
@@ -13,11 +13,11 @@ const
 /**
  * Policy Information Point
  * @name PIP
- * @extends PolicyAgent~SystemComponent
+ * @extends PolicyAgent.SystemComponent
  */
 class PIP extends SystemComponent {
     /**
-     * @param {PolicyAgent~DataStore.MongoDB} attributeStore
+     * @param {PolicyAgent.DataStore.MongoDB} attributeStore
      * @constructs PIP
      * @public
      */

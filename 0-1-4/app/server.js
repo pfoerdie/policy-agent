@@ -14,9 +14,11 @@ const
         attributeStore = new MongoStore(undefined, 'AttributeStore'),
         policyStore = new Neo4jStore(undefined, undefined, 'odrl'),
         myPIP = new PIP(attributeStore),
-        myPDP = new PDP(policyStore),
+        myPDP = new PDP(policyStore, myPIP),
         myPEP = new PEP(),
         myPAP = new PAP(policyStore);
+
+    myPEP.connectPDP(myPDP);
 
     return 0;
     // NOTE was cooleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeees

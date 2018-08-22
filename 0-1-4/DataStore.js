@@ -1,5 +1,5 @@
 /**
- * @module PolicyAgent~DataStore
+ * @module PolicyAgent.DataStore
  * @author Simon Petrac
  */
 
@@ -12,7 +12,7 @@ let Neo4j, MongoDB;
 
 /**
  * @name DataStore
- * @extends PolicyAgent~SystemComponent
+ * @extends PolicyAgent.SystemComponent
  */
 class DataStore extends SystemComponent {
     /**

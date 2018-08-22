@@ -1,5 +1,5 @@
 /**
- * @module PolicyAgent~PDP
+ * @module PolicyAgent.PDP
  * @author Simon Petrac
  */
 
@@ -14,19 +14,20 @@ const
 /**
  * Policy Decision Point
  * @name PDP
- * @extends PolicyAgent~SystemComponent
+ * @extends PolicyAgent.SystemComponent
  */
 class PDP extends SystemComponent {
     /**
-     * @param {PolicyAgent~DataStore.Neo4j} policyStore
+     * @param {PolicyAgent.DataStore.Neo4j} policyStore
      * @constructs PDP
      * @public
      */
-    constructor(policyStore) {
+    constructor(policyStore, informationPoint) {
         super('PDP');
 
         if (V8n().not.arrSchema([
-            V8n().ofClass(DataStore.Neo4j) // policyStore
+            V8n().ofClass(DataStore.Neo4j), // policyStore
+            V8n().componentType('PIP') // informationPoint
         ]).test(arguments)) {
             this.throw('constructor', new TypeError(`invalid arguments`));
         } // argument validation
@@ -35,11 +36,21 @@ class PDP extends SystemComponent {
             policyStore: {
                 value: policyStore
             },
-            connectedPIPs: {
-                value: []
+            informationPoint: {
+                value: informationPoint
             }
         });
     } // PDP#constructor
+
+    /**
+     * @name PDP#_request
+     * @param {Context} context 
+     * @package
+     * @async
+     * TODO implementation
+     */
+    async _request(context) {
+    } // PDP#_request
 
 } // PDP
 

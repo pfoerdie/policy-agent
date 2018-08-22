@@ -1,5 +1,5 @@
 /**
- * @module PolicyAgent~SystemComponent
+ * @module PolicyAgent.SystemComponent
  * @author Simon Petrac
  */
 
@@ -84,6 +84,7 @@ class SystemComponent {
      * @name SystemComponent#id
      * @type {UUID}
      * @public
+     * @readonly
      */
     get id() {
         return systemAttributes.get(this).instanceID;

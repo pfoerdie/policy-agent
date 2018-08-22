@@ -1,5 +1,5 @@
 /**
- * @module PolicyAgent~PEP
+ * @module PolicyAgent.PEP
  * @author Simon Petrac
  */
 
@@ -13,7 +13,7 @@ const
 /**
  * Policy Execution Point
  * @name PEP
- * @extends PolicyAgent~SystemComponent
+ * @extends PolicyAgent.SystemComponent
  */
 class PEP extends SystemComponent {
     /**
@@ -32,6 +32,9 @@ class PEP extends SystemComponent {
         Object.defineProperties(this.data, {
             actionCallbacks: {
                 value: new Map()
+            },
+            decisionPoints: {
+                value: new Set()
             }
         });
     } // PEP#constructor
@@ -39,11 +42,13 @@ class PEP extends SystemComponent {
     /**
      * Creates a context and sends a request to the connected PDPs.
      * @name PEP#request
-     * @param {(Session|PolicyAgent~Context)} session The session for the context. If session is a Context itself, the session will be inherited.
+     * @param {(Session|PolicyAgent.Context)} session The session for the context. If session is a Context itself, the session will be inherited.
      * @param {JSON} param The parametrization for the context.
      * @returns {object} The result of the created context.
      * @async
      * @public
+     * TODO was passiert mit dem result und dem context danach?
+     * TODO return
      */
     async request(session, param) {
         if (V8n().ofClass(Context).test(session))
@@ -56,10 +61,13 @@ class PEP extends SystemComponent {
             this.throw('request', new TypeError(`invalid arguments`));
         } // argument validation
 
-        let context = new Context(session, param);
-        context.log('constructor', `initialized by ${this.toString()}`);
+        for (let decisionPoint of this.data.decisionPoints) {
+            let context = new Context(session, param, this, decisionPoint);
+            context.log('constructor', `initialized by ${this.toString()}`);
 
-        // TODO
+            let result = await context._requestDecision();
+            console.log(result);
+        }
     } // PEP#request
 
     /**
@@ -83,19 +91,40 @@ class PEP extends SystemComponent {
     } // PEP#defineAction
 
     /**
+     * Adds a PDP to resolve decision request.
+     * @name PEP#connectPDP
+     * @param {PolicyAgent.PDP} decisionPoint 
+     */
+    connectPDP(decisionPoint) {
+        if (V8n().not.arrSchema([
+            V8n().componentType('PDP') // decisionPoint
+        ]).test(arguments)) {
+            this.throw('connectPDP', new TypeError(`invalid arguments`));
+        } // argument validation
+
+        if (this.data.decisionPoints.has(decisionPoint))
+            this.throw('connectPDP', new Error(`decisionPoint already connected`));
+
+        this.data.decisionPoints.add(decisionPoint);
+    } // PEP#connectPDP
+
+    /**
      * @name PEP.express
-     * @param {PEP} [pep]
+     * @param {PEP} [enforcementPoint]
      * @returns {express~Router}
      * @static
      * TODO vllt so, vllt anders. Aber irgendwie muss ein vorhandener PEP übergeben werden können
      *      (gilt für alle statischen Methoden, die einen PEP erzeugen)
+     * TODO implementieren
      */
-    static express(pep) {
-        // TODO implementieren
+    static express(enforcementPoint) {
     } // PEP.express
 
+    /**
+     * TODO jsDoc
+     * TODO implementieren
+     */
     static socketIO() {
-        // TODO implementieren
     } // PEP.socketIO
 
 } // PEP
