@@ -49,10 +49,11 @@ class PEP extends SystemComponent {
      * @public
      * TODO was passiert mit dem result und dem context danach?
      * TODO return
+     * IDEA die main-action muss ausgeführt und das Resultat als return zurückgegeben werden
      */
     async request(session, param) {
         if (V8n().ofClass(Context).test(session))
-            session = session.session;
+            session = session.data.resource.session;
 
         if (V8n().not.arrSchema([
             V8n().object(), // session
@@ -63,11 +64,13 @@ class PEP extends SystemComponent {
 
         for (let decisionPoint of this.data.decisionPoints) {
             let context = new Context(session, param, this, decisionPoint);
-            context.log('constructor', `initialized by ${this.toString()}`);
+            context.log(undefined, `initialized by ${this.toString('request')}`);
 
             let result = await context._requestDecision();
             console.log(result);
         }
+
+
     } // PEP#request
 
     /**

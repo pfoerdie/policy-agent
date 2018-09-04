@@ -30,19 +30,38 @@ const
 
     myPEP.connectPDP(myPDP);
 
-    /* */
     let
         app = Express(),
         server = HTTP.createServer(app),
         io = SocketIO(server);
-    /* *
-    app.use(PEP.express());
-    io.use(PEP.socketIO());
-    /* *
+
+    app.use(async (request, response, next) => {
+        try {
+            let result = await myPEP.request({}, {
+                action: 'read',
+                relation: {
+                    target: {
+                        '@type': "html",
+                        '@id': request.url
+                    }
+                }
+            });
+
+            console.log(result);
+
+            response.type('txt').send("Lorem Ipsum");
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    // app.use(PEP.express());
+    // io.use(PEP.socketIO());
+
     server.listen(80, () => console.log('HTTP-Server -> listening'));
-    /* */
 
     return 0;
+
     // NOTE was cooleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeees
 
 })(/* TESTING */).then(result => {
