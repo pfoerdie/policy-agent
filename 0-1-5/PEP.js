@@ -7,6 +7,7 @@ const
     V8n = require('v8n'),
     UUID = require('uuid/v4'),
     Crypto = require('crypto'),
+    SHA256 = (str) => Crypto.createHash('sha256').update(str).digest('base64'),
     CookieParser = require('cookie-parser'),
     Express = require('express'),
     ExpressSession = require('express-session'),
@@ -32,7 +33,7 @@ class GenericPEP extends PolicyPoint {
 
         super(options['@id']);
 
-        this.data.hashedID = Crypto.createHash('sha256').update(this.id).digest('base64');
+        this.data.hashedID = SHA256(this.id);
 
         this.data.cookieSecret = UUID();
         this.data.cookieMaxAge = 60 * 60 * 24 * 7;
