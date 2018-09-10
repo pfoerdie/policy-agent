@@ -54,6 +54,7 @@ class PolicyPoint {
              * An object that holds all data of the instance.
              * @name PolicyPoint#data
              * @type {object}
+             * @package
              */
             data: {
                 value: {}

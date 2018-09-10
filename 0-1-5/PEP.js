@@ -5,8 +5,15 @@
 
 const
     V8n = require('v8n'),
+    UUID = require('uuid/v4'),
+    Crypto = require('crypto'),
+    CookieParser = require('cookie-parser'),
+    Express = require('express'),
+    ExpressSession = require('express-session'),
+    SessionMemoryStore = require('session-memory-store')(ExpressSession),
     PolicyPoint = require('./PolicyPoint.js'),
     Context = require('./Context.js');
+
 
 /**
  * @name GenericPEP
@@ -25,29 +32,44 @@ class GenericPEP extends PolicyPoint {
 
         super(options['@id']);
 
-        this.data.sessionStore = null; // TODO
+        this.data.hashedID = Crypto.createHash('sha256').update(this.id).digest('base64');
+
+        this.data.cookieSecret = UUID();
+        this.data.cookieMaxAge = 60 * 60 * 24 * 7;
+
+        this.data.sessionStore = ExpressSession({
+            name: this.data.hashedID,
+            secret: this.data.cookieSecret,
+            cookie: {
+                maxAge: this.data.cookieMaxAge,
+                secure: true
+            },
+            store: new SessionMemoryStore({
+                expires: this.data.cookieMaxAge
+            }),
+            saveUninitialized: true, // TODO setze saveUninitialized auf false
+            resave: false
+        });
 
     } // GenericPEP#constructor
 
     /**
-     * TODO
+     * @name GenericPEP#request
+     * @param {Session} session
+     * @param {JSON} param
+     * @returns {*}
+     * @async
      */
-    async request() {
-
+    async request(session, param) {
+        try {
+            // TODO
+        } catch (err) {
+            this.throw(err);
+        }
     } // GenericPEP#request
 
-    /**
-     * TODO
-     */
-    static getComponent(instanceID) {
-        return super(instanceID);
-    } // GenericPEP.getComponent
-
-    static get express() {
-        return ExpressPEP;
-    } // GenericPEP.express<getter>
-
 } // GenericPEP
+
 
 /**
  * @name ExpressPEP
@@ -77,4 +99,23 @@ class ExpressPEP extends GenericPEP {
 
 } // ExpressPEP
 
-module.exports = GenericPEP;
+
+/**
+ * @name SocketIoPEP
+ * @extends GenericPEP
+ */
+class SocketIoPEP extends GenericPEP {
+
+} // SocketIoPEP
+
+
+module.exports = Object.assign(GenericPEP, {
+    'express': {
+        enumerable: true,
+        get: () => ExpressPEP
+    },
+    'socketIO': {
+        enumerable: true,
+        get: () => SocketIoPEP
+    }
+});
