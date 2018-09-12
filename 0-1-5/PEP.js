@@ -152,6 +152,8 @@ class ExpressPEP extends GenericPEP {
 
         this.data.expressRouter.use(requestRouter.bind(this));
 
+        // TODO darf die session hier public werden?
+
     } // ExpressPEP#constructor
 
     /**

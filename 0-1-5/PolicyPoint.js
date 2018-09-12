@@ -35,6 +35,8 @@ V8n.extend({
     }
 });
 
+//#region PolicyPoint
+
 /**
  * This is the base class for every PolicyPoint.
  * @name PolicyPoint
@@ -165,5 +167,7 @@ class PolicyPoint {
     } // PolicyPoint#getComponent
 
 } // PolicyPoint
+
+//#endregion PolicyPoint
 
 module.exports = PolicyPoint;

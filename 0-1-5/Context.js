@@ -7,6 +7,8 @@ const
     V8n = require('v8n'),
     PolicyPoint = require('./PolicyPoint.js');
 
+//#region Context
+
 /**
  * @name Context
  */
@@ -75,5 +77,7 @@ class Context {
     } // Context#constructor
 
 } // Context
+
+//#endregion Context
 
 module.exports = Context;
