@@ -13,9 +13,11 @@ const
 class Context {
     /**
      * @constructs Context
+     * @param {Session} session
+     * @param {JSON} subject
      * @package
      */
-    constructor(session, options) { // TODO
+    constructor(session, subject) { // TODO
         Object.defineProperties(this, {
             subject: {
                 value: Object.create({}, {

@@ -5,6 +5,7 @@
 
 const
     UUID = require('uuid/v4'),
+    Crypto = require('crypto'),
     Color = require('colors'),
     V8n = require('v8n'),
     _private = new WeakMap(),
@@ -19,6 +20,8 @@ V8n.extend({
         typeof value === 'symbol',
     arrSchema: (schema) => value =>
         Array.isArray(value) ? schema.every((validator, index) => validator.test(value[index])) : false,
+    custom: (validator) => value =>
+        validator(value),
     JSON: () => value => {
         try {
             JSON.stringify(value, (key, value) => {
@@ -64,7 +67,8 @@ class PolicyPoint {
         _private.set(this, {
             targetClass: new.target,
             className: new.target.name,
-            instanceID: instanceID
+            instanceID: instanceID,
+            instanceName: Crypto.createHash('sha256').update(instanceID).digest('base64')
         });
 
         if (_systemComponents.has(instanceID))
@@ -75,7 +79,7 @@ class PolicyPoint {
     } // PolicyPoint#constructor
 
     /**
-     * The id of this instance.
+     * The id of this instance. This value should be used with care.
      * @name PolicyPoint#id
      * @type {string}
      * @public
@@ -84,6 +88,17 @@ class PolicyPoint {
     get id() {
         return _private.get(this).instanceID;
     } // PolicyPoint#id<getter>
+
+    /**
+     * The sha256 hashed id of this instance. This value is suitable for public use.
+     * @name PolicyPoint#name
+     * @type {string}
+     * @public
+     * @readonly
+     */
+    get name() {
+        return _private.get(this).instanceName;
+    } // PolicyPoint#name<getter>
 
     /**
      * This function is used to log events on this component.

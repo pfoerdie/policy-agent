@@ -6,8 +6,6 @@
 const
     V8n = require('v8n'),
     UUID = require('uuid/v4'),
-    Crypto = require('crypto'),
-    SHA256 = (str) => Crypto.createHash('sha256').update(str).digest('base64'),
     CookieParser = require('cookie-parser'),
     Express = require('express'),
     ExpressSession = require('express-session'),
@@ -15,6 +13,7 @@ const
     PolicyPoint = require('./PolicyPoint.js'),
     Context = require('./Context.js');
 
+//#region GenericPEP
 
 /**
  * @name GenericPEP
@@ -33,24 +32,13 @@ class GenericPEP extends PolicyPoint {
 
         super(options['@id']);
 
-        this.data.hashedID = SHA256(this.id);
+        this.data.sessionMaxAge = 60 * 60 * 24 * 7;
 
-        this.data.cookieSecret = UUID();
-        this.data.cookieMaxAge = 60 * 60 * 24 * 7;
-
-        this.data.sessionStore = ExpressSession({
-            name: this.data.hashedID,
-            secret: this.data.cookieSecret,
-            cookie: {
-                maxAge: this.data.cookieMaxAge,
-                secure: true
-            },
-            store: new SessionMemoryStore({
-                expires: this.data.cookieMaxAge
-            }),
-            saveUninitialized: true, // TODO setze saveUninitialized auf false
-            resave: false
+        this.data.sessionStore = new SessionMemoryStore({
+            expires: this.data.sessionMaxAge
         });
+
+        return;
 
     } // GenericPEP#constructor
 
@@ -61,16 +49,71 @@ class GenericPEP extends PolicyPoint {
      * @returns {*}
      * @async
      */
-    async request(session, param) {
+    async request(session, subject) {
+        if (V8n().not.arrSchema([
+            V8n().object(),
+            V8n().object() // TODO
+        ]).test(arguments)) {
+            this.throw('request', new TypeError(`invalid arguments`));
+        } // argument validation
+
         try {
+            await new Promise((resolve, reject) => {
+                this.data.sessionStore.get(session.id, (err, result) => {
+                    if (err)
+                        reject(err);
+                    else if (result !== session)
+                        reject(new Error(`invalid session`));
+                    else
+                        resolve();
+                });
+            });
+
+            let context = new Context(session, subject);
+
             // TODO
         } catch (err) {
-            this.throw(err);
+            this.throw('request', err);
         }
     } // GenericPEP#request
 
 } // GenericPEP
 
+//#endregion GenericPEP
+
+//#region ExpressPEP
+
+/**
+ * @name ExpressPEP~requestRouter
+ * @param {object} request
+ * @param {object} response
+ * @param {function} next
+ * @this {ExpressPEP}
+ * @async
+ * @private
+ */
+async function requestRouter(request, response, next) {
+    try {
+        let subject = {
+            action: 'use',
+            relation: {
+                target: {
+                    '@type': "html",
+                    '@id': "test"
+                }
+            },
+            function: {
+                assigner: null,
+                assignee: null
+            }
+        };
+
+        let result = await this.request(request.session, subject);
+    } catch (err) {
+        // TODO ??
+        next();
+    }
+} // ExpressPEP~requestRouter
 
 /**
  * @name ExpressPEP
@@ -85,21 +128,50 @@ class ExpressPEP extends GenericPEP {
     constructor(options) {
         super(options);
 
+        this.data.cookieSecret = UUID();
+        this.data.cookieMaxAge = 60 * 60 * 24 * 7;
+
+        this.data.expressRouter = Express.Router();
+
+        this.data.expressRouter.use(Express.json());
+        this.data.expressRouter.use(Express.urlencoded({ extended: false }));
+
+        this.data.expressRouter.use(CookieParser());
+
+        this.data.expressRouter.use(ExpressSession({
+            name: this.name,
+            secret: this.data.cookieSecret,
+            cookie: {
+                maxAge: this.data.cookieMaxAge,
+                secure: true
+            },
+            store: this.data.sessionStore,
+            saveUninitialized: true, // TODO setze saveUninitialized auf false
+            resave: false
+        }));
+
+        this.data.expressRouter.use(requestRouter.bind(this));
+
     } // ExpressPEP#constructor
 
     /**
      * @name ExpressPEP#router
+     * @type {function}
      * @param {object} request
      * @param {object} response
      * @param {function} next
-     * @async
+     * @readonly
+     * @public
      */
-    async router(request, response, next) {
-        // TODO
+    get router() {
+        return this.data.expressRouter;
     } // ExpressPEP#router<getter>
 
 } // ExpressPEP
 
+//#endregion ExpressPEP
+
+//#region SocketIoPEP
 
 /**
  * @name SocketIoPEP
@@ -108,6 +180,8 @@ class ExpressPEP extends GenericPEP {
 class SocketIoPEP extends GenericPEP {
 
 } // SocketIoPEP
+
+//#endregion SocketIoPEP
 
 
 module.exports = Object.assign(GenericPEP, {
