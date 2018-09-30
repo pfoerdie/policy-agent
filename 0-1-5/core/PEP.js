@@ -1,19 +1,16 @@
 /**
+ * Policy Execution Point
  * @module PolicyAgent.PEP
  * @author Simon Petrac
  */
 
 const
     UUID = require('uuid/v4'),
-    CookieParser = require('cookie-parser'),
-    Express = require('express'),
     ExpressSession = require('express-session'),
     SessionMemoryStore = require('session-memory-store')(ExpressSession),
     PolicyPoint = require('./PolicyPoint.js'),
     Context = require('./Context.js'),
     PDP = require('./PDP.js');
-
-//#region GenericPEP
 
 /**
  * @name GenericPEP
@@ -64,7 +61,7 @@ class GenericPEP extends PolicyPoint {
      * @returns {*}
      * @async
      */
-    async request(session, subject) {
+    async request(session, param) {
 
         /**
          * INFO
@@ -76,11 +73,10 @@ class GenericPEP extends PolicyPoint {
         this.data.decisionPoints.forEach(decisionPoint => promises.push(
             (async (resolve, reject) => {
                 try {
-                    let
-                        context = new Context(session, subject),
-                        result = await context.next(decisionPoint._request);
-
-                    return [null, result, context];
+                    let context = new Context(session, param);
+                    await context.next(this);
+                    await context.next(decisionPoint);
+                    return [null, context];
                 } catch (err) {
                     return [err];
                 }
@@ -108,124 +104,5 @@ class GenericPEP extends PolicyPoint {
     } // GenericPEP#request
 
 } // GenericPEP
-
-//#endregion GenericPEP
-
-//#region ExpressPEP
-
-/**
- * Must be called after all other this.data for the ExpressPEP have been set.
- * @name ExpressPEP~initializeExpressRouter
- * @return {Express~Router}
- * @this {ExpressPEP}
- */
-function initializeExpressRouter() {
-
-    this.data.expressRouter = Express.Router();
-
-    this.data.expressRouter.use(Express.json());
-    this.data.expressRouter.use(Express.urlencoded({ extended: false }));
-
-    this.data.expressRouter.use(CookieParser());
-
-    this.data.expressRouter.use(ExpressSession({
-        name: this.name,
-        secret: this.data.cookieSecret,
-        cookie: {
-            maxAge: this.data.cookieMaxAge,
-            secure: true
-        },
-        store: this.data.sessionStore,
-        saveUninitialized: true, // TODO setze saveUninitialized auf false
-        resave: false
-    }));
-
-    this.data.expressRouter.use(async (request, response, next) => {
-        try {
-
-            let subject = { 'action': {}, 'relation': {}, 'function': {} };
-
-            subject['action']['@id'] = this.data.requestAction; // IDEA oder aus dem request.body
-
-            subject['relation']['target'] = {
-                '@type': "html", // TODO wie komme ich an den richtigen Typ?
-                '@id': request.url // IDEA oder aus dem request.body
-            };
-
-            subject['function']['assigner'] = null; // IDEA aus dem request.body
-            subject['function']['assignee'] = null; // IDEA aus der request.session oder dem request.body
-
-            let context = new Context(request.session, subject); // IDEA wäre nice, wenn das auch mit this.request klappt
-
-            response.send('hello world');
-
-        } catch (err) {
-            // INFO remove the session from the request
-            delete request.session;
-            delete request.sessionID;
-            next();
-        }
-    });
-
-} // ExpressPEP~initializeExpressRouter
-
-/**
- * @name ExpressPEP
- * @extends GenericPEP
- */
-class ExpressPEP extends GenericPEP {
-    /**
-     * @constructs ExpressPEP
-     * @param {JSON} [options={}]
-     * @public
-     */
-    constructor(options) {
-        super(options);
-
-        this.data.cookieSecret = UUID();
-        this.data.cookieMaxAge = 60 * 60 * 24 * 7;
-
-        this.data.requestAction = 'use';
-
-        initializeExpressRouter.call(this);
-
-    } // ExpressPEP.constructor
-
-    /**
-     * @name ExpressPEP#router
-     * @type {function}
-     * @readonly
-     * @public
-     */
-    get router() {
-        return this.data.expressRouter;
-    } // ExpressPEP#router<getter>
-
-} // ExpressPEP
-
-//#endregion ExpressPEP
-
-//#region SocketIoPEP
-
-/**
- * @name SocketIoPEP
- * @extends GenericPEP
- */
-class SocketIoPEP extends GenericPEP {
-
-} // SocketIoPEP
-
-//#endregion SocketIoPEP
-
-Object.defineProperties(GenericPEP, {
-    'express': {
-        enumerable: true,
-        value: ExpressPEP
-    },
-    'socketIO': {
-        enumerable: true,
-        value: SocketIoPEP
-    }
-});
 
 module.exports = GenericPEP;

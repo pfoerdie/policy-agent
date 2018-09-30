@@ -26,6 +26,7 @@
  *  13. The PEP fulfills the obligations.
  *  14. (Not shown) If access is permitted, then the PEP permits access to the resource; otherwise, it denies access.
  * {@link http://docs.oasis-open.org/xacml/3.0/xacml-3.0-core-spec-os-en.html#_Toc325047088 XACML Data-flow model}
+ * {@link https://www.oasis-open.org/committees/download.php/2713/Brief_Introduction_to_XACML.html A Brief Introduction to XACML}
  */
 
 const
@@ -44,7 +45,8 @@ const
 class PolicyPoint {
     /**
      * @constructs PolicyPoint
-     * @param {string} [instanceID=UUID()]
+     * @param {object} options
+     * @param {string} [options.@id=UUID()]
      * @package
      * @abstract
      */
@@ -61,8 +63,11 @@ class PolicyPoint {
             instanceName: Crypto.createHash('sha256').update(instanceID).digest('base64')
         });
 
+        if (!options || typeof options !== 'object')
+            this.throw('constructor', new TypeError(`invalid argument`));
+
         if (_systemComponents.has(instanceID))
-            this.throw('constructor', `id '${instanceID}' already exists`);
+            this.throw('constructor', new Error(`id '${instanceID}' already exists`));
         else
             _systemComponents.set(instanceID, this);
 
@@ -166,7 +171,7 @@ class PolicyPoint {
     static getComponent(instanceID) {
         let instance = _systemComponents.get(instanceID);
         return (instance && instance instanceof this) ? instance : undefined;
-    } // PolicyPoint#getComponent
+    } // PolicyPoint.getComponent
 
 } // PolicyPoint
 

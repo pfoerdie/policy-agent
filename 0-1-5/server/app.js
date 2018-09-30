@@ -2,7 +2,9 @@
 
     //#region PolicyAgent
 
-    const PolicyAgent = require('..');
+    const
+        Path = require('path'),
+        PolicyAgent = require('..');
 
     /**
      * -> Desktop:
@@ -21,21 +23,27 @@
         accessPDP = new PolicyAgent.PDP({
             '@id': "/PDP/access-to-the-world"
         }),
-        attributePIP = new PolicyAgent.PIP.AttributeStore({
+        myPIP = new PolicyAgent.PIP({
             '@id': "/PIP/the-worlds-attributes"
         }),
-        policyPIP = new PolicyAgent.PIP.PolicyStore({
-            '@id': "/PIP/the-worlds-policies",
-            'password': "odrl"
+        myPAP = new PolicyAgent.PAP({
+            '@id': "/PIP/the-worlds-policies"
         });
 
-    // await attributePIP.ping();
     // await policyPIP.ping();
 
     expressPEP.connectPDP(accessPDP);
 
-    accessPDP.connectPIP(policyPIP);
-    accessPDP.connectPIP(attributePIP);
+    accessPDP.connectPIP(myPIP);
+    accessPDP.connectPAP(myPAP);
+
+    myPIP.connectSP(new PolicyAgent.SP({
+        'password': "odrl"
+    }));
+
+    myPIP.connectRP(new PolicyAgent.RP({
+        'root': Path.join(__dirname, "webapp")
+    }));
 
     //#endregion PolicyAgent
 
@@ -60,5 +68,5 @@
     //#endregion ExpressServer
 
 })(/* closure */)
-    // .catch(console.error)
-    .catch(err => null);
+    .catch(console.error);
+    // .catch(err => null);
