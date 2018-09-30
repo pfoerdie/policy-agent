@@ -30,8 +30,6 @@
             '@id': "/PIP/the-worlds-policies"
         });
 
-    // await policyPIP.ping();
-
     expressPEP.connectPDP(accessPDP);
 
     accessPDP.connectPIP(myPIP);

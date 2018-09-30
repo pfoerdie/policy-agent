@@ -8,7 +8,8 @@ const
     UUID = require('uuid/v4'),
     Path = require('path'),
     Fs = require('fs'),
-    PolicyPoint = require('./PolicyPoint.js');
+    PolicyPoint = require('./PolicyPoint.js'),
+    _promify = (callback, ...args) => new Promise((resolve, reject) => callback(...args, (err, result) => err ? reject(err) : resolve(result)));
 
 /**
  * @name RP
@@ -30,6 +31,10 @@ class RP extends PolicyPoint {
         this.data.root = options['root'];
 
     } // RP.constructor
+
+    async _retrieve() {
+
+    } // RP#_retrieve
 
     // TODO
 

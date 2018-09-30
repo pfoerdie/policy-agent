@@ -1,4 +1,5 @@
 /**
+ * Express PEP
  * @module PolicyAgent.PEP.express
  * @author Simon Petrac
  */

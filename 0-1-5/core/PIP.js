@@ -7,8 +7,10 @@
 const
     UUID = require('uuid/v4'),
     PolicyPoint = require('./PolicyPoint.js'),
+    Context = require('./Context.js'),
     SP = require('./SP.js'),
-    RP = require('./RP.js');
+    RP = require('./RP.js'),
+    _source = Symbol();
 
 /**
  * @name PIP
@@ -23,8 +25,8 @@ class PIP extends PolicyPoint {
     constructor(options = {}) {
         super(options);
 
-        this.data.subjectsPoints = new Map();
-        this.data.resourcePoints = new Map();
+        this.data.subjectsPoints = new Set();
+        this.data.resourcePoints = new Set();
 
     } // PIP.constructor
 
@@ -32,19 +34,49 @@ class PIP extends PolicyPoint {
         if (!(subjectsPoint instanceof SP))
             this.throw('connectSP', new TypeError(`invalid param`));
 
-        this.data.subjectsPoints.set(Symbol(), subjectsPoint);
-
-        this.log('connectSP', `${subjectsPoint.toString(undefined, true)} connected`);
+        if (this.data.subjectsPoints.add(subjectsPoint))
+            this.log('connectSP', `${subjectsPoint.toString(undefined, true)} connected`);
     } // PIP#connectSP
 
     connectRP(resourcePoint) {
         if (!(resourcePoint instanceof RP))
             this.throw('connectRP', new TypeError(`invalid param`));
 
-        this.data.resourcePoints.set(Symbol(), resourcePoint);
-
-        this.log('connectRP', `${resourcePoint.toString(undefined, true)} connected`);
+        if (this.data.resourcePoints.add(resourcePoint))
+            this.log('connectRP', `${resourcePoint.toString(undefined, true)} connected`);
     } // PIP#connectRP
+
+    async _retrieveSubjects(context) {
+        if (!(context instanceof Context))
+            this.throw('_retrieveSubjects', new TypeError(`invalid argument`));
+
+        let
+            query = [],
+            promiseArr = [];
+
+        // TODO query aufbauen
+
+        this.data.subjectsPoints.forEach((subjectsPoint) => {
+            promiseArr.push(subjectsPoint._retrieve(query));
+        });
+
+        // TODO context anreichern
+
+    } // PIP#_retrieveSubjects
+
+    async _submitSubjects(context) {
+        if (!(context instanceof Context))
+            this.throw('_submitSubjects', new TypeError(`invalid argument`));
+
+        // TODO
+
+    } // PIP#_submitSubjects
+
+    async _retrieveResource(/* TODO */) {
+
+        // TODO
+
+    } // PIP#_retrieveResource
 
 } // PIP
 

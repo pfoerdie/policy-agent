@@ -17,7 +17,8 @@ class PAP extends PolicyPoint {
     /**
      * @constructs PAP
      * @param {JSON} [options={}]
-     * @param {string} [options.host="localhost:7687"]
+     * @param {string} [options.host="localhost"]
+     * @param {number} [options.port=7687]
      * @param {string} [options.user="neo4j"]
      * @param {string} [options.password="neo4j"]
      */
@@ -28,7 +29,7 @@ class PAP extends PolicyPoint {
             this.throw('constructor', new TypeError(`invalid argument`));
 
         const connection = {
-            host: options['host'] || "localhost:7687",
+            host: (options['host'] || "localhost") + ":" + (options['port'] || 7687),
             user: options['user'] || "neo4j",
             password: options['password'] || "neo4j"
         };
@@ -65,25 +66,28 @@ class PAP extends PolicyPoint {
      * @package
      */
     async _request(query) {
-        const isArray = Array.isArray(query);
+        const queryArr = Array.isArray(query) ? query : null;
 
-        if (typeof query !== 'string' || (isArray && query.some(elem => typeof elem !== 'string')))
+        if (typeof query !== 'string' || (queryArr && queryArr.some(query => typeof query !== 'string')))
             this.throw('_request', new TypeError(`invalid argument`));
 
         try {
             let
                 session = this.data.driver.session(),
-                result = isArray
-                    ? await Promise.all(query.map(elem => session.run(elem)))
+                result = queryArr
+                    ? await Promise.all(queryArr.map(query => session.run(query)))
                     : await session.run(query);
 
             session.close();
 
             // TODO überdenken
+            // IDEA result bereinigen
 
-            return isArray
-                ? result.map(PAP_resolveQueryResult)
-                : PAP_resolveQueryResult(result);
+            const resultArr = queryArr ? result : null;
+
+            return resultArr
+                ? resultArr.map(_resolveQueryResult)
+                : _resolveQueryResult(result);
         } catch (err) {
             this.throw('_request', err);
         }

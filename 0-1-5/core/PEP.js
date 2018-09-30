@@ -74,7 +74,6 @@ class PEP extends PolicyPoint {
             (async (resolve, reject) => {
                 try {
                     let context = new Context(session, param);
-                    await context.next(this);
                     await context.next(decisionPoint);
                     return [null, context];
                 } catch (err) {

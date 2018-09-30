@@ -1,4 +1,5 @@
 /**
+ * SocketIO PEP
  * @module PolicyAgent.PEP.socketIO
  * @author Simon Petrac
  */

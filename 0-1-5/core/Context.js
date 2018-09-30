@@ -12,8 +12,9 @@ const
     PDP = require('./PDP.js'),
     PIP = require('./PIP.js'),
     _private = new WeakMap(),
-    _enum = {},
-    _source = Symbol();
+    _enum = {};
+
+//#region Enumerations
 
 _enum.Decision = {
     Permit: 1,
@@ -23,11 +24,12 @@ _enum.Decision = {
 };
 
 _enum.Phase = {
-    Initialization: 1,
-    Enforcement: 2,
-    Decision: 3,
-    Execution: 4
+    Enforcement: 1,
+    Decision: 2,
+    Execution: 3
 };
+
+//#endregion Enumerations
 
 /**
  * @name Context
@@ -43,10 +45,13 @@ class Context {
      * @package
      */
     constructor(session, param) {
-        _private.set(this, {
+        const _attr = {
             instanceID: UUID(),
-            phase: _enum.Phase.Initialization
-        });
+            phase: _enum.Phase.Enforcement,
+            informationPoint: null,
+            decision: null
+        };
+        _private.set(this, _attr);
 
         if (!session || typeof session !== 'object')
             this.throw('constructor', new TypeError(`invalid argument`));
@@ -99,9 +104,6 @@ class Context {
                     session: {
                         value: session
                     },
-                    missing: {
-                        value: new Set()
-                    },
                     cache: {
                         value: new Map()
                     },
@@ -110,12 +112,13 @@ class Context {
                      * -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
                      */
                     decision: {
-                        value: null,
-                        writable: true
-                    },
-                    result: {
-                        value: null,
-                        writable: true
+                        set: (value) => {
+                            if (_attr.decision)
+                                this.throw(undefined, "decision already set");
+
+                            _attr.decision = value;
+                        },
+                        get: () => _attr.decision
                     }
                 })
             }
@@ -153,71 +156,61 @@ class Context {
 
         switch (_attr.phase) {
 
-            case _enum.Phase.Initialization:
-                // TODO brauche ich  unbedingt this.attributes.resource.enforcement oder kann ich diese Phase streichen?
-                if (policyPoint instanceof PEP) {
-                    let enforcementPoint = policyPoint;
-
-                    this.attributes.resource.enforcement = {
-                        '@id': enforcementPoint.id
-                    };
-
-                    _attr.phase = _enum.Phase.Enforcement;
-                    this.log(undefined, `enforcement phase entered`);
-                } else
-                    this.throw(new TypeError(`invalid argument`));
-                break;
-
             case _enum.Phase.Enforcement:
-                if (policyPoint instanceof PDP) {
-                    let decisionPoint = policyPoint;
 
-                    _attr.phase = _enum.Phase.Decision;
-                    this.log(undefined, `decision phase entered`);
-
-                    this.attributes.resource.decision = {
-                        '@id': decisionPoint.id
-                    };
-
-                    try {
-                        await decisionPoint._request(this);
-                    } catch (err) {
-                        _attr.phase = null;
-                        throw err;
-                    }
-
-                    _attr.phase = _enum.Phase.Execution;
-                    this.log(undefined, `execution phase entered`);
-                } else
+                if (!(policyPoint instanceof PDP))
                     this.throw(new TypeError(`invalid argument`));
-                break;
+
+                _attr.phase = _enum.Phase.Decision;
+                this.log(undefined, `decision phase entered`);
+
+                let decisionPoint = policyPoint;
+
+                try {
+                    await decisionPoint._requestDecision(this);
+                } catch (err) {
+                    _attr.phase = null;
+                    throw err;
+                }
+
+                _attr.phase = _enum.Phase.Execution;
+                this.log(undefined, `execution phase entered`);
+
+                break; // Phase -> Enforcement
 
             case _enum.Phase.Decision:
-                if (policyPoint instanceof PIP['AttributeStore']) {
-                    let attributeStore = policyPoint;
 
-                    let request = [];
-                    this.data.missing.forEach((missingID, undefined, missingMap) => {
-                        // TODO
-                    });
-
-                    let result = await attributeStore._retrieve(request);
-
-                    // TODO
-                } else
+                if (!(policyPoint instanceof PIP))
                     this.throw(new TypeError(`invalid argument`));
-                break;
+
+                let informationPoint = policyPoint;
+
+                if (_attr.informationPoint)
+                    this.throw(new Error(`informationPoint already set`));
+
+                _attr.informationPoint = informationPoint;
+                await informationPoint._retrieveSubjects(request);
+
+                // IDEA '_attr.phase = null' setzen, falls decision es KLAR verbietet
+                // TODO
+
+                break; // Phase -> Decision
 
             case _enum.Phase.Execution:
-                if (policyPoint instanceof PEP) {
-                    let executionPoint = policyStore;
 
-                    // TODO actions vom PEP holen und ausführen
-
-                    _attr.phase = null;
-                } else
+                if (!(policyPoint instanceof PEP))
                     this.throw(new TypeError(`invalid argument`));
-                break;
+
+                let executionPoint = policyPoint;
+
+                // TODO actions vom PEP holen und ausführen
+                // TODO target-Resourcen vom informationPoint abholen
+                // TODO alle geänderten Subjects zurückschreiben (_attr.informationPoint)
+                // NOTE falls decision es KLAR verbietet, Phase nicht ausführen sondern überspringen
+
+                _attr.phase = null;
+
+                break; // Phase -> Execution
 
             default:
                 this.throw('next', new Error(`context deprecated`));

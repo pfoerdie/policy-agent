@@ -25,8 +25,8 @@ class PDP extends PolicyPoint {
     constructor(options = {}) {
         super(options);
 
-        this.data.policyStore = null;
-        this.data.attributeStore = null;
+        this.data.administrationPoint = null;
+        this.data.informationPoint = null;
 
     } // PDP.constructor
 
@@ -38,10 +38,10 @@ class PDP extends PolicyPoint {
     connectPIP(informationPoint) {
         if (!(informationPoint instanceof PIP))
             this.throw('connectPIP', new TypeError(`invalid argument`));
-        if (this.attributeStore)
+        if (this.informationPoint)
             this.throw('connectPIP', `AttributeStore already connected`);
 
-        this.attributeStore = informationPoint;
+        this.informationPoint = informationPoint;
         this.log('connectPIP', `${informationPoint.toString(undefined, true)} connected`);
     } // PDP#connectPIP
 
@@ -53,31 +53,31 @@ class PDP extends PolicyPoint {
     connectPAP(administrationPoint) {
         if (!(administrationPoint instanceof PAP))
             this.throw('connectPAP', new TypeError(`invalid argument`));
-        if (this.policyStore)
+        if (this.administrationPoint)
             this.throw('connectPAP', `PAP already connected`);
 
-        this.policyStore = administrationPoint;
+        this.administrationPoint = administrationPoint;
         this.log('connectPAP', `${administrationPoint.toString(undefined, true)} connected`);
     } // PDP#connectPAP
 
     /**
-     * @name PDP#_request
+     * @name PDP#_requestDecision
      * @param {Context} context
      * @async
      * 
      * NOTE 7.17 Authorization decision
      * - The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
      */
-    async _request(context) {
+    async _requestDecision(context) {
         if (!(context instanceof Context))
-            this.throw('_request', new TypeError(`invalid argument`));
+            this.throw('_requestDecision', new TypeError(`invalid argument`));
 
         const _attr = _private.get(this);
 
-        if (!_attr.policyStore)
-            this.throw('_request', new Error(`policyStore not connected`));
-        if (!_attr.attributeStore)
-            this.throw('_request', new Error(`attributeStore not connected`));
+        if (!_attr.administrationPoint)
+            this.throw('_requestDecision', new Error(`administrationPoint not connected`));
+        if (!_attr.informationPoint)
+            this.throw('_requestDecision', new Error(`informationPoint not connected`));
 
         for (let subjRelation of context.subject['relation']) {
             if (typeof subjRelation['@id'] === 'string')
@@ -89,15 +89,12 @@ class PDP extends PolicyPoint {
                 context.data.missing.add(subjFunction['@id']);
         }
 
-        await context.next(_attr.attributeStore);
-        // NOTE falls der context die source den attributen hinzufügt, kann es auch gerne mehrere attributeStores pro PDP geben
+        await context.next(_attr.informationPoint);
+        // NOTE falls der context die source den attributen hinzufügt, kann es auch gerne mehrere informationPoints pro PDP geben
         //      da in der Execution Phase diese auch zurückgeschrieben werden können
 
-        if (context.data.missing.size > 0)
-            this.throw('_request', new Error(`missing attributes`));
-
         // TODO
-    } // PDP#request
+    } // PDP#_requestDecision
 
 } // PDP
 

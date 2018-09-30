@@ -5,7 +5,6 @@
  */
 
 const PolicyAgent = require('./core');
-
 require('./module');
 
 module.exports = PolicyAgent;

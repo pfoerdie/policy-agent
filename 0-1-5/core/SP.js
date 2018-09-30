@@ -7,7 +7,8 @@
 const
     UUID = require('uuid/v4'),
     MongoDB = require('mongodb').MongoClient,
-    PolicyPoint = require('./PolicyPoint.js');
+    PolicyPoint = require('./PolicyPoint.js'),
+    _promify = (callback, ...args) => new Promise((resolve, reject) => callback(...args, (err, result) => err ? reject(err) : resolve(result)));
 
 /**
  * @name resolveQueryResult
@@ -34,6 +35,9 @@ class SP extends PolicyPoint {
     /**
      * @constructs SP
      * @param {JSON} [options={}]
+     * @param {string} [options.host="localhost"]
+     * @param {number} [options.port=27017]
+     * @param {string} [options.options={}]
      * @abstract
      * @public
      */
@@ -41,8 +45,8 @@ class SP extends PolicyPoint {
         super(options);
 
         const connection = {
-            host: options['host'] || "localhost:27017",
-            dbName: options['dbName'] || "SP"
+            host: (options['host'] || "localhost") + ":" + (options['port'] || 27017),
+            dbName: options['dbName'] || "SubjectsPoint"
         };
 
         this.data.driver = {
@@ -77,30 +81,52 @@ class SP extends PolicyPoint {
         }
     } // SP#ping
 
+    /**
+     * @name SP#_retrieve
+     * @param {(JSON|JSON[])} query 
+     * @returns {(*|[*])}
+     * @async
+     * 
+     * INFO
+     * The query shall not be altered. A new object is used for the result.
+     * INFO
+     * If a query is not successful, it shall not throw an error, but instead return null.
+     */
     async _retrieve(query) {
-        const isArray = Array.isArray(query);
+        const queryArr = Array.isArray(query) ? query : null;
 
         if (
-            typeof query !== 'string' ||
-            (isArray && query.some(elem => typeof elem !== 'object' || typeof elem['@type'] !== 'string'))
+            (!queryArr && typeof query !== 'object') ||
+            (queryArr && queryArr.some(query => typeof query !== 'object'))
         )
             this.throw('_request', new TypeError(`invalid argument`));
 
         let
             client = await this.data.driver.client(),
-            result = isArray
-                ? query.map(elem => client.db.collection(elem['@type']).find(elem))
-                : client.db.collection(query['@type']).find(query);
+            result = queryArr
+                ? await Promise.all(queryArr.map(query => _promify(client.db.collection(query['@type']).find(query).toArray)))
+                : await _promify(client.db.collection(query['@type']).find(query).toArray);
 
-        // TODO üderdenken
+        const resultArr = queryArr ? result : null;
 
-        return isArray
-            ? await result.map(resolveQueryResult)
-            : await resolveQueryResult(result);
+        if (resultArr)
+            resultArr.forEach((result) => {
+                // TODO paste the code of the else here
+            });
+        else {
+            // TODO delete the _id property on every doc of the result
+        }
+
+        // TODO überdenken
+
+        return result;
+
     } // SP#_retrieve
 
-    async _submit() {
+    async _submit(query) {
+
         // TODO
+
     } // SP#_submit
 
 } // SP
