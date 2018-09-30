@@ -10,15 +10,15 @@ const
     Fs = require('fs'),
     PolicyPoint = require('./PolicyPoint.js');
 
-//#region ResourcePoint
+//#region RP
 
 /**
- * @name ResourcePoint
+ * @name RP
  * @extends PolicyPoint
  */
-class ResourcePoint extends PolicyPoint {
+class RP extends PolicyPoint {
     /**
-     * @constructs ResourcePoint
+     * @constructs RP
      * @param {JSON} [options={}]
      * @abstract
      * @public
@@ -31,12 +31,12 @@ class ResourcePoint extends PolicyPoint {
 
         this.data.root = options['root'];
 
-    } // ResourcePoint.constructor
+    } // RP.constructor
 
     // TODO
 
-} // ResourcePoint
+} // RP
 
-//#endregion ResourcePoint
+//#endregion RP
 
-module.exports = ResourcePoint;
+module.exports = RP;

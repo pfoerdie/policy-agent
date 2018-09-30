@@ -13,19 +13,19 @@ const
     PDP = require('./PDP.js');
 
 /**
- * @name GenericPEP
+ * @name PEP
  * @extends PolicyPoint
  */
-class GenericPEP extends PolicyPoint {
+class PEP extends PolicyPoint {
     /**
-     * @constructs GenericPEP
+     * @constructs PEP
      * @param {JSON} [options={}]
      * @abstract
      * @public
      */
     constructor(options = {}) {
-        if (!new.target || new.target === GenericPEP)
-            throw new Error(`GenericPEP is an abstract class`);
+        if (!new.target || new.target === PEP)
+            throw new Error(`PEP is an abstract class`);
 
         super(options);
 
@@ -36,7 +36,7 @@ class GenericPEP extends PolicyPoint {
         });
 
         this.data.decisionPoints = new Set();
-    } // GenericPEP.constructor
+    } // PEP.constructor
 
     /**
      * Adds a PDP to resolve decision request.
@@ -55,7 +55,7 @@ class GenericPEP extends PolicyPoint {
     } // PEP#connectPDP
 
     /**
-     * @name GenericPEP#request
+     * @name PEP#request
      * @param {Session} session
      * @param {JSON} param
      * @returns {*}
@@ -101,8 +101,8 @@ class GenericPEP extends PolicyPoint {
         // TODO Aktionen ausführen (Deny-biased PEP vs Permit-biased PEP)
         // TODO Rückgabewert feststellen
 
-    } // GenericPEP#request
+    } // PEP#request
 
-} // GenericPEP
+} // PEP
 
-module.exports = GenericPEP;
+module.exports = PEP;

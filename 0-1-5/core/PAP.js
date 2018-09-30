@@ -9,15 +9,15 @@ const
     Neo4j = require('neo4j-driver').v1,
     PolicyPoint = require('./PolicyPoint.js');
 
-//#region GenericPAP
+//#region PAP
 
 /**
- * @name GenericPAP
+ * @name PAP
  * @extends PolicyPoint
  */
-class GenericPAP extends PolicyPoint {
+class PAP extends PolicyPoint {
     /**
-     * @constructs GenericPAP
+     * @constructs PAP
      * @param {JSON} [options={}]
      * @param {string} [options.host="localhost:7687"]
      * @param {string} [options.user="neo4j"]
@@ -39,10 +39,10 @@ class GenericPAP extends PolicyPoint {
             `bolt://${connection.host}`,
             Neo4j.auth.basic(connection.user, connection.password)
         );
-    } // GenericPAP.constructor
+    } // PAP.constructor
 
     /**
-     * @name GenericPAP#ping
+     * @name PAP#ping
      * @async
      */
     async ping() {
@@ -57,10 +57,10 @@ class GenericPAP extends PolicyPoint {
         } catch (err) {
             this.throw('ping', err);
         }
-    } // GenericPAP#ping
+    } // PAP#ping
 
     /**
-     * @name GenericPAP#_request
+     * @name PAP#_request
      * @param {(string|string[])} query Query in the cypher query language.
      * @returns {*} Result of the request to Neo4j.
      * @async
@@ -84,15 +84,15 @@ class GenericPAP extends PolicyPoint {
             // TODO überdenken
 
             return isArray
-                ? result.map(GenericPAP_resolveQueryResult)
-                : GenericPAP_resolveQueryResult(result);
+                ? result.map(PAP_resolveQueryResult)
+                : PAP_resolveQueryResult(result);
         } catch (err) {
             this.throw('_request', err);
         }
-    } // GenericPAP#_request
+    } // PAP#_request
 
-} // GenericPAP
+} // PAP
 
-//#endregion GenericPAP
+//#endregion PAP
 
-module.exports = GenericPAP;
+module.exports = PAP;

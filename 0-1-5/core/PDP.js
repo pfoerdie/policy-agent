@@ -11,15 +11,15 @@ const
     PIP = require('./PIP.js'),
     PAP = require('./PAP.js');
 
-//#region GenericPDP
+//#region PDP
 
 /**
- * @name GenericPDP
+ * @name PDP
  * @extends PolicyPoint
  */
-class GenericPDP extends PolicyPoint {
+class PDP extends PolicyPoint {
     /**
-     * @constructs GenericPDP
+     * @constructs PDP
      * @param {JSON} [options={}]
      * @abstract
      * @public
@@ -30,7 +30,7 @@ class GenericPDP extends PolicyPoint {
         this.data.policyStore = null;
         this.data.attributeStore = null;
 
-    } // GenericPDP.constructor
+    } // PDP.constructor
 
     /**
      * Adds a PIP to retrieve information.
@@ -45,12 +45,12 @@ class GenericPDP extends PolicyPoint {
 
         this.attributeStore = informationPoint;
         this.log('connectPIP', `${informationPoint.toString(undefined, true)} connected`);
-    } // PEP#connectPIP
+    } // PDP#connectPIP
 
     /**
-     * Adds a PIP to retrieve information.
-     * @name PDP#connectPIP
-     * @param {PolicyAgent.PIP} administrationPoint 
+     * Adds a PAP to retrieve policies.
+     * @name PDP#connectPAP
+     * @param {PolicyAgent.PAP} administrationPoint 
      */
     connectPAP(administrationPoint) {
         if (!(administrationPoint instanceof PAP))
@@ -60,10 +60,10 @@ class GenericPDP extends PolicyPoint {
 
         this.policyStore = administrationPoint;
         this.log('connectPAP', `${administrationPoint.toString(undefined, true)} connected`);
-    } // PEP#connectPIP
+    } // PDP#connectPAP
 
     /**
-     * @name GenericPDP#_request
+     * @name PDP#_request
      * @param {Context} context
      * @async
      * 
@@ -99,12 +99,12 @@ class GenericPDP extends PolicyPoint {
             this.throw('_request', new Error(`missing attributes`));
 
         // TODO
-    } // GenericPDP#request
+    } // PDP#request
 
-} // GenericPDP
+} // PDP
 
-//#endregion GenericPDP
+//#endregion PDP
 
-Object.defineProperties(GenericPDP, {});
+Object.defineProperties(PDP, {});
 
-module.exports = GenericPDP;
+module.exports = PDP;

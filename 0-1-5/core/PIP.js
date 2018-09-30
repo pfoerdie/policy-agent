@@ -7,49 +7,49 @@
 const
     UUID = require('uuid/v4'),
     PolicyPoint = require('./PolicyPoint.js'),
-    SubjectsPoint = require('./SubjectsPoint.js'),
-    ResourcePoint = require('./ResourcePoint.js');
+    SP = require('./SP.js'),
+    RP = require('./RP.js');
 
-//#region GenericPIP
+//#region PIP
 
 /**
- * @name GenericPIP
+ * @name PIP
  * @extends PolicyPoint
  */
-class GenericPIP extends PolicyPoint {
+class PIP extends PolicyPoint {
     /**
-     * @constructs GenericPIP
+     * @constructs PIP
      * @param {JSON} [options={}]
      * @public
      */
     constructor(options = {}) {
         super(options);
 
-        this.data.SubjectsPoints = new Map();
-        this.data.ResourcePoints = new Map();
+        this.data.SPs = new Map();
+        this.data.RPs = new Map();
 
-    } // GenericPIP.constructor
+    } // PIP.constructor
 
-    connectSP(subjectsPoint) {
-        if (!(subjectsPoint instanceof SubjectsPoint))
-            this.throw('connectSubjectsPoint', new TypeError(`invalid param`));
+    connectSP(SP) {
+        if (!(SP instanceof SP))
+            this.throw('connectSP', new TypeError(`invalid param`));
 
-        this.data.SubjectsPoints.set(Symbol(), subjectsPoint);
+        this.data.SPs.set(Symbol(), SP);
 
-        this.log('connectSubjectsPoint', `${subjectsPoint.toString(undefined, true)} connected`);
-    } // GenericPIP#connectSubjectsPoint
+        this.log('connectSP', `${SP.toString(undefined, true)} connected`);
+    } // PIP#connectSP
 
-    connectRP(resourcePoint) {
-        if (!(resourcePoint instanceof ResourcePoint))
-            this.throw('connectResourcePoint', new TypeError(`invalid param`));
+    connectRP(RP) {
+        if (!(RP instanceof RP))
+            this.throw('connectRP', new TypeError(`invalid param`));
 
-        this.data.ResourcePoints.set(Symbol(), resourcePoint);
+        this.data.RPs.set(Symbol(), RP);
 
-        this.log('connectResourcePoint', `${resourcePoint.toString(undefined, true)} connected`);
-    } // GenericPIP#connectResourcePoint
+        this.log('connectRP', `${RP.toString(undefined, true)} connected`);
+    } // PIP#connectRP
 
-} // GenericPIP
+} // PIP
 
-//#endregion GenericPIP
+//#endregion PIP
 
-module.exports = GenericPIP;
+module.exports = PIP;

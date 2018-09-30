@@ -9,7 +9,7 @@ const
     MongoDB = require('mongodb').MongoClient,
     PolicyPoint = require('./PolicyPoint.js');
 
-//#region SubjectsPoint
+//#region SP
 
 /**
  * @name resolveQueryResult
@@ -29,12 +29,12 @@ function resolveQueryResult(queryResult) {
 } // resolveQueryResult
 
 /**
- * @name SubjectsPoint
+ * @name SP
  * @extends PolicyPoint
  */
-class SubjectsPoint extends PolicyPoint {
+class SP extends PolicyPoint {
     /**
-     * @constructs SubjectsPoint
+     * @constructs SP
      * @param {JSON} [options={}]
      * @abstract
      * @public
@@ -44,7 +44,7 @@ class SubjectsPoint extends PolicyPoint {
 
         const connection = {
             host: options['host'] || "localhost:27017",
-            dbName: options['dbName'] || "SubjectsPoint"
+            dbName: options['dbName'] || "SP"
         };
 
         this.data.driver = {
@@ -61,10 +61,10 @@ class SubjectsPoint extends PolicyPoint {
                 }
             ))
         };
-    } // SubjectsPoint.constructor
+    } // SP.constructor
 
     /**
-     * @name SubjectsPoint#ping
+     * @name SP#ping
      * @async
      */
     async ping() {
@@ -77,7 +77,7 @@ class SubjectsPoint extends PolicyPoint {
         } catch (err) {
             this.throw('ping', err);
         }
-    } // SubjectsPoint#ping
+    } // SP#ping
 
     async _retrieve(query) {
         const isArray = Array.isArray(query);
@@ -99,14 +99,14 @@ class SubjectsPoint extends PolicyPoint {
         return isArray
             ? await result.map(resolveQueryResult)
             : await resolveQueryResult(result);
-    } // SubjectsPoint#_retrieve
+    } // SP#_retrieve
 
     async _submit() {
         // TODO
-    } // SubjectsPoint#_submit
+    } // SP#_submit
 
-} // SubjectsPoint
+} // SP
 
-//#endregion SubjectsPoint
+//#endregion SP
 
-module.exports = SubjectsPoint;
+module.exports = SP;

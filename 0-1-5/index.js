@@ -5,8 +5,8 @@ const
     PDP = require('./core/PDP.js'),
     PIP = require('./core/PIP.js'),
     PAP = require('./core/PAP.js'),
-    SubjectsPoint = require('./core/SubjectsPoint.js'),
-    ResourcePoint = require('./core/ResourcePoint.js');
+    SP = require('./core/SP.js'),
+    RP = require('./core/RP.js');
 
 require('./module/ExpressPEP.js');
 require('./module/SocketIoPEP.js');
@@ -15,7 +15,7 @@ exports['PEP'] = PEP;
 exports['PDP'] = PDP;
 exports['PIP'] = PIP;
 exports['PAP'] = PAP;
-exports['SP'] = SubjectsPoint;
-exports['RP'] = ResourcePoint;
+exports['SP'] = SP;
+exports['RP'] = RP;
 
 Object.freeze(module.exports);
