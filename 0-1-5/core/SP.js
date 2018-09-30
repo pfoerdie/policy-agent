@@ -9,8 +9,6 @@ const
     MongoDB = require('mongodb').MongoClient,
     PolicyPoint = require('./PolicyPoint.js');
 
-//#region SP
-
 /**
  * @name resolveQueryResult
  * @param {object} queryResult 
@@ -106,7 +104,5 @@ class SP extends PolicyPoint {
     } // SP#_submit
 
 } // SP
-
-//#endregion SP
 
 module.exports = SP;

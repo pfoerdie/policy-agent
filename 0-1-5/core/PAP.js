@@ -9,8 +9,6 @@ const
     Neo4j = require('neo4j-driver').v1,
     PolicyPoint = require('./PolicyPoint.js');
 
-//#region PAP
-
 /**
  * @name PAP
  * @extends PolicyPoint
@@ -92,7 +90,5 @@ class PAP extends PolicyPoint {
     } // PAP#_request
 
 } // PAP
-
-//#endregion PAP
 
 module.exports = PAP;

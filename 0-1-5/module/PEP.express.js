@@ -4,13 +4,11 @@
  */
 
 const
-    GenericPEP = require('../core/PEP.js'),
+    PEP = require('../core/PEP.js'),
     UUID = require('uuid/v4'),
     CookieParser = require('cookie-parser'),
     Express = require('express'),
     ExpressSession = require('express-session');
-
-//#region ExpressPEP
 
 /**
  * Must be called after all other this.data for the ExpressPEP have been set.
@@ -73,9 +71,9 @@ function initializeExpressRouter() {
 
 /**
  * @name ExpressPEP
- * @extends GenericPEP
+ * @extends PEP
  */
-class ExpressPEP extends GenericPEP {
+class ExpressPEP extends PEP {
     /**
      * @constructs ExpressPEP
      * @param {JSON} [options={}]
@@ -105,9 +103,7 @@ class ExpressPEP extends GenericPEP {
 
 } // ExpressPEP
 
-//#endregion ExpressPEP
-
-Object.defineProperty(GenericPEP, 'express', {
+Object.defineProperty(PEP, 'express', {
     enumerable: true,
     value: ExpressPEP
 });

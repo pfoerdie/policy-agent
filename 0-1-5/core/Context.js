@@ -1,4 +1,5 @@
 /**
+ * Context
  * @module PolicyAgent.Context
  * @author Simon Petrac
  */
@@ -27,8 +28,6 @@ _enum.Phase = {
     Decision: 3,
     Execution: 4
 };
-
-//#region Context
 
 /**
  * @name Context
@@ -295,7 +294,5 @@ class Context {
     } // Context.enum
 
 } // Context
-
-//#endregion Context
 
 module.exports = Context;

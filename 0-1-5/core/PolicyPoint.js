@@ -1,4 +1,5 @@
 /**
+ * Policy Point
  * @module PolicyAgent.PolicyPoint
  * @author Simon Petrac
  */
@@ -35,8 +36,6 @@ const
     Color = require('colors'),
     _private = new WeakMap(),
     _systemComponents = new Map();
-
-//#region PolicyPoint
 
 /**
  * This is the base class for every PolicyPoint.
@@ -174,7 +173,5 @@ class PolicyPoint {
     } // PolicyPoint.getComponent
 
 } // PolicyPoint
-
-//#endregion PolicyPoint
 
 module.exports = PolicyPoint;

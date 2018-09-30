@@ -10,8 +10,6 @@ const
     SP = require('./SP.js'),
     RP = require('./RP.js');
 
-//#region PIP
-
 /**
  * @name PIP
  * @extends PolicyPoint
@@ -25,31 +23,29 @@ class PIP extends PolicyPoint {
     constructor(options = {}) {
         super(options);
 
-        this.data.SPs = new Map();
-        this.data.RPs = new Map();
+        this.data.subjectsPoints = new Map();
+        this.data.resourcePoints = new Map();
 
     } // PIP.constructor
 
-    connectSP(SP) {
-        if (!(SP instanceof SP))
+    connectSP(subjectsPoint) {
+        if (!(subjectsPoint instanceof SP))
             this.throw('connectSP', new TypeError(`invalid param`));
 
-        this.data.SPs.set(Symbol(), SP);
+        this.data.subjectsPoints.set(Symbol(), subjectsPoint);
 
-        this.log('connectSP', `${SP.toString(undefined, true)} connected`);
+        this.log('connectSP', `${subjectsPoint.toString(undefined, true)} connected`);
     } // PIP#connectSP
 
-    connectRP(RP) {
-        if (!(RP instanceof RP))
+    connectRP(resourcePoint) {
+        if (!(resourcePoint instanceof RP))
             this.throw('connectRP', new TypeError(`invalid param`));
 
-        this.data.RPs.set(Symbol(), RP);
+        this.data.resourcePoints.set(Symbol(), resourcePoint);
 
-        this.log('connectRP', `${RP.toString(undefined, true)} connected`);
+        this.log('connectRP', `${resourcePoint.toString(undefined, true)} connected`);
     } // PIP#connectRP
 
 } // PIP
-
-//#endregion PIP
 
 module.exports = PIP;

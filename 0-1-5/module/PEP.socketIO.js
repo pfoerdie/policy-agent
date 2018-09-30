@@ -4,16 +4,14 @@
  */
 
 const
-    GenericPEP = require('../core/PEP.js'),
+    PEP = require('../core/PEP.js'),
     SocketIO = require('socket.io');
-
-//#region SocketIoPEP
 
 /**
  * @name SocketIoPEP
- * @extends GenericPEP
+ * @extends PEP
  */
-class SocketIoPEP extends GenericPEP {
+class SocketIoPEP extends PEP {
     constructor(options = {}) {
         super(options);
 
@@ -23,9 +21,7 @@ class SocketIoPEP extends GenericPEP {
 
 } // SocketIoPEP
 
-//#endregion SocketIoPEP
-
-Object.defineProperty(GenericPEP, 'socketIO', {
+Object.defineProperty(PEP, 'socketIO', {
     enumerable: true,
     value: SocketIoPEP
 });

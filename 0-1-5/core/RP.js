@@ -10,8 +10,6 @@ const
     Fs = require('fs'),
     PolicyPoint = require('./PolicyPoint.js');
 
-//#region RP
-
 /**
  * @name RP
  * @extends PolicyPoint
@@ -36,7 +34,5 @@ class RP extends PolicyPoint {
     // TODO
 
 } // RP
-
-//#endregion RP
 
 module.exports = RP;

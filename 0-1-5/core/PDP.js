@@ -11,8 +11,6 @@ const
     PIP = require('./PIP.js'),
     PAP = require('./PAP.js');
 
-//#region PDP
-
 /**
  * @name PDP
  * @extends PolicyPoint
@@ -102,8 +100,6 @@ class PDP extends PolicyPoint {
     } // PDP#request
 
 } // PDP
-
-//#endregion PDP
 
 Object.defineProperties(PDP, {});
 
