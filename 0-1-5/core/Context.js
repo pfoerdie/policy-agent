@@ -7,29 +7,7 @@
 const
     UUID = require('uuid/v4'),
     Color = require('colors'),
-    PolicyPoint = require('./PolicyPoint.js'),
-    PEP = require('./PEP.js'),
-    PDP = require('./PDP.js'),
-    PIP = require('./PIP.js'),
-    _private = new WeakMap(),
-    _enum = {};
-
-//#region Enumerations
-
-_enum.Decision = {
-    Permit: 1,
-    Deny: 2,
-    Indeterminate: 3,
-    NotApplicable: 4
-};
-
-_enum.Phase = {
-    Enforcement: 1,
-    Decision: 2,
-    Execution: 3
-};
-
-//#endregion Enumerations
+    _private = new WeakMap();
 
 /**
  * @name Context
@@ -45,12 +23,8 @@ class Context {
      * @package
      */
     constructor(session, param) {
-        const _attr = {
-            instanceID: UUID(),
-            phase: _enum.Phase.Enforcement,
-            informationPoint: null,
-            decision: null
-        };
+        const _attr = {};
+        _attr.instanceID = UUID();
         _private.set(this, _attr);
 
         if (!session || typeof session !== 'object')
@@ -58,165 +32,108 @@ class Context {
         if (!param || typeof param !== 'object')
             this.throw('constructor', new TypeError(`invalid argument`));
 
+        _attr.session = session;
+        _attr.decision = null;
+
         Object.defineProperties(this, {
-            attributes: {
+            attr: {
                 value: Object.create({}, {
                     /**
-                     * NOTE XACML request.action:
+                     * INFO XACML request.action:
                      * -> An operation on a resource
                      */
                     action: {
                         value: {}
                     },
                     /**
-                     * NOTE 
-                     * XACML suggests an attribute called subject.
-                     * Due to variation to ODRL, this will be split into relation and target.
-                     * NOTE XACML request.subject:
+                     * INFO XACML request.subject:
                      * -> An actor whose attributes may be referenced by a predicate
                      *    (Predicate := A statement about attributes whose truth can be evaluated)
+                     * INFO  The relation and the function property of the ODRL will be combined into
+                     *       this single subjects property of XACML.
                      */
-                    relation: {
-                        value: {}
-                    },
-                    function: {
-                        value: {}
+                    subjects: {
+                        value: new Map()
                     },
                     /**
-                     * NOTE XACML request.resource:
+                     * INFO XACML request.resource:
                      * -> Data, service or system component
                      */
                     resource: {
-                        value: {}
+                        value: new Map()
                     },
                     /**
-                     * NOTE XACML request.environment:
+                     * INFO XACML request.environment:
                      * -> The set of attributes that are relevant to an authorization decision 
                      *    and are independent of a particular subject, resource or action
                      */
                     environment: {
-                        value: {}
-                    }
-                })
-            },
-            data: {
-                value: Object.create({}, {
-                    session: {
-                        value: session
-                    },
-                    cache: {
                         value: new Map()
-                    },
-                    /**
-                     * NOTE 7.17 Authorization decision:
-                     * -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
-                     */
-                    decision: {
-                        set: (value) => {
-                            if (_attr.decision)
-                                this.throw(undefined, "decision already set");
-
-                            _attr.decision = value;
-                        },
-                        get: () => _attr.decision
                     }
                 })
             }
         });
 
-        if (typeof param['action'] === 'string')
-            this.attributes.action['@id'] = param['action'];
-        else if (typeof param['action'] === 'object' && typeof param['action']['@id'] === 'string')
-            Object.assign(this.attributes.action, param['action']);
-        else
-            this.throw('constructor', new Error(`invalid action`));
+        for (let key in param) {
+            if (key === 'action') {
+                let action = param[key];
 
-        if (typeof param['target'] === 'object')
-            this.attributes.relation.target = param['target'];
-        else
+                if (typeof action === 'string')
+                    this.attr.action['@id'] = action;
+                else if (action && typeof action === 'object' && typeof action['@id'] === 'string')
+                    Object.assign(this.attr.action, action);
+            } else {
+                let subject = param[key];
+
+                if (subject && typeof subject === 'object' && typeof subject['@type'] === 'string')
+                    this.attr.subjects.set(key, subject);
+            }
+        } // transfer param to attr.action and attr.subjects
+
+        if (!this.attr.action['@id'])
+            this.throw('constructor', new Error(`invalid action`));
+        if (!this.attr.subjects.has('target'))
             this.throw('constructor', new Error(`invalid target`));
 
-        if (typeof param['assignee'] === 'object')
-            this.attributes.function.assignee = param['assignee'];
-        if (typeof param['assigner'] === 'object')
-            this.attributes.function.assigner = param['assigner'];
-
-        // TODO this.attributes.resource ???
-        // TODO this.attributes.environment ???
-
-        this.log(undefined, `instantiated`);
     } // Context.constructor
 
+    get session() {
+        return _private.get(this).session;
+    } // Context#session<getter>
+
     /**
-     * @name Context#
-     * @param {PolicyPoint} policyPoint 
+     * @name Context#decision
+     * @type {string} "Permit" | "Deny" | "Indeterminate" | "NotApplicable" | null
+     * 
+     * INFO 7.17 Authorization decision:
+     *   -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
      */
-    async next(policyPoint) {
+    get decision() {
+        return _private.get(this).decision;
+    } // Context#decision<getter>
+
+    set decision(value) {
         const _attr = _private.get(this);
 
-        switch (_attr.phase) {
+        if (_attr.decision)
+            this.throw('decision', "already set");
 
-            case _enum.Phase.Enforcement:
+        switch (value) {
 
-                if (!(policyPoint instanceof PDP))
-                    this.throw(new TypeError(`invalid argument`));
-
-                _attr.phase = _enum.Phase.Decision;
-                this.log(undefined, `decision phase entered`);
-
-                let decisionPoint = policyPoint;
-
-                try {
-                    await decisionPoint._requestDecision(this);
-                } catch (err) {
-                    _attr.phase = null;
-                    throw err;
-                }
-
-                _attr.phase = _enum.Phase.Execution;
-                this.log(undefined, `execution phase entered`);
-
-                break; // Phase -> Enforcement
-
-            case _enum.Phase.Decision:
-
-                if (!(policyPoint instanceof PIP))
-                    this.throw(new TypeError(`invalid argument`));
-
-                let informationPoint = policyPoint;
-
-                if (_attr.informationPoint)
-                    this.throw(new Error(`informationPoint already set`));
-
-                _attr.informationPoint = informationPoint;
-                await informationPoint._retrieveSubjects(request);
-
-                // IDEA '_attr.phase = null' setzen, falls decision es KLAR verbietet
-                // TODO
-
-                break; // Phase -> Decision
-
-            case _enum.Phase.Execution:
-
-                if (!(policyPoint instanceof PEP))
-                    this.throw(new TypeError(`invalid argument`));
-
-                let executionPoint = policyPoint;
-
-                // TODO actions vom PEP holen und ausführen
-                // TODO target-Resourcen vom informationPoint abholen
-                // TODO alle geänderten Subjects zurückschreiben (_attr.informationPoint)
-                // NOTE falls decision es KLAR verbietet, Phase nicht ausführen sondern überspringen
-
-                _attr.phase = null;
-
-                break; // Phase -> Execution
+            case 'Permit':
+            case 'Deny':
+            case 'Indeterminate':
+            case 'NotApplicable':
+                _attr.decision = value;
+                break;
 
             default:
-                this.throw('next', new Error(`context deprecated`));
+                this.throw('decision', new TypeError(`invalid argument`));
 
         } // switch
-    } // Context#next
+    } // Context#decision<setter>
+
+    //#region logging
 
     /**
      * This function is used to log events on this component.
@@ -241,14 +158,15 @@ class Context {
      * @throws {Error} Always throws an error.
      * @package
      */
-    throw(funcName, error) {
+    throw(funcName, error, silent = false) {
         error = (error instanceof Error) ? error : new Error(error.toString().trim());
 
         let errMsg = this.toString(funcName, true);
         errMsg += "\n" + Color.grey("-> ") + error.toString().trim();
         console.error(errMsg);
 
-        throw error;
+        if (silent) return error;
+        else throw error;
     } // Context#throw
 
     /**
@@ -276,15 +194,7 @@ class Context {
         return str;
     } // PolicyPoint#toString
 
-    /**
-     * The enumerations that this class uses.
-     * @name Context.enum
-     * @type {object}
-     * @readonly
-     */
-    static get enum() {
-        return _enum; // TODO überdenken
-    } // Context.enum
+    //#endregion logging
 
 } // Context
 

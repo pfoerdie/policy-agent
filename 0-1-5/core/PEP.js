@@ -20,13 +20,9 @@ class PEP extends PolicyPoint {
     /**
      * @constructs PEP
      * @param {JSON} [options={}]
-     * @abstract
      * @public
      */
     constructor(options = {}) {
-        if (!new.target || new.target === PEP)
-            throw new Error(`PEP is an abstract class`);
-
         super(options);
 
         this.data.sessionMaxAge = 60 * 60 * 24 * 7;
@@ -69,12 +65,12 @@ class PEP extends PolicyPoint {
          * All other validation will be done by the Context's constructor.
          */
 
-        let promises = [];
-        this.data.decisionPoints.forEach(decisionPoint => promises.push(
-            (async (resolve, reject) => {
+        let promiseArr = [];
+        this.data.decisionPoints.forEach(decisionPoint => promiseArr.push(
+            (async () => {
                 try {
                     let context = new Context(session, param);
-                    await context.next(decisionPoint);
+                    await decisionPoint._requestDecision(context);
                     return [null, context];
                 } catch (err) {
                     return [err];
@@ -82,12 +78,14 @@ class PEP extends PolicyPoint {
             })(/* INFO call the async function immediately to get a promise */)
         ));
 
-        let results = (await Promise.all(promises)).filter(([err]) => !err);
-        if (results.length === 0)
+        let resultArr = await Promise.all(promiseArr);
+        resultArr = resultArr.filter(([err]) => !err);
+
+        if (resultArr.length === 0)
             this.throw('request', new Error(`failed to resolve`));
 
         /**
-         * NOTE 7.2.1 Base PEP
+         * INFO 7.2.1 Base PEP
          * - If the decision is "Permit", then the PEP SHALL permit access.  
          *   If obligations accompany the decision, then the PEP SHALL permit access only if it understands and it can and will discharge those obligations.
          * - If the decision is "Deny", then the PEP SHALL deny access.

@@ -55,20 +55,20 @@ class PolicyPoint {
 
         let instanceID = (options && typeof options['@id'] === 'string') ? options['@id'] : UUID();
 
-        _private.set(this, {
-            targetClass: new.target,
-            className: new.target.name,
-            instanceID: instanceID,
-            instanceName: Crypto.createHash('sha256').update(instanceID).digest('base64')
-        });
+        const _attr = {};
+        _attr.targetClass = new.target;
+        _attr.className = new.target.name;
+        _attr.instanceID = (options && typeof options['@id'] === 'string') ? options['@id'] : UUID();
+        _attr.instanceName = Crypto.createHash('sha256').update(_attr.instanceID).digest('base64');
+        _private.set(this, _attr);
 
         if (!options || typeof options !== 'object')
             this.throw('constructor', new TypeError(`invalid argument`));
 
-        if (_systemComponents.has(instanceID))
-            this.throw('constructor', new Error(`id '${instanceID}' already exists`));
+        if (_systemComponents.has(_attr.instanceID))
+            this.throw('constructor', new Error(`id '${_attr.instanceID}' already exists`));
         else
-            _systemComponents.set(instanceID, this);
+            _systemComponents.set(_attr.instanceID, this);
 
         Object.defineProperties(this, {
             /** 
@@ -106,6 +106,8 @@ class PolicyPoint {
         return _private.get(this).instanceName;
     } // PolicyPoint#name<getter>
 
+    //#region logging
+
     /**
      * This function is used to log events on this component.
      * @name PolicyPoint#log
@@ -129,14 +131,15 @@ class PolicyPoint {
      * @throws {Error} Always throws an error.
      * @package
      */
-    throw(funcName, error) {
+    throw(funcName, error, silent = false) {
         error = (error instanceof Error) ? error : new Error(error.toString().trim());
 
         let errMsg = this.toString(funcName, true);
         errMsg += "\n" + Color.grey("-> ") + error.toString().trim();
         console.error(errMsg);
 
-        throw error;
+        if (silent) return error;
+        else throw error;
     } // PolicyPoint#throw
 
     /**
@@ -163,6 +166,8 @@ class PolicyPoint {
 
         return str;
     } // PolicyPoint#toString
+
+    //#endregion logging
 
     /**
      * TODO

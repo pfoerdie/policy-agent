@@ -51,14 +51,27 @@ class PIP extends PolicyPoint {
             this.throw('_retrieveSubjects', new TypeError(`invalid argument`));
 
         let
-            query = [],
+            subjNames = Array.from(context.attr.subjects.keys()),
+            query = subjNames.map(name => context.attr.subjects.get(name)),
             promiseArr = [];
 
-        // TODO query aufbauen
+        this.data.subjectsPoints.forEach(subjectsPoint => promiseArr.push(
+            (async () => {
+                try {
+                    let result = await subjectsPoint._retrieve(query);
+                    return [null, result];
+                } catch (err) {
+                    return [err];
+                }
+            })(/* INFO call the async function immediately to get a promise */)
+        ));
 
-        this.data.subjectsPoints.forEach((subjectsPoint) => {
-            promiseArr.push(subjectsPoint._retrieve(query));
-        });
+        let resultArr = await Promise.all(promiseArr);
+        resultArr = resultArr.filter(([err]) => !err);
+
+        let result = resultArr.reduce((acc, [undefined, result]) => {
+            // TODO resultArr zu einem result kombinieren
+        }, {});
 
         // TODO context anreichern
 
@@ -77,6 +90,12 @@ class PIP extends PolicyPoint {
         // TODO
 
     } // PIP#_retrieveResource
+
+    async _submitResource(/* TODO */) {
+
+        // TODO
+
+    } // PIP#_submitResource
 
 } // PIP
 

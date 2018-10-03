@@ -38,10 +38,10 @@ class PDP extends PolicyPoint {
     connectPIP(informationPoint) {
         if (!(informationPoint instanceof PIP))
             this.throw('connectPIP', new TypeError(`invalid argument`));
-        if (this.informationPoint)
+        if (this.data.informationPoint)
             this.throw('connectPIP', `AttributeStore already connected`);
 
-        this.informationPoint = informationPoint;
+        this.data.informationPoint = informationPoint;
         this.log('connectPIP', `${informationPoint.toString(undefined, true)} connected`);
     } // PDP#connectPIP
 
@@ -53,10 +53,10 @@ class PDP extends PolicyPoint {
     connectPAP(administrationPoint) {
         if (!(administrationPoint instanceof PAP))
             this.throw('connectPAP', new TypeError(`invalid argument`));
-        if (this.administrationPoint)
+        if (this.data.administrationPoint)
             this.throw('connectPAP', `PAP already connected`);
 
-        this.administrationPoint = administrationPoint;
+        this.data.administrationPoint = administrationPoint;
         this.log('connectPAP', `${administrationPoint.toString(undefined, true)} connected`);
     } // PDP#connectPAP
 
@@ -65,35 +65,24 @@ class PDP extends PolicyPoint {
      * @param {Context} context
      * @async
      * 
-     * NOTE 7.17 Authorization decision
-     * - The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
+     * INFO 7.17 Authorization decision:
+     *   -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
      */
     async _requestDecision(context) {
         if (!(context instanceof Context))
             this.throw('_requestDecision', new TypeError(`invalid argument`));
 
-        const _attr = _private.get(this);
-
-        if (!_attr.administrationPoint)
+        if (!this.data.administrationPoint)
             this.throw('_requestDecision', new Error(`administrationPoint not connected`));
-        if (!_attr.informationPoint)
+        if (!this.data.informationPoint)
             this.throw('_requestDecision', new Error(`informationPoint not connected`));
 
-        for (let subjRelation of context.subject['relation']) {
-            if (typeof subjRelation['@id'] === 'string')
-                context.data.missing.add(subjRelation['@id']);
-        }
-
-        for (let subjFunction of context.subject['function']) {
-            if (typeof subjFunction['@id'] === 'string')
-                context.data.missing.add(subjFunction['@id']);
-        }
-
-        await context.next(_attr.informationPoint);
-        // NOTE falls der context die source den attributen hinzufügt, kann es auch gerne mehrere informationPoints pro PDP geben
-        //      da in der Execution Phase diese auch zurückgeschrieben werden können
+        await this.data.informationPoint._retrieveSubjects(context);
 
         // TODO
+
+        context.decision = "Indeterminate";
+
     } // PDP#_requestDecision
 
 } // PDP

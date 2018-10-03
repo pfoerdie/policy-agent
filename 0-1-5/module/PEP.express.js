@@ -48,7 +48,7 @@ function initializeExpressRouter() {
             };
 
             param['target'] = {
-                '@type': "html", // TODO wie komme ich an den richtigen Typ?
+                '@type': "content", // TODO wie komme ich an den richtigen Typ?
                 '@id': request.url // IDEA oder aus dem request.body
             };
 
@@ -56,8 +56,8 @@ function initializeExpressRouter() {
             // IDEA ist der PEP vllt selber der assigner?
             param['assignee'] = null; // IDEA aus der request.session oder dem request.body
 
-            // IDEA wäre nice, wenn das auch mit this.request klappt
-            // TODO
+            let result = await this.request(request.session, param);
+
             response.send('hello world');
 
         } catch (err) {

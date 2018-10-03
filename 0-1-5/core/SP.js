@@ -7,25 +7,39 @@
 const
     UUID = require('uuid/v4'),
     MongoDB = require('mongodb').MongoClient,
-    PolicyPoint = require('./PolicyPoint.js'),
-    _promify = (callback, ...args) => new Promise((resolve, reject) => callback(...args, (err, result) => err ? reject(err) : resolve(result)));
+    PolicyPoint = require('./PolicyPoint.js');
 
 /**
- * @name resolveQueryResult
- * @param {object} queryResult 
- * @returns {object}
+ * @name _retrieveSubject
+ * @param {MongoDB~DataBase} dataBase 
+ * @param {object} subject 
+ * @returns {Promise}
+ * @this {SP}
  * @private
  */
-function resolveQueryResult(queryResult) {
-    return new Promise((resolve, reject) => queryResult.toArray((err, docs) => {
-        if (err)
-            reject(err);
-        else {
-            // TODO
-            resolve(docs);
-        }
-    }));
-} // resolveQueryResult
+function _retrieveSubject(dataBase, subject) {
+    return new Promise((resolve, reject) => {
+        dataBase
+            .collection(subject['@type'])
+            .find(subject)
+            .toArray((err, docs) => {
+                if (err) {
+                    this.throw('_retrieve', err, true); // silent
+                    resolve(null);
+                } else {
+                    docs.forEach((doc) => {
+                        delete doc['_id'];
+
+                        Object.defineProperty(doc, '@source', {
+                            value: this.id
+                        });
+                    });
+
+                    resolve(docs);
+                }
+            })
+    });
+} // _retrieveSubject
 
 /**
  * @name SP
@@ -49,6 +63,8 @@ class SP extends PolicyPoint {
             dbName: options['dbName'] || "SubjectsPoint"
         };
 
+        this.data.requestTimeout = 10e3; // TODO einsetzen
+
         this.data.driver = {
             client: () => new Promise((resolve, reject) => MongoDB.connect(
                 `mongodb://${connection.host}`,
@@ -63,6 +79,7 @@ class SP extends PolicyPoint {
                 }
             ))
         };
+
     } // SP.constructor
 
     /**
@@ -87,39 +104,22 @@ class SP extends PolicyPoint {
      * @returns {(*|[*])}
      * @async
      * 
-     * INFO
-     * The query shall not be altered. A new object is used for the result.
-     * INFO
-     * If a query is not successful, it shall not throw an error, but instead return null.
+     * INFO The query shall not be altered. A new object is used for the result.
+     * INFO If a query is not successful, it shall not throw an error, but instead return null.
      */
     async _retrieve(query) {
-        const queryArr = Array.isArray(query) ? query : null;
+        const
+            queryArr = Array.isArray(query) ? query : null,
+            queryInvalid = (query) => (!query || typeof query !== 'object' || typeof query['@type'] !== 'string');
 
-        if (
-            (!queryArr && typeof query !== 'object') ||
-            (queryArr && queryArr.some(query => typeof query !== 'object'))
-        )
+        if (queryArr ? queryArr.some(queryInvalid) : queryInvalid(query))
             this.throw('_request', new TypeError(`invalid argument`));
 
-        let
-            client = await this.data.driver.client(),
-            result = queryArr
-                ? await Promise.all(queryArr.map(query => _promify(client.db.collection(query['@type']).find(query).toArray)))
-                : await _promify(client.db.collection(query['@type']).find(query).toArray);
+        let client = await this.data.driver.client();
 
-        const resultArr = queryArr ? result : null;
-
-        if (resultArr)
-            resultArr.forEach((result) => {
-                // TODO paste the code of the else here
-            });
-        else {
-            // TODO delete the _id property on every doc of the result
-        }
-
-        // TODO überdenken
-
-        return result;
+        return queryArr ?
+            await Promise.all(queryArr.map(query => _retrieveSubject.call(this, client.db, query))) :
+            await _retrieveSubject.call(this, client.db, query);
 
     } // SP#_retrieve
 

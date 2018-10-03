@@ -11,6 +11,14 @@ const
     PolicyPoint = require('./PolicyPoint.js'),
     _promify = (callback, ...args) => new Promise((resolve, reject) => callback(...args, (err, result) => err ? reject(err) : resolve(result)));
 
+class Resource {
+    /**
+     * IDEA
+     * Resource#load zum laden der Resource.
+     * Kann zB vom PIP instanziiert werden und später in der Action geladen
+     */
+} // Resource
+
 /**
  * @name RP
  * @extends PolicyPoint
@@ -35,6 +43,10 @@ class RP extends PolicyPoint {
     async _retrieve() {
 
     } // RP#_retrieve
+
+    async _submit() {
+
+    } // RP#_submit
 
     // TODO
 
