@@ -10,6 +10,7 @@
      * -> Desktop:
      * /d/Programme/Neo4j/neo4j-community-3.4.0/bin/neo4j.bat console
      * /d/Programme/MongoDB/mongodb-community-4.0.0/bin/mongod --dbpath=D:/Programme/MongoDB/databases/examplePIPdataBase
+     * 
      * -> IdeaPad:
      * /d/Programme/Neo4j/neo4j-community-3.4.5/bin/neo4j.bat console
      * /d/Programme/MongoDB/mongodb-community-4.0.0/bin/mongod --dbpath=D:/Programme/MongoDB/databases/examplePIPdataBase

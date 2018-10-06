@@ -65,6 +65,9 @@ class PEP extends PolicyPoint {
          * All other validation will be done by the Context's constructor.
          */
 
+        // TODO fehlende Subjects aus der Session holen und in param speichern (z.B. assignee)
+        // oder an einer anderen Stelle, aber diese schien am geeignetesten
+
         let promiseArr = [];
         this.data.decisionPoints.forEach(decisionPoint => promiseArr.push(
             (async () => {

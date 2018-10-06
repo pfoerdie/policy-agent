@@ -5,11 +5,62 @@
  */
 
 const
-    UUID = require('uuid/v4'),
     PolicyPoint = require('./PolicyPoint.js'),
     Context = require('./Context.js'),
     PIP = require('./PIP.js'),
     PAP = require('./PAP.js');
+
+/**
+ * @name _makeRequestQuery
+ * @param {JSON} action 
+ * @param {Map<string, JSON>} subjects 
+ * @returns {string}
+ * @this {PDP}
+ * @private
+ */
+function _makeRequestQuery(action, subjects) {
+
+    const queryBlocks = [];
+
+    let
+        target = subjects.get('target'),
+        assignee = subjects.get('assignee'),
+        assigner = subjects.get('assigner');
+
+    // find the action and the target
+    queryBlocks.push(`MATCH (action:ODRL:Action {id: "${action['@id']}"})`);
+    queryBlocks.push(`MATCH (target:ODRL:Asset} {uid: "${target['@id']}"})`);
+
+    // if assignee or assigner are present, find them too
+    if (assignee) queryBlocks.push(`MATCH (assignee:ODRL:Party} {uid: "${assignee['@id']}"})`);
+    if (assigner) queryBlocks.push(`MATCH (assigner:ODRL:Party} {uid: "${assigner['@id']}"})`);
+
+    // search for every policy, that is related to that target and action
+    queryBlocks.push(`MATCH (policy:ODRL:Policy)-[*]->(rule:ODRL:Rule)-[:target]->(target)`);
+    queryBlocks.push(`WHERE ( (rule)-[:action]->(action) OR (rule)-[:action]->(:ODRL:Action)-[:value]->(action) )`);
+
+    // filter further with by assignee reference ...
+    if (assignee) queryBlocks.push(`AND ( (rule)-[:assignee]->(assignee) OR NOT (rule)-[:assignee]->(:ODRL) )`);
+    else queryBlocks.push(`AND NOT (rule)-[:assignee]->(:ODRL)`);
+
+    // ... and assigner reference
+    if (assigner) queryBlocks.push(`AND ( (rule)-[:assigner]->(assigner) OR NOT (rule)-[:assigner]->(:ODRL) )`);
+    else queryBlocks.push(`AND NOT (rule)-[:assigner]->(:ODRL)`);
+
+    // return collected results
+    queryBlocks.push(`RETURN`);
+    queryBlocks.push(`policy,`);
+    queryBlocks.push(`rule,`);
+    queryBlocks.push(`target,`);
+    if (assignee) queryBlocks.push(`assignee,`);
+    if (assigner) queryBlocks.push(`assigner,`);
+    queryBlocks.push(`action.id AS action`);
+
+    // TODO hier ist noch vieeel potential 
+
+    return queryBlocks.join("\n");
+
+} // _makeRequestQuery
 
 /**
  * @name PDP
@@ -78,6 +129,12 @@ class PDP extends PolicyPoint {
             this.throw('_requestDecision', new Error(`informationPoint not connected`));
 
         await this.data.informationPoint._retrieveSubjects(context);
+
+        let
+            cypherQuery = _makeRequestQuery.call(this, context.attr.action, context.attr.subjects),
+            queryResult = await this.data.administrationPoint._retrievePolicies(cypherQuery);
+
+        console.log(queryResult);
 
         // TODO
 

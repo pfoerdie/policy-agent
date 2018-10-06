@@ -52,38 +52,30 @@ class PIP extends PolicyPoint {
 
         let
             subjNames = Array.from(context.attr.subjects.keys()),
-            query = subjNames.map(name => context.attr.subjects.get(name)),
-            promiseArr = [];
+            queryArr = subjNames.map(name => context.attr.subjects.get(name)),
+            promiseArr = [], subjectsMap = new Map();
 
         this.data.subjectsPoints.forEach(subjectsPoint => promiseArr.push(
             (async () => {
                 try {
-                    let result = await subjectsPoint._retrieve(query);
-                    return [null, result];
+                    let resultArr = await subjectsPoint._retrieve(queryArr);
+
+                    if (Array.isArray(resultArr) && resultArr.length === subjNames.length)
+                        resultArr.forEach((result, index) => {
+                            let subjName = subjNames[index];
+                            if (result && !Array.isArray(result) && !subjectsMap.has(subjName))
+                                subjectsMap.set(subjName, result);
+                        });
                 } catch (err) {
-                    return [err];
+                    // do nothing
                 }
             })(/* INFO call the async function immediately to get a promise */)
         ));
 
-        let resultArr = await Promise.all(promiseArr);
-        resultArr = resultArr.filter(([err]) => !err);
-
-        let result = resultArr.reduce((acc, [undefined, result]) => {
-            // TODO resultArr zu einem result kombinieren
-        }, {});
-
-        // TODO context anreichern
+        await Promise.all(promiseArr);
+        subjectsMap.forEach((subject, subjName) => context.attr.subjects.set(subjName, subject));
 
     } // PIP#_retrieveSubjects
-
-    async _submitSubjects(context) {
-        if (!(context instanceof Context))
-            this.throw('_submitSubjects', new TypeError(`invalid argument`));
-
-        // TODO
-
-    } // PIP#_submitSubjects
 
     async _retrieveResource(/* TODO */) {
 
@@ -91,11 +83,26 @@ class PIP extends PolicyPoint {
 
     } // PIP#_retrieveResource
 
-    async _submitResource(/* TODO */) {
+    /**
+     * TODO Subjects & Resource
+     * -    submit
+     * -    create
+     * -    delete
+     */
+
+    static async _submitSubjects(context) {
+        if (!(context instanceof Context))
+            this.throw('_submitSubjects', new TypeError(`invalid argument`));
 
         // TODO
 
-    } // PIP#_submitResource
+    } // PIP._submitSubjects
+
+    static async _submitResource(/* TODO */) {
+
+        // TODO
+
+    } // PIP._submitResource
 
 } // PIP
 

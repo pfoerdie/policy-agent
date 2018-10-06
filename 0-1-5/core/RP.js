@@ -5,19 +5,10 @@
  */
 
 const
-    UUID = require('uuid/v4'),
     Path = require('path'),
     Fs = require('fs'),
     PolicyPoint = require('./PolicyPoint.js'),
     _promify = (callback, ...args) => new Promise((resolve, reject) => callback(...args, (err, result) => err ? reject(err) : resolve(result)));
-
-class Resource {
-    /**
-     * IDEA
-     * Resource#load zum laden der Resource.
-     * Kann zB vom PIP instanziiert werden und später in der Action geladen
-     */
-} // Resource
 
 /**
  * @name RP
@@ -42,13 +33,15 @@ class RP extends PolicyPoint {
 
     async _retrieve() {
 
+        // TODO
+
     } // RP#_retrieve
 
     async _submit() {
 
-    } // RP#_submit
+        // TODO
 
-    // TODO
+    } // RP#_submit
 
 } // RP
 

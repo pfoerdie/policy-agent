@@ -5,7 +5,6 @@
  */
 
 const
-    UUID = require('uuid/v4'),
     MongoDB = require('mongodb').MongoClient,
     PolicyPoint = require('./PolicyPoint.js');
 
@@ -35,11 +34,25 @@ function _retrieveSubject(dataBase, subject) {
                         });
                     });
 
-                    resolve(docs);
+                    resolve(docs.length === 0 ? null : docs.length === 1 ? docs[0] : docs);
                 }
             })
     });
 } // _retrieveSubject
+
+/**
+ * @name _submitSubject
+ * @param {MongoDB~DataBase} dataBase 
+ * @param {object} subject 
+ * @returns {Promise}
+ * @this {SP}
+ * @private
+ */
+function _submitSubject(dataBase, subject) {
+
+    // TODO
+
+} // _submitSubject
 
 /**
  * @name SP
@@ -63,7 +76,7 @@ class SP extends PolicyPoint {
             dbName: options['dbName'] || "SubjectsPoint"
         };
 
-        this.data.requestTimeout = 10e3; // TODO einsetzen
+        this.data.requestTimeout = 10e3; // ms
 
         this.data.driver = {
             client: () => new Promise((resolve, reject) => MongoDB.connect(
@@ -115,18 +128,62 @@ class SP extends PolicyPoint {
         if (queryArr ? queryArr.some(queryInvalid) : queryInvalid(query))
             this.throw('_request', new TypeError(`invalid argument`));
 
-        let client = await this.data.driver.client();
+        let
+            client = await this.data.driver.client(),
+            resultPromise = queryArr
+                ? Promise.all(queryArr.map(query => _retrieveSubject.call(this, client.db, query)))
+                : _retrieveSubject.call(this, client.db, query),
+            success = false;
 
-        return queryArr ?
-            await Promise.all(queryArr.map(query => _retrieveSubject.call(this, client.db, query))) :
-            await _retrieveSubject.call(this, client.db, query);
+        /** INFO timeout mechanic */
+        await Promise.race([
+            resultPromise,
+            new Promise((resolve, reject) => (0 < this.data.requestTimeout && this.data.requestTimeout < Infinity)
+                ? resolve()
+                : setTimeout(
+                    () => success ? resolve() : reject(this.throw('_retrieve', new Error(`timed out`), true)),
+                    this.data.requestTimeout
+                ))
+        ]);
 
+        success = true;
+        return await resultPromise;
     } // SP#_retrieve
 
+    /**
+     * @name SP#_submit
+     * @param {(JSON|JSON[])} query 
+     * @returns {*} TODO
+     * @async
+     */
     async _submit(query) {
+        const
+            queryArr = Array.isArray(query) ? query : null,
+            queryInvalid = (query) => (!query || typeof query !== 'object' || typeof query['@type'] !== 'string');
 
-        // TODO
+        if (queryArr ? queryArr.some(queryInvalid) : queryInvalid(query))
+            this.throw('_request', new TypeError(`invalid argument`));
 
+        let
+            client = await this.data.driver.client(),
+            resultPromise = queryArr
+                ? Promise.all(queryArr.map(query => _submitSubject.call(this, client.db, query)))
+                : _submitSubject.call(this, client.db, query),
+            success = false;
+
+        /** INFO timeout mechanic */
+        await Promise.race([
+            resultPromise,
+            new Promise((resolve, reject) => (0 < this.data.requestTimeout && this.data.requestTimeout < Infinity)
+                ? resolve()
+                : setTimeout(
+                    () => success ? resolve() : reject(this.throw('_submit', new Error(`timed out`), true)),
+                    this.data.requestTimeout
+                ))
+        ]);
+
+        success = true;
+        return await resultPromise;
     } // SP#_submit
 
 } // SP
