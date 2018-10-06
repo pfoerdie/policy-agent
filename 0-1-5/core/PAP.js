@@ -51,10 +51,11 @@ function _makeSubmitQuery(varName, odrl) {
 
     if (odrl['@type'] === 'Action') {
         queryBlocks.push(`MERGE (${varName}:ODRL:Action {id: "${odrl['id']}"})`);
-    } else if (typeof odrl['uid'] === 'string') {
-        queryBlocks.push(`MERGE (${varName}:ODRL:${odrl['@type']} {uid: "${odrl['uid']}"})`);
     } else {
-        queryBlocks.push(`CREATE (${varName}:ODRL:${odrl['@type']})`);
+        if (typeof odrl['uid'] !== 'string')
+            odrl['uid'] = UUID(); // NOTE vllt müsste man nochmal überprüfen, ob die uid auch wirklich nicht vorkommt
+
+        queryBlocks.push(`MERGE (${varName}:ODRL:${odrl['@type']} {uid: "${odrl['uid']}"})`);
     }
 
     switch (odrl['@type']) {
