@@ -2,64 +2,6 @@
     "@context": "http://www.w3.org/ns/odrl/2/",
     "@graph": [
         {
-            "@type": "Asset",
-            "uid": "/asset/login.html",
-            "partOf": "/assetcollection/public"
-        },
-        {
-            "@type": "Asset",
-            "uid": "/asset/favicon.ico",
-            "partOf": "/assetcollection/public"
-        },
-        {
-            "@type": "AssetCollection",
-            "uid": "/assetcollection/public"
-        },
-        {
-            "@type": "Asset",
-            "uid": "/asset/index.html"
-        },
-        {
-            "@type": "PartyCollection",
-            "uid": "/partycollection/employee"
-        },
-        {
-            "@type": "Party",
-            "uid": "/party/pfoerdie",
-            "partOf": "/partycollection/user"
-        },
-        {
-            "@type": "PartyCollection",
-            "uid": "/partycollection/user"
-        },
-        {
-            "@type": "Policy",
-            "uid": "/policy/public_access",
-            "permission": [
-                {
-                    "@type": "Permission",
-                    "action": "read",
-                    "target": "/assetcollection/public"
-                }
-            ]
-        },
-        {
-            "@type": "Policy",
-            "uid": "/policy/employee_access"
-        },
-        {
-            "@type": "Policy",
-            "uid": "/policy/user_access",
-            "permission": [
-                {
-                    "@type": "Permission",
-                    "action": "read",
-                    "target": "/asset/index.html",
-                    "assignee": "/partycollection/user"
-                }
-            ]
-        },
-        {
             "@type": "Action",
             "id": "use"
         },
@@ -71,6 +13,64 @@
             "@type": "Action",
             "id": "read",
             "includedIn": "use"
+        },
+        {
+            "@type": "Asset",
+            "uid": "/content/"
+        },
+        {
+            "@type": "Asset",
+            "uid": "/content/login",
+            "partOf": "/collection/public"
+        },
+        {
+            "@type": "Asset",
+            "uid": "/content/favicon.ico",
+            "partOf": "/collection/public"
+        },
+        {
+            "@type": "AssetCollection",
+            "uid": "/collection/public"
+        },
+        {
+            "@type": "Party",
+            "uid": "/user/pfoerdie",
+            "partOf": "/group/user"
+        },
+        {
+            "@type": "PartyCollection",
+            "uid": "/group/employee"
+        },
+        {
+            "@type": "PartyCollection",
+            "uid": "/group/user"
+        },
+        {
+            "@type": "Policy",
+            "uid": "/policy/public_access",
+            "permission": [
+                {
+                    "@type": "Permission",
+                    "action": "read",
+                    "target": "/collection/public"
+                }
+            ]
+        },
+        {
+            "@type": "Policy",
+            "uid": "/policy/user_access",
+            "permission": [
+                {
+                    "@type": "Permission",
+                    "action": "read",
+                    "target": "/content/",
+                    "assignee": "/group/user"
+                }
+            ]
+        },
+        {
+            "@type": "Policy",
+            "uid": "/policy/employee_access"
         }
     ]
 }

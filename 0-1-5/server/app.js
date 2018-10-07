@@ -27,7 +27,8 @@
             '@id': "/PIP/the-worlds-attributes"
         }),
         myPAP = new PolicyAgent.PAP({
-            '@id': "/PIP/the-worlds-policies"
+            '@id': "/PIP/the-worlds-policies",
+            'password': "odrl"
         });
 
     expressPEP.connectPDP(accessPDP);

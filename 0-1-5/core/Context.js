@@ -22,7 +22,7 @@ class Context {
      * @param {JSON} subject
      * @package
      */
-    constructor(session, param) {
+    constructor(session, param) { // IDEA ...args hinzufügen, als Parameter für die Aktion später (zB um Request/Response zu übergeben)
         const _attr = {};
         _attr.instanceID = UUID();
         _private.set(this, _attr);

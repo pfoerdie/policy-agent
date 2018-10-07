@@ -1,0 +1,78 @@
+{
+	"@context": "http://www.w3.org/ns/odrl/2/",
+	"@graph": [
+		{
+			"@type": "Action",
+			"id": "use"
+		},
+		{
+			"@type": "Action",
+			"id": "transfer"
+		},
+		{
+			"@type": "Action",
+			"id": "read",
+			"includedIn": "use"
+		},
+		{
+			"@type": "Asset",
+			"uid": "/content/"
+		},
+		{
+			"@type": "Asset",
+			"uid": "/content/login",
+			"partOf": "/collection/public"
+		},
+		{
+			"@type": "Asset",
+			"uid": "/content/favicon.ico",
+			"partOf": "/collection/public"
+		},
+		{
+			"@type": "AssetCollection",
+			"uid": "/collection/public"
+		},
+		{
+			"@type": "Party",
+			"uid": "/user/pfoerdie",
+			"partOf": "/group/user"
+		},
+		{
+			"@type": "PartyCollection",
+			"uid": "/group/employee"
+		},
+		{
+			"@type": "PartyCollection",
+			"uid": "/group/user"
+		},
+		{
+			"@type": "Policy",
+			"uid": "/policy/public_access",
+			"permission": [
+				{
+					"@type": "Permission",
+					"action": "read",
+					"target": "/collection/public",
+					"uid": "52b0cad4-2cca-4c3d-b5d2-dda15e656430"
+				}
+			]
+		},
+		{
+			"@type": "Policy",
+			"uid": "/policy/user_access",
+			"permission": [
+				{
+					"@type": "Permission",
+					"action": "read",
+					"target": "/content/",
+					"assignee": "/group/user",
+					"uid": "9b980ac6-6dde-4f86-bdf7-e2a418ca3bb2"
+				}
+			]
+		},
+		{
+			"@type": "Policy",
+			"uid": "/policy/employee_access"
+		}
+	]
+}

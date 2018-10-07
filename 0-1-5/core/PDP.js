@@ -11,58 +11,6 @@ const
     PAP = require('./PAP.js');
 
 /**
- * @name _makeRequestQuery
- * @param {JSON} action 
- * @param {Map<string, JSON>} subjects 
- * @returns {string}
- * @this {PDP}
- * @private
- */
-function _makeRequestQuery(action, subjects) {
-
-    const queryBlocks = [];
-
-    let
-        target = subjects.get('target'),
-        assignee = subjects.get('assignee'),
-        assigner = subjects.get('assigner');
-
-    // find the action and the target
-    queryBlocks.push(`MATCH (action:ODRL:Action {id: "${action['@id']}"})`);
-    queryBlocks.push(`MATCH (target:ODRL:Asset} {uid: "${target['@id']}"})`);
-
-    // if assignee or assigner are present, find them too
-    if (assignee) queryBlocks.push(`MATCH (assignee:ODRL:Party} {uid: "${assignee['@id']}"})`);
-    if (assigner) queryBlocks.push(`MATCH (assigner:ODRL:Party} {uid: "${assigner['@id']}"})`);
-
-    // search for every policy, that is related to that target and action
-    queryBlocks.push(`MATCH (policy:ODRL:Policy)-[*]->(rule:ODRL:Rule)-[:target]->(target)`);
-    queryBlocks.push(`WHERE ( (rule)-[:action]->(action) OR (rule)-[:action]->(:ODRL:Action)-[:value]->(action) )`);
-
-    // filter further with by assignee reference ...
-    if (assignee) queryBlocks.push(`AND ( (rule)-[:assignee]->(assignee) OR NOT (rule)-[:assignee]->(:ODRL) )`);
-    else queryBlocks.push(`AND NOT (rule)-[:assignee]->(:ODRL)`);
-
-    // ... and assigner reference
-    if (assigner) queryBlocks.push(`AND ( (rule)-[:assigner]->(assigner) OR NOT (rule)-[:assigner]->(:ODRL) )`);
-    else queryBlocks.push(`AND NOT (rule)-[:assigner]->(:ODRL)`);
-
-    // return collected results
-    queryBlocks.push(`RETURN`);
-    queryBlocks.push(`policy,`);
-    queryBlocks.push(`rule,`);
-    queryBlocks.push(`target,`);
-    if (assignee) queryBlocks.push(`assignee,`);
-    if (assigner) queryBlocks.push(`assigner,`);
-    queryBlocks.push(`action.id AS action`);
-
-    // TODO hier ist noch vieeel potential 
-
-    return queryBlocks.join("\n");
-
-} // _makeRequestQuery
-
-/**
  * @name PDP
  * @extends PolicyPoint
  */
@@ -130,14 +78,26 @@ class PDP extends PolicyPoint {
 
         await this.data.informationPoint._retrieveSubjects(context);
 
-        let
-            cypherQuery = _makeRequestQuery.call(this, context.attr.action, context.attr.subjects),
-            queryResult = await this.data.administrationPoint._retrievePolicies(cypherQuery);
+        // TODO die policies aller includedIn und implies müssen auch geladen werden
 
-        console.log(queryResult);
+        let recordsArr = await this.data.administrationPoint._retrievePolicies(context.attr.action, context.attr.subjects);
 
-        // TODO
+        // TODO 
 
+        /**
+         * INFO {@link https://www.w3.org/TR/odrl-model/#conflict Policy Conflict Strategy}
+         * The conflict property SHOULD take one of the following Conflict Strategy Preference values (instance of the ConflictTerm class):
+         *      perm: the Permissions MUST override the Prohibitions
+         *      prohibit: the Prohibitions MUST override the Permissions
+         *      invalid: the entire Policy MUST be void if any conflict is detected
+         * 
+         * If the conflict property is not explicitly set, the default of invalid will be used.
+         * 
+         * The Conflict Strategy requirements include:
+         *      If a Policy has the conflict property of perm then any conflicting Permission Rule MUST override the Prohibition Rule.
+         *      If a Policy has the conflict property of prohibit then any conflicting Prohibition Rule MUST override the Permission Rule.
+         *      If a Policy has the conflict property of invalid then any conflicting Rules MUST void the entire Policy.
+         */
         context.decision = "Indeterminate";
 
     } // PDP#_requestDecision

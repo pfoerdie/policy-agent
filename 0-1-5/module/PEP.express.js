@@ -86,7 +86,8 @@ class ExpressPEP extends PEP {
         this.data.cookieSecret = UUID();
         this.data.cookieMaxAge = 60 * 60 * 24 * 7;
 
-        this.data.requestAction = 'use';
+        // TODO this.data.requestAction = 'use';
+        this.data.requestAction = 'read';
 
         initializeExpressRouter.call(this);
 
