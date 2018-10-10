@@ -28,10 +28,6 @@ function _retrieveSubject(dataBase, subject) {
                 } else {
                     docs.forEach((doc) => {
                         delete doc['_id'];
-
-                        Object.defineProperty(doc, '@source', {
-                            value: this.id
-                        });
                     });
 
                     resolve(docs.length === 0 ? null : docs.length === 1 ? docs[0] : docs);
@@ -56,7 +52,7 @@ function _submitSubject(dataBase, subject) {
 
 /**
  * @name SP
- * @extends PolicyPoint
+ * @extends PolicyAgent.PolicyPoint
  */
 class SP extends PolicyPoint {
     /**
@@ -139,11 +135,9 @@ class SP extends PolicyPoint {
         await Promise.race([
             resultPromise,
             new Promise((resolve, reject) => (0 < this.data.requestTimeout && this.data.requestTimeout < Infinity)
-                ? resolve()
-                : setTimeout(
-                    () => success ? resolve() : reject(this.throw('_retrieve', new Error(`timed out`), true)),
-                    this.data.requestTimeout
-                ))
+                ? setTimeout(() => success ? resolve() : reject(this.throw('_retrieve', new Error(`timed out`), true)), this.data.requestTimeout)
+                : resolve()
+            )
         ]);
 
         success = true;

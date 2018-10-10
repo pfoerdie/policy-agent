@@ -12,7 +12,7 @@ const
 
 /**
  * @name RP
- * @extends PolicyPoint
+ * @extends PolicyAgent.PolicyPoint
  */
 class RP extends PolicyPoint {
     /**

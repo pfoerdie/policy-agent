@@ -14,7 +14,7 @@ const
 
 /**
  * @name PEP
- * @extends PolicyPoint
+ * @extends PolicyAgent.PolicyPoint
  */
 class PEP extends PolicyPoint {
     /**
@@ -76,6 +76,7 @@ class PEP extends PolicyPoint {
                     await decisionPoint._requestDecision(context);
                     return [null, context];
                 } catch (err) {
+                    // NOTE debugging point
                     return [err];
                 }
             })(/* INFO call the async function immediately to get a promise */)

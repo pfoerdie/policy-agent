@@ -33,15 +33,16 @@
 const
     UUID = require('uuid/v4'),
     Crypto = require('crypto'),
-    Color = require('colors'),
+    Auditor = require('./Auditor.js'),
     _private = new WeakMap(),
     _systemComponents = new Map();
 
 /**
  * This is the base class for every PolicyPoint.
  * @name PolicyPoint
+ * @extends PolicyAgent.Auditor
  */
-class PolicyPoint {
+class PolicyPoint extends Auditor {
     /**
      * @constructs PolicyPoint
      * @param {object} options
@@ -54,21 +55,21 @@ class PolicyPoint {
             throw new Error(`PolicyPoint is an abstract class`);
 
         let instanceID = (options && typeof options['@id'] === 'string') ? options['@id'] : UUID();
-
-        const _attr = {};
-        _attr.targetClass = new.target;
-        _attr.className = new.target.name;
-        _attr.instanceID = (options && typeof options['@id'] === 'string') ? options['@id'] : UUID();
-        _attr.instanceName = Crypto.createHash('sha256').update(_attr.instanceID).digest('base64');
-        _private.set(this, _attr);
+        super(instanceID);
 
         if (!options || typeof options !== 'object')
             this.throw('constructor', new TypeError(`invalid argument`));
 
-        if (_systemComponents.has(_attr.instanceID))
-            this.throw('constructor', new Error(`id '${_attr.instanceID}' already exists`));
+        if (_systemComponents.has(instanceID))
+            this.throw('constructor', new Error(`id '${instanceID}' already exists`));
         else
-            _systemComponents.set(_attr.instanceID, this);
+            _systemComponents.set(instanceID, this);
+
+        _private.set(this, {
+            targetClass: new.target,
+            instanceID: instanceID,
+            instanceName: Crypto.createHash('sha256').update(instanceID).digest('base64')
+        });
 
         Object.defineProperties(this, {
             /** 
@@ -105,69 +106,6 @@ class PolicyPoint {
     get name() {
         return _private.get(this).instanceName;
     } // PolicyPoint#name<getter>
-
-    //#region logging
-
-    /**
-     * This function is used to log events on this component.
-     * @name PolicyPoint#log
-     * @param {string} funcName The name of the function for this log entry.
-     * @param {...(string|*)} messages If no string is submitted, the arguments will be used with the toString method.
-     * @package
-     */
-    log(funcName, ...messages) {
-        let logMsg = this.toString(funcName, true);
-        for (let msg of messages) {
-            logMsg += "\n" + Color.grey("-> ") + msg.toString().trim();
-        }
-        console.log(logMsg);
-    } // PolicyPoint#log
-
-    /**
-     * This function is used to log errors on this PolicyPoint. It will also throw an error.
-     * @name PolicyPoint#throw
-     * @param {string} funcName The name of the function for this log entry.
-     * @param {(Error|*)} error If no error is submitted, the arguments will be used to create an error.
-     * @throws {Error} Always throws an error.
-     * @package
-     */
-    throw(funcName, error, silent = false) {
-        error = (error instanceof Error) ? error : new Error(error.toString().trim());
-
-        let errMsg = this.toString(funcName, true);
-        errMsg += "\n" + Color.grey("-> ") + error.toString().trim();
-        console.error(errMsg);
-
-        if (silent) return error;
-        else throw error;
-    } // PolicyPoint#throw
-
-    /**
-     * @name PolicyPoint#toString
-     * @param {string} [funcName] The name of a function to include in the output.
-     * @param {boolean} [colored=false] Weather the output should make use of colors.
-     * @returns {string}
-     * @override
-     */
-    toString(funcName, colored = false) {
-        const _attr = _private.get(this);
-
-        if (!_attr)
-            return Object.prototype.toString.call(this);
-
-        let str = colored
-            ? Color.blue(_attr.className) + Color.grey("<") + Color.magenta(_attr.instanceID) + Color.grey(">")
-            : `${_attr.className}<${_attr.instanceID}>`;
-
-        if (funcName && typeof funcName === 'string')
-            str += colored
-                ? Color.grey(".") + Color.cyan(funcName.trim())
-                : `.${funcName.trim()}`;
-
-        return str;
-    } // PolicyPoint#toString
-
-    //#endregion logging
 
     /**
      * TODO

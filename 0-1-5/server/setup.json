@@ -15,6 +15,49 @@
             "includedIn": "use"
         },
         {
+            "@type": "Action",
+            "id": "test_1",
+            "includedIn": "use",
+            "implies": [
+                "test_1_1",
+                "test_1_2"
+            ]
+        },
+        {
+            "@type": "Action",
+            "id": "test_2",
+            "includedIn": "test_1",
+            "implies": [
+                "test_2_1",
+                "test_2_2"
+            ]
+        },
+        {
+            "@type": "Action",
+            "id": "test_3",
+            "includedIn": "test_2"
+        },
+        {
+            "@type": "Action",
+            "id": "test_1_1",
+            "includedIn": "use"
+        },
+        {
+            "@type": "Action",
+            "id": "test_1_2",
+            "includedIn": "use"
+        },
+        {
+            "@type": "Action",
+            "id": "test_2_1",
+            "includedIn": "use"
+        },
+        {
+            "@type": "Action",
+            "id": "test_2_2",
+            "includedIn": "use"
+        },
+        {
             "@type": "Asset",
             "uid": "/content/"
         },

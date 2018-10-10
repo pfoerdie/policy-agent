@@ -14,7 +14,7 @@ const
 
 /**
  * @name PIP
- * @extends PolicyPoint
+ * @extends PolicyAgent.PolicyPoint
  */
 class PIP extends PolicyPoint {
     /**
@@ -73,7 +73,14 @@ class PIP extends PolicyPoint {
         ));
 
         await Promise.all(promiseArr);
-        subjectsMap.forEach((subject, subjName) => context.attr.subjects.set(subjName, subject));
+        subjectsMap.forEach((subject, subjName) => {
+            // add a @source property to later be able to submit subjects back to the database
+            Object.defineProperty(subject, '@source', {
+                value: this.id
+            });
+
+            context.attr.subjects.set(subjName, subject);
+        });
 
     } // PIP#_retrieveSubjects
 

@@ -5,17 +5,17 @@
  */
 
 const
-    UUID = require('uuid/v4'),
-    Color = require('colors'),
+    Auditor = require('./Auditor.js'),
     _private = new WeakMap();
 
 /**
  * @name Context
+ * @extends PolicyAgent.Auditor
  * 
  * INFO
  * Any Context instance shall never be revealed to the public as it is.
  */
-class Context {
+class Context extends Auditor {
     /**
      * @constructs Context
      * @param {Session} session
@@ -23,17 +23,17 @@ class Context {
      * @package
      */
     constructor(session, param) { // IDEA ...args hinzufügen, als Parameter für die Aktion später (zB um Request/Response zu übergeben)
-        const _attr = {};
-        _attr.instanceID = UUID();
-        _private.set(this, _attr);
+        super();
 
         if (!session || typeof session !== 'object')
             this.throw('constructor', new TypeError(`invalid argument`));
         if (!param || typeof param !== 'object')
             this.throw('constructor', new TypeError(`invalid argument`));
 
-        _attr.session = session;
-        _attr.decision = null;
+        _private.set(this, {
+            session: session,
+            decision: null
+        });
 
         Object.defineProperties(this, {
             attr: {
@@ -104,9 +104,6 @@ class Context {
     /**
      * @name Context#decision
      * @type {string} "Permit" | "Deny" | "Indeterminate" | "NotApplicable" | null
-     * 
-     * INFO 7.17 Authorization decision:
-     *   -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
      */
     get decision() {
         return _private.get(this).decision;
@@ -132,69 +129,6 @@ class Context {
 
         } // switch
     } // Context#decision<setter>
-
-    //#region logging
-
-    /**
-     * This function is used to log events on this component.
-     * @name Context#log
-     * @param {string} funcName The name of the function for this log entry.
-     * @param {...(string|*)} messages If no string is submitted, the arguments will be used with the toString method.
-     * @package
-     */
-    log(funcName, ...messages) {
-        let logMsg = this.toString(funcName, true);
-        for (let msg of messages) {
-            logMsg += "\n" + Color.grey("-> ") + msg.toString().trim();
-        }
-        console.log(logMsg);
-    } // Context#log
-
-    /**
-     * This function is used to log errors on this Context. It will also throw an error.
-     * @name Context#throw
-     * @param {string} funcName The name of the function for this log entry.
-     * @param {(Error|*)} error If no error is submitted, the arguments will be used to create an error.
-     * @throws {Error} Always throws an error.
-     * @package
-     */
-    throw(funcName, error, silent = false) {
-        error = (error instanceof Error) ? error : new Error(error.toString().trim());
-
-        let errMsg = this.toString(funcName, true);
-        errMsg += "\n" + Color.grey("-> ") + error.toString().trim();
-        console.error(errMsg);
-
-        if (silent) return error;
-        else throw error;
-    } // Context#throw
-
-    /**
-     * @name Context#toString
-     * @param {string} [funcName] The name of a function to include in the output.
-     * @param {boolean} [colored=false] Weather the output should make use of colors.
-     * @returns {string}
-     * @override
-     */
-    toString(funcName, colored = false) {
-        const _attr = _private.get(this);
-
-        if (!_attr)
-            return Object.prototype.toString.call(this);
-
-        let str = colored
-            ? Color.blue("Context") + Color.grey("<") + Color.magenta(_attr.instanceID) + Color.grey(">")
-            : `${"Context"}<${_attr.instanceID}>`;
-
-        if (funcName && typeof funcName === 'string')
-            str += colored
-                ? Color.grey(".") + Color.cyan(funcName.trim())
-                : `.${funcName.trim()}`;
-
-        return str;
-    } // PolicyPoint#toString
-
-    //#endregion logging
 
 } // Context
 
