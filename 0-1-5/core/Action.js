@@ -5,8 +5,7 @@
  */
 
 const
-    Auditor = require('./Auditor.js'),
-    _private = new WeakMap();
+    Auditor = require('./Auditor.js');
 
 class Action extends Auditor {
     constructor(actionID) {
@@ -15,16 +14,11 @@ class Action extends Auditor {
         Object.assign(this, {
             id: actionID || "",
             includedIn: null,
-            implies: []
+            implies: [],
+            usage: "Indeterminate" // Indeterminate | Permission | Prohibition | Obligation
         });
 
     } // Action.constructor
-
-    async execute(callback) {
-        const _attr = _private.get(this);
-
-        // TODO
-    } // Action#execute
 
 } // Action
 

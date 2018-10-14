@@ -7,6 +7,7 @@
 const
     PolicyPoint = require('./PolicyPoint.js'),
     Context = require('./Context.js'),
+    Action = require('./Action.js'),
     PIP = require('./PIP.js'),
     PAP = require('./PAP.js');
 
@@ -76,7 +77,11 @@ class PDP extends PolicyPoint {
         if (!this.data.informationPoint)
             this.throw('_requestDecision', new Error(`informationPoint not connected`));
 
-        let actionMap = new Map();
+        let
+            /** @type {Map<string, PolicyAgent.Action} */
+            actionMap = new Map(),
+            /** @type {Map<PolicyAgent.Action, object} */
+            recordsMap = new Map();
 
         try {
             await this.data.informationPoint._retrieveSubjects(context);
@@ -131,19 +136,23 @@ class PDP extends PolicyPoint {
                     'assigner': subjects.assigner ? `/${subjects.assigner['@type']}${subjects.assigner['@id']}` : undefined
                 });
 
+            actionArr.forEach(action => actionMap.set(action.id, new Action(action.id)));
+
             for (let action of actionArr) {
                 // add actions to a Map for easy access
+                let action
                 actionMap.set(action.id, action);
-                action.records = [];
+                recordsMap.set(actionMap.get(action.id), []);
             }
 
             for (let record of recordsArr) {
                 // push each record to the corresponding action
-                actionMap.get(record['actionID']).records.push(record);
+                recordsMap.get(record['actionID']).push(record);
             }
 
         } catch (err) {
             context.decision = "NotApplicable";
+            context.log(undefined, "decision: NotApplicable");
             return;
         }
 
@@ -163,44 +172,20 @@ class PDP extends PolicyPoint {
          * 
          * INFO 7.17 Authorization decision:
          *   -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
+         * 
+         * IDEA Aufteilung in: Indeterminate | Permission | Prohibition | Obligation | NotApplicable
          */
 
         function validatePolicy(record) {
-            if (record['ruleType'] === "prohibition")
-                return "Deny";
-            else if (record['ruleType'] === "permission")
-                return "Permit";
-            else
-                return "Indeterminate";
+
         } // validatePolicy
 
         function validateAction(action) {
             // NOTE I decided to go for a prohibit-PDP by default, as long as ConflictTerm is not validated
 
-            action.decision = action.records.map(elem => validatePolicy.call(this, elem)).reduce(
-                (acc, val) => val === "Deny" ? "Deny" : val === "Permit" && acc !== "Deny" ? "Permit" : acc,
-                "Indeterminate"
-            );
-
-            if (action.decision === "Deny")
-                return action.decision;
-
-            let
-                includedInResult = action.includedIn
-                    ? validateAction.call(this, actionMap.get(action.includedIn))
-                    : "Indeterminate",
-                impliesResults = action.implies.map(elem => validateAction.call(this, actionMap.get(elem)));
-
-            if (includedInResult === "Deny")
-                return includedInResult;
-            else if (impliesResults.some(elem => elem === "Deny"))
-                return "Deny";
-            else
-                return action.decision;
-
         } // validateAction
 
-        context.decision = validateAction.call(this, actionMap.get(context.attr.action['@id']));
+        context.decision = "Indeterminate"; // TODO
 
     } // PDP#_requestDecision
 
