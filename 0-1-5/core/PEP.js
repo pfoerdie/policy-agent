@@ -9,7 +9,7 @@ const
     ExpressSession = require('express-session'),
     SessionMemoryStore = require('session-memory-store')(ExpressSession),
     PolicyPoint = require('./PolicyPoint.js'),
-    Context = require('./Context.js'),
+    RequestContext = require('./Context.js').Request,
     PDP = require('./PDP.js');
 
 /**
@@ -62,7 +62,7 @@ class PEP extends PolicyPoint {
         /**
          * INFO
          * It is not possible to validate the session at this point.
-         * All other validation will be done by the Context's constructor.
+         * All other validation will be done by the RequestContext's constructor.
          */
 
         // TODO fehlende Subjects aus der Session holen und in param speichern (z.B. assignee)
@@ -72,9 +72,11 @@ class PEP extends PolicyPoint {
         this.data.decisionPoints.forEach(decisionPoint => promiseArr.push(
             (async () => {
                 try {
-                    let context = new Context(session, param);
-                    await decisionPoint._requestDecision(context);
-                    return [null, context];
+                    let
+                        requestContext = new RequestContext(session, param),
+                        responseContext = await decisionPoint._requestDecision(requestContext);
+
+                    return [null, responseContext];
                 } catch (err) {
                     // NOTE debugging point
                     return [err];
@@ -83,7 +85,7 @@ class PEP extends PolicyPoint {
         ));
 
         let resultArr = await Promise.all(promiseArr);
-        resultArr = resultArr.filter(([err]) => !err);
+        resultArr = resultArr.filter(([err, responseContext]) => !err && responseContext !== "NotApplicable" && responseContext !== "Indeterminate");
 
         if (resultArr.length === 0)
             this.throw('request', new Error(`failed to resolve`));
@@ -98,7 +100,7 @@ class PEP extends PolicyPoint {
          * - If the decision is “Indeterminate”, then the PEP’s behavior is undefined.
          */
 
-        // TODO Auswahl des Contexts
+        // TODO Auswahl des ResponseContexts
         // TODO Aktionen ausführen (Deny-biased PEP vs Permit-biased PEP)
         // TODO Rückgabewert feststellen
 

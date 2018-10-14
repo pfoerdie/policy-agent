@@ -68,8 +68,8 @@ class PDP extends PolicyPoint {
      * INFO 7.17 Authorization decision:
      *   -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
      */
-    async _requestDecision(context) {
-        if (!(context instanceof Context))
+    async _requestDecision(requestContext) {
+        if (!(requestContext instanceof Context.Request))
             this.throw('_requestDecision', new TypeError(`invalid argument`));
 
         if (!this.data.administrationPoint)
@@ -78,13 +78,14 @@ class PDP extends PolicyPoint {
             this.throw('_requestDecision', new Error(`informationPoint not connected`));
 
         let
+            responseContext = new Context.Response(requestContext),
             /** @type {Map<string, PolicyAgent.Action} */
             actionMap = new Map(),
             /** @type {Map<PolicyAgent.Action, object} */
             recordsMap = new Map();
 
         try {
-            await this.data.informationPoint._retrieveSubjects(context);
+            await this.data.informationPoint._retrieveSubjects(requestContext);
 
             let
                 actionQuery = [
@@ -98,11 +99,11 @@ class PDP extends PolicyPoint {
                     `incl.id AS includedIn,`,
                     `extract(impl IN (action)-[:implies]->(:ODRL:Action) | endNode(relationships(impl)[0]).id) AS implies`
                 ].join("\n"),
-                actionArr = await this.data.administrationPoint._request(actionQuery, { 'action': context.attr.action['@id'] }),
+                actionArr = await this.data.administrationPoint._request(actionQuery, { 'action': requestContext.attr.action['@id'] }),
                 subjects = {
-                    target: context.attr.subjects.get('target'),
-                    assignee: context.attr.subjects.get('assignee'),
-                    assigner: context.attr.subjects.get('assigner'),
+                    target: requestContext.attr.subjects.get('target'),
+                    assignee: requestContext.attr.subjects.get('assignee'),
+                    assigner: requestContext.attr.subjects.get('assigner'),
                 },
                 subjectsQuery = [
                     `UNWIND $actionList AS actionID`,
@@ -140,7 +141,7 @@ class PDP extends PolicyPoint {
 
             for (let action of actionArr) {
                 // add actions to a Map for easy access
-                let action
+                let action = new Action();
                 actionMap.set(action.id, action);
                 recordsMap.set(actionMap.get(action.id), []);
             }
@@ -150,10 +151,12 @@ class PDP extends PolicyPoint {
                 recordsMap.get(record['actionID']).push(record);
             }
 
+            return responseContext;
+
         } catch (err) {
-            context.decision = "NotApplicable";
-            context.log(undefined, "decision: NotApplicable");
-            return;
+            responseContext.decision = "NotApplicable";
+            requestContext.log(undefined, "decision: NotApplicable");
+            return responseContext;
         }
 
         /**
@@ -185,7 +188,7 @@ class PDP extends PolicyPoint {
 
         } // validateAction
 
-        context.decision = "Indeterminate"; // TODO
+        requestContext.decision = "Indeterminate"; // TODO
 
     } // PDP#_requestDecision
 

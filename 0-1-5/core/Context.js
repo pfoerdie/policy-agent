@@ -6,23 +6,26 @@
 
 const
     Auditor = require('./Auditor.js'),
+    Action = require('./Action.js'),
+    Resource = require('./Resource.js'),
+    Subject = require('./Subject.js'),
     _private = new WeakMap();
 
 /**
- * @name Context
+ * @name RequestContext
  * @extends PolicyAgent.Auditor
  * 
  * INFO
- * Any Context instance shall never be revealed to the public as it is.
+ * Any RequestContext instance shall never be revealed to the public as it is.
  */
-class Context extends Auditor {
+class RequestContext extends Auditor {
     /**
-     * @constructs Context
+     * @constructs RequestContext
      * @param {Session} session
-     * @param {JSON} subject
+     * @param {JSON} param
      * @package
      */
-    constructor(session, param) { // IDEA ...args hinzufügen, als Parameter für die Aktion später (zB um Request/Response zu übergeben)
+    constructor(session, param) {
         super();
 
         if (!session || typeof session !== 'object')
@@ -31,8 +34,7 @@ class Context extends Auditor {
             this.throw('constructor', new TypeError(`invalid argument`));
 
         _private.set(this, {
-            session: session,
-            decision: null
+            session: session
         });
 
         Object.defineProperties(this, {
@@ -95,19 +97,47 @@ class Context extends Auditor {
         if (!this.attr.subjects.has('target'))
             this.throw('constructor', new Error(`invalid target`));
 
-    } // Context.constructor
+    } // RequestContext.constructor
+
+} // RequestContext
+
+/**
+ * @name ResponseContext
+ * @extends PolicyAgent.Auditor
+ */
+class ResponseContext extends Auditor {
+    /**
+     * @constructs ResponseContext
+     * @param {RequestContext} requestContext
+     * @param {JSON} param
+     * @package
+     */
+    constructor(requestContext, param) {
+        super();
+
+        if (!(requestContext instanceof RequestContext))
+            this.throw('constructor', new TypeError(`invalid argument`));
+
+        _private.set(this, {
+            session: _private.get(requestContext).session,
+            decision: null
+        });
+
+        Object.defineProperties(this, {});
+
+    } // ResponseContext.constructor
 
     get session() {
         return _private.get(this).session;
-    } // Context#session<getter>
+    } // ResponseContext#session<getter>
 
     /**
-     * @name Context#decision
+     * @name ResponseContext#decision
      * @type {string} "Permit" | "Deny" | "Indeterminate" | "NotApplicable" | null
      */
     get decision() {
         return _private.get(this).decision;
-    } // Context#decision<getter>
+    } // ResponseContext#decision<getter>
 
     set decision(value) {
         const _attr = _private.get(this);
@@ -128,8 +158,9 @@ class Context extends Auditor {
                 this.throw('decision', new TypeError(`invalid argument`));
 
         } // switch
-    } // Context#decision<setter>
+    } // ResponseContext#decision<setter>
 
-} // Context
+} // ResponseContext
 
-module.exports = Context;
+exports.Request = RequestContext;
+exports.Response = ResponseContext;

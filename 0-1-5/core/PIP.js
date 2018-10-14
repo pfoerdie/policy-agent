@@ -47,7 +47,7 @@ class PIP extends PolicyPoint {
     } // PIP#connectRP
 
     async _retrieveSubjects(context) {
-        if (!(context instanceof Context))
+        if (!(context instanceof Context.Request))
             this.throw('_retrieveSubjects', new TypeError(`invalid argument`));
 
         let
@@ -98,7 +98,7 @@ class PIP extends PolicyPoint {
      */
 
     static async _submitSubjects(context) {
-        if (!(context instanceof Context))
+        if (!(context instanceof Context.Response))
             this.throw('_submitSubjects', new TypeError(`invalid argument`));
 
         // TODO
