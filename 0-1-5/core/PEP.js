@@ -74,6 +74,7 @@ class PEP extends PolicyPoint {
                 try {
                     let
                         requestContext = new RequestContext(session, param),
+                        /** @type {PolicyAgent.Context.Response} */
                         responseContext = await decisionPoint._requestDecision(requestContext);
 
                     return [null, responseContext];

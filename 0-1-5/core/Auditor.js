@@ -71,9 +71,13 @@ class Auditor {
     toString(funcName, colored = false) {
         const _attr = _private.get(this);
 
+        let // TODO mal beobachten & informieren, wie das mit __proto__ im produktiv ist
+            className = _attr ? _attr.name : this.__proto__.constructor.name,
+            instanceID = _attr ? _attr.id : this['@id'] ? this['@id'] : this.id ? this.id : "";
+
         let str = colored
-            ? Color.blue(_attr.name) + Color.grey("<") + Color.magenta(_attr.id) + Color.grey(">")
-            : `${_attr.name}<${_attr.id}>`;
+            ? Color.blue(className) + Color.grey("<") + Color.magenta(instanceID) + Color.grey(">")
+            : `${className}<${instanceID}>`;
 
         if (funcName && typeof funcName === 'string')
             str += colored

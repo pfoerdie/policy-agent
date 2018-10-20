@@ -72,10 +72,12 @@ class PDP extends PolicyPoint {
         if (!(requestContext instanceof Context.Request))
             this.throw('_requestDecision', new TypeError(`invalid argument`));
 
-        if (!this.data.administrationPoint)
-            this.throw('_requestDecision', new Error(`administrationPoint not connected`));
         if (!this.data.informationPoint)
             this.throw('_requestDecision', new Error(`informationPoint not connected`));
+        if (!this.data.administrationPoint)
+            this.throw('_requestDecision', new Error(`administrationPoint not connected`));
+
+        await this.data.informationPoint._retrieveSubjects(requestContext.subjects);
 
         let
             responseContext = new Context.Response(requestContext),
@@ -85,8 +87,6 @@ class PDP extends PolicyPoint {
             recordsMap = new Map();
 
         try {
-            await this.data.informationPoint._retrieveSubjects(requestContext);
-
             let
                 actionQuery = [
                     // find every related action ...
@@ -99,12 +99,8 @@ class PDP extends PolicyPoint {
                     `incl.id AS includedIn,`,
                     `extract(impl IN (action)-[:implies]->(:ODRL:Action) | endNode(relationships(impl)[0]).id) AS implies`
                 ].join("\n"),
-                actionArr = await this.data.administrationPoint._request(actionQuery, { 'action': requestContext.attr.action['@id'] }),
-                subjects = {
-                    target: requestContext.attr.subjects.get('target'),
-                    assignee: requestContext.attr.subjects.get('assignee'),
-                    assigner: requestContext.attr.subjects.get('assigner'),
-                },
+                actionArr = await this.data.administrationPoint._request(actionQuery, { 'action': requestContext.action['@id'] }),
+                subjects = requestContext.subjects,
                 subjectsQuery = [
                     `UNWIND $actionList AS actionID`,
                     // find the action and the target
@@ -155,7 +151,6 @@ class PDP extends PolicyPoint {
 
         } catch (err) {
             responseContext.decision = "NotApplicable";
-            requestContext.log(undefined, "decision: NotApplicable");
             return responseContext;
         }
 
@@ -177,6 +172,7 @@ class PDP extends PolicyPoint {
          *   -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
          * 
          * IDEA Aufteilung in: Indeterminate | Permission | Prohibition | Obligation | NotApplicable
+         * TODO Unterscheidung von Set/Offer/Aggreement Policies
          */
 
         function validatePolicy(record) {
@@ -188,7 +184,7 @@ class PDP extends PolicyPoint {
 
         } // validateAction
 
-        requestContext.decision = "Indeterminate"; // TODO
+        // TODO
 
     } // PDP#_requestDecision
 

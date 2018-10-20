@@ -2,6 +2,9 @@
  * Context
  * @module PolicyAgent.Context
  * @author Simon Petrac
+ * 
+ * INFO
+ * Any Context instance shall never be revealed to the public as it is.
  */
 
 const
@@ -14,9 +17,6 @@ const
 /**
  * @name RequestContext
  * @extends PolicyAgent.Auditor
- * 
- * INFO
- * Any RequestContext instance shall never be revealed to the public as it is.
  */
 class RequestContext extends Auditor {
     /**
@@ -28,7 +28,7 @@ class RequestContext extends Auditor {
     constructor(session, param) {
         super();
 
-        if (!session || typeof session !== 'object')
+        if (!session || typeof session !== 'object' || typeof session.id !== 'string')
             this.throw('constructor', new TypeError(`invalid argument`));
         if (!param || typeof param !== 'object')
             this.throw('constructor', new TypeError(`invalid argument`));
@@ -38,41 +38,41 @@ class RequestContext extends Auditor {
         });
 
         Object.defineProperties(this, {
-            attr: {
-                value: Object.create({}, {
-                    /**
-                     * INFO XACML request.action:
-                     * -> An operation on a resource
-                     */
-                    action: {
-                        value: {}
-                    },
-                    /**
-                     * INFO XACML request.subject:
-                     * -> An actor whose attributes may be referenced by a predicate
-                     *    (Predicate := A statement about attributes whose truth can be evaluated)
-                     * INFO  The relation and the function property of the ODRL will be combined into
-                     *       this single subjects property of XACML.
-                     */
-                    subjects: {
-                        value: new Map()
-                    },
-                    /**
-                     * INFO XACML request.resource:
-                     * -> Data, service or system component
-                     */
-                    resource: {
-                        value: new Map()
-                    },
-                    /**
-                     * INFO XACML request.environment:
-                     * -> The set of attributes that are relevant to an authorization decision 
-                     *    and are independent of a particular subject, resource or action
-                     */
-                    environment: {
-                        value: new Map()
-                    }
-                })
+            /**
+             * INFO XACML request.action:
+             * -> An operation on a resource
+             */
+            action: {
+                enumerable: true,
+                value: {}
+            },
+            /**
+             * INFO XACML request.subject:
+             * -> An actor whose attributes may be referenced by a predicate
+             *    (Predicate := A statement about attributes whose truth can be evaluated)
+             * INFO  The relation and the function property of the ODRL will be combined into
+             *       this single subjects property of XACML.
+             */
+            subjects: {
+                enumerable: true,
+                value: {}
+            },
+            /**
+             * INFO XACML request.resource:
+             * -> Data, service or system component
+             */
+            resource: {
+                enumerable: true,
+                value: {}
+            },
+            /**
+             * INFO XACML request.environment:
+             * -> The set of attributes that are relevant to an authorization decision 
+             *    and are independent of a particular subject, resource or action
+             */
+            environment: {
+                enumerable: true,
+                value: {}
             }
         });
 
@@ -81,22 +81,34 @@ class RequestContext extends Auditor {
                 let action = param[key];
 
                 if (typeof action === 'string')
-                    this.attr.action['@id'] = action;
+                    this.action['@id'] = action;
                 else if (action && typeof action === 'object' && typeof action['@id'] === 'string')
-                    Object.assign(this.attr.action, action);
+                    Object.assign(this.action, action);
             } else {
                 let subject = param[key];
 
                 if (subject && typeof subject === 'object' && typeof subject['@type'] === 'string')
-                    this.attr.subjects.set(key, subject);
-            }
-        } // transfer param to attr.action and attr.subjects
+                    Object.defineProperty(this.subjects, key, {
+                        enumerable: true,
+                        get: () => subject,
+                        set: (value) => {
+                            if (
+                                value && typeof value === 'object' && subject['@type'] === value['@type'] &&
+                                (subject['@id'] === value['@id'] || (!subject['@id'] && typeof value['@id'] === 'string'))
+                            )
+                                subject = value;
+                        }
+                    });
+            } // if
+        } // transfer param to this.action and this.subjects
 
-        if (!this.attr.action['@id'])
+        if (!this.action['@id'])
             this.throw('constructor', new Error(`invalid action`));
-        if (!this.attr.subjects.has('target'))
+        if (!this.subjects['target'])
             this.throw('constructor', new Error(`invalid target`));
 
+        // this.log(undefined, `constructed from Session<${session.id}>`); // TODO ist der toString-call save?
+        this.log(undefined, `constructed from ${Auditor.prototype.toString.call(session, undefined, true)}`);
     } // RequestContext.constructor
 
 } // RequestContext
@@ -123,17 +135,16 @@ class ResponseContext extends Auditor {
             decision: null
         });
 
-        Object.defineProperties(this, {});
+        Object.defineProperties(this, {
 
+        });
+
+        this.log(undefined, `constructed from ${requestContext}`);
     } // ResponseContext.constructor
-
-    get session() {
-        return _private.get(this).session;
-    } // ResponseContext#session<getter>
 
     /**
      * @name ResponseContext#decision
-     * @type {string} "Permit" | "Deny" | "Indeterminate" | "NotApplicable" | null
+     * @type {(string|null)} 
      */
     get decision() {
         return _private.get(this).decision;
@@ -143,21 +154,12 @@ class ResponseContext extends Auditor {
         const _attr = _private.get(this);
 
         if (_attr.decision)
-            this.throw('decision', "already set");
+            this.throw('decision', new Error("already set"));
+        if (typeof value !== 'string')
+            this.throw('decision', new TypeError(`invalid argument`));
 
-        switch (value) {
-
-            case 'Permit':
-            case 'Deny':
-            case 'Indeterminate':
-            case 'NotApplicable':
-                _attr.decision = value;
-                break;
-
-            default:
-                this.throw('decision', new TypeError(`invalid argument`));
-
-        } // switch
+        _attr.decision = value;
+        this.log('decision', value);
     } // ResponseContext#decision<setter>
 
 } // ResponseContext

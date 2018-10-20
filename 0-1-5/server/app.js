@@ -36,9 +36,7 @@
     accessPDP.connectPIP(myPIP);
     accessPDP.connectPAP(myPAP);
 
-    myPIP.connectSP(new PolicyAgent.SP({
-        'password': "odrl"
-    }));
+    myPIP.connectSP(new PolicyAgent.SP({}));
 
     myPIP.connectRP(new PolicyAgent.RP({
         'root': Path.join(__dirname, "webapp")

@@ -46,14 +46,21 @@ class PIP extends PolicyPoint {
             this.log('connectRP', `${resourcePoint.toString(undefined, true)} connected`);
     } // PIP#connectRP
 
-    async _retrieveSubjects(context) {
-        if (!(context instanceof Context.Request))
+    /**
+     * @name PIP#_retrieveSubjects
+     * @param {object} subjects
+     * @returns {object} The modified subjects, though modifications are made on the original object anyway.
+     * @async
+     * @package
+     */
+    async _retrieveSubjects(subjects) {
+        if (!subjects || typeof subjects !== 'object')
             this.throw('_retrieveSubjects', new TypeError(`invalid argument`));
 
         let
-            subjNames = Array.from(context.attr.subjects.keys()),
-            queryArr = subjNames.map(name => context.attr.subjects.get(name)),
-            promiseArr = [], subjectsMap = new Map();
+            subjNames = Object.keys(subjects),
+            queryArr = subjNames.map(name => subjects[name]),
+            promiseArr = [];
 
         this.data.subjectsPoints.forEach(subjectsPoint => promiseArr.push(
             (async () => {
@@ -63,24 +70,31 @@ class PIP extends PolicyPoint {
                     if (Array.isArray(resultArr) && resultArr.length === subjNames.length)
                         resultArr.forEach((result, index) => {
                             let subjName = subjNames[index];
-                            if (result && !Array.isArray(result) && !subjectsMap.has(subjName))
-                                subjectsMap.set(subjName, result);
+
+                            if (
+                                !subjects[subjName]['@source'] &&
+                                result && !Array.isArray(result) && typeof result['@id'] === 'string'
+                            ) {
+                                Object.defineProperty(result, '@source', {
+                                    enumerable: true,
+                                    value: this.id
+                                });
+
+                                Object.defineProperty(subjects, subjName, {
+                                    enumerable: true,
+                                    value: result
+                                });
+                            }
                         });
                 } catch (err) {
                     // do nothing
+                    this.throw(_retrieveSubjects, err, true);
                 }
-            })(/* INFO call the async function immediately to get a promise */)
+            })(/* NOTE call the async function immediately to get a promise */)
         ));
 
         await Promise.all(promiseArr);
-        subjectsMap.forEach((subject, subjName) => {
-            // add a @source property to later be able to submit subjects back to the database
-            Object.defineProperty(subject, '@source', {
-                value: this.id
-            });
-
-            context.attr.subjects.set(subjName, subject);
-        });
+        return subjects;
 
     } // PIP#_retrieveSubjects
 

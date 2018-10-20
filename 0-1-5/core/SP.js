@@ -12,7 +12,7 @@ const
  * @name _retrieveSubject
  * @param {MongoDB~DataBase} dataBase 
  * @param {object} subject 
- * @returns {Promise}
+ * @returns {Promise<(object|object[])>}
  * @this {SP}
  * @private
  */
@@ -60,7 +60,6 @@ class SP extends PolicyPoint {
      * @param {JSON} [options={}]
      * @param {string} [options.host="localhost"]
      * @param {number} [options.port=27017]
-     * @param {string} [options.options={}]
      * @abstract
      * @public
      */
@@ -110,7 +109,7 @@ class SP extends PolicyPoint {
     /**
      * @name SP#_retrieve
      * @param {(JSON|JSON[])} query 
-     * @returns {(*|[*])}
+     * @returns {(object|object[])}
      * @async
      * 
      * INFO The query shall not be altered. A new object is used for the result.

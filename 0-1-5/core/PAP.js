@@ -33,6 +33,8 @@ function _prettifyRecord(record) {
  *
  * INFO {@link https://www.w3.org/TR/odrl-model/#infoModel ODRL Information Model}
  * INFO This function uses recursion to deal with nested nodes.
+ * 
+ * TODO expanding shortcut properties wie in ODRL angegeben
  */
 function _makeSubmitQuery(varName, odrl) {
     // NOTE always use MERGE queries, never MATCH
