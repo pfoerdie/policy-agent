@@ -139,7 +139,7 @@ class ResponseContext extends Auditor {
 
         });
 
-        this.log(undefined, `constructed from ${requestContext}`);
+        this.log(undefined, `constructed from ${requestContext.toString(undefined, true)}`);
     } // ResponseContext.constructor
 
     /**
