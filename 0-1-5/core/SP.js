@@ -9,6 +9,26 @@ const
     PolicyPoint = require('./PolicyPoint.js');
 
 /**
+ * @name Subject
+ * @class
+ * @public
+ */
+class Subject {
+    /**
+     * @constructs Subject
+     * @param {object} options 
+     * @private
+     */
+    constructor(options) {
+        if (typeof options !== 'object' || typeof options['uid'] !== 'string')
+            throw new TypeError(`invalid argument`);
+
+        Object.assign(this, options);
+    } // Subject.constructor
+
+} // Subject
+
+/**
  * @name _retrieveSubject
  * @param {MongoDB~DataBase} dataBase 
  * @param {object} subject 
@@ -24,13 +44,18 @@ function _retrieveSubject(dataBase, subject) {
             .toArray((err, docs) => {
                 if (err) {
                     this.throw('_retrieve', err, true); // silent
-                    resolve(null);
+                    resolve(undefined);
+                } else if (docs.length === 1) {
+                    try {
+                        delete docs[0]['_id'];
+                        const subject = new Subject(docs[0]);
+                        resolve(subject);
+                    } catch (err) {
+                        this.throw('_retrieve', err, true); // silent
+                        resolve(undefined);
+                    }
                 } else {
-                    docs.forEach((doc) => {
-                        delete doc['_id'];
-                    });
-
-                    resolve(docs.length === 0 ? null : docs.length === 1 ? docs[0] : docs);
+                    resolve(undefined);
                 }
             })
     });

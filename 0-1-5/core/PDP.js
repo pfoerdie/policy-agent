@@ -7,7 +7,6 @@
 const
     PolicyPoint = require('./PolicyPoint.js'),
     Context = require('./Context.js'),
-    Action = require('./Action.js'),
     PIP = require('./PIP.js'),
     PAP = require('./PAP.js');
 
@@ -128,9 +127,9 @@ class PDP extends PolicyPoint {
                 recordsArr = await this.data.administrationPoint._request(subjectsQuery, {
                     // parameter for the query
                     'actionList': actionArr.map(action => action.id),
-                    'target': `/${subjects.target['@type']}${subjects.target['@id']}`,
-                    'assignee': subjects.assignee ? `/${subjects.assignee['@type']}${subjects.assignee['@id']}` : undefined,
-                    'assigner': subjects.assigner ? `/${subjects.assigner['@type']}${subjects.assigner['@id']}` : undefined
+                    'target': subjects.target['uid'],
+                    'assignee': subjects.assignee ? subjects.assignee['uid'] : undefined,
+                    'assigner': subjects.assigner ? subjects.assigner['uid'] : undefined
                 });
 
             actionArr.forEach(action => actionMap.set(action.id, new Action(action.id)));

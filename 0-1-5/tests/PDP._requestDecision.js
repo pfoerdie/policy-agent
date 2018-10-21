@@ -1,3 +1,8 @@
+/**
+ * INFO tests/PDP#_requestDecision
+ * @author Simon Petrac
+ */
+
 const
     UUID = require('uuid/v4'),
     PolicyAgent = require('..'),
@@ -37,7 +42,7 @@ const
                 `MATCH path = (:ODRL:Action {id: $action})-[:implies|includedIn*]->(:ODRL:Action)`,
                 `UNWIND nodes(path) AS action WITH DISTINCT action`,
                 `OPTIONAL MATCH (action)-[:includedIn]->(incl:ODRL:Action)`,
-                // ... and return them inclusive includedIn/implies
+                // ... and return them incl. includedIn/implies
                 `RETURN`,
                 `action.id AS id,`,
                 `incl.id AS includedIn,`,

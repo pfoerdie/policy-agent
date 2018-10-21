@@ -9,8 +9,59 @@ const
     ExpressSession = require('express-session'),
     SessionMemoryStore = require('session-memory-store')(ExpressSession),
     PolicyPoint = require('./PolicyPoint.js'),
+    Auditor = require('./Auditor.js'),
     RequestContext = require('./Context.js').Request,
-    PDP = require('./PDP.js');
+    PDP = require('./PDP.js'),
+    _private = new WeakMap();
+
+/**
+ * @name Action
+ * @extends PolicyAgent.Auditor
+ */
+class Action extends Auditor {
+    /**
+     * @constructs Action
+     * @param {string} actionName 
+     * @param {string} includedIn 
+     * @param {string[]} implies
+     * @param {function} callback 
+     * @private
+     */
+    constructor(actionName, includedIn, implies, callback) {
+        super(actionName);
+
+        if (!actionName || typeof actionName !== 'string')
+            this.throw('constructor', new TypeError(`invalid argument`));
+        if (actionName === 'use' || actionName === 'transfer') {
+            includedIn = undefined;
+            implies = [];
+        } else if (typeof includedIn !== 'string')
+            this.throw('constructor', new TypeError(`invalid argument`));
+        if (!Array.isArray(implies) || implies.some(elem => typeof elem !== 'string'))
+            this.throw('constructor', new TypeError(`invalid argument`));
+        if (typeof callback !== 'function')
+            this.throw('constructor', new TypeError(`invalid argument`));
+
+        Object.defineProperties(this, {
+            id: {
+                enumerable: true,
+                value: actionName
+            },
+            includedIn: {
+                enumerable: true,
+                value: includedIn
+            },
+            implies: {
+                enumerable: true,
+                value: implies
+            }
+        });
+
+        _private.set(this, { callback });
+
+    } // Action.constructor
+
+} // Action
 
 /**
  * @name PEP
@@ -32,6 +83,11 @@ class PEP extends PolicyPoint {
         });
 
         this.data.decisionPoints = new Set();
+
+        this.data.actions = new Map([
+            ['use', new Action('use', undefined, undefined, (/* TODO */) => { /* TODO */ })],
+            ['transfer', new Action('transfer', undefined, undefined, (/* TODO */) => { /* TODO */ })]
+        ]);
     } // PEP.constructor
 
     /**
@@ -58,22 +114,44 @@ class PEP extends PolicyPoint {
      * @async
      */
     async request(session, param) {
+        const request = {
+            actions: [],
+            subjects: {}
+        };
 
-        /**
-         * INFO
-         * It is not possible to validate the session at this point.
-         * All other validation will be done by the RequestContext's constructor.
-         */
+        for (let key in param) {
+            if (key === 'action') {
+                let action = param[key];
 
-        // TODO fehlende Subjects aus der Session holen und in param speichern (z.B. assignee)
-        // oder an einer anderen Stelle, aber diese schien am geeignetesten
+                if (typeof action === 'string')
+                    request.actions.push({
+                        '@id': action
+                    });
+                else if (action && typeof action === 'object' && typeof action['@id'] === 'string')
+                    request.actions.push(action);
+            } else {
+                let subject = param[key];
+
+                if (subject && typeof subject === 'object' && typeof subject['@type'] === 'string')
+                    request.subjects[key] = subject;
+            } // if
+        } // transfer param to request.actions and request.subjects
+
+        // TODO fehlende Subjects aus der Session holen und in request speichern (z.B. assignee)
+
+        if (!request.actions.length === 0)
+            this.throw('constructor', new Error(`invalid action`));
+        if (!request.subjects['target'])
+            this.throw('constructor', new Error(`invalid target`));
+
+        // TODO includedIn und implied actions hinzufügen
 
         let promiseArr = [];
         this.data.decisionPoints.forEach(decisionPoint => promiseArr.push(
             (async () => {
                 try {
                     let
-                        requestContext = new RequestContext(session, param),
+                        requestContext = new RequestContext(session, request),
                         /** @type {PolicyAgent.Context.Response} */
                         responseContext = await decisionPoint._requestDecision(requestContext);
 
@@ -106,6 +184,28 @@ class PEP extends PolicyPoint {
         // TODO Rückgabewert feststellen
 
     } // PEP#request
+
+    /**
+     * @name PEP#defineAction
+     * @param {string} actionName 
+     * @param {string} includedIn 
+     * @param {string[]} [implies=[]] 
+     * @param {function} callback 
+     */
+    defineAction(actionName, includedIn, implies = [], callback) {
+        if (this.data.actions.has(actionName))
+            this.throw('defineAction', new Error(`'${actionName}' already defined`));
+
+        const action = new Action(actionName, includedIn, implies, callback);
+        // NOTE if arguments were invalid, Action.constructor would have thrown
+
+        if (!this.data.actions.has(includedIn))
+            this.throw('defineAction', new Error(`includedIn unknown`));
+        if (!implies.every(elem => this.data.actions.has(elem)))
+            this.throw('defineAction', new Error(`implies unknown`));
+
+        this.data.actions.set(actionName, action);
+    } // PEP#defineAction
 
 } // PEP
 

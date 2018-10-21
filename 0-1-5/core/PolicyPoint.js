@@ -72,7 +72,7 @@ class PolicyPoint extends Auditor {
         });
 
         Object.defineProperties(this, {
-            /** 
+            /**
              * An object that holds all data of the instance.
              * @name PolicyPoint#data
              * @type {object}

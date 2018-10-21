@@ -9,10 +9,41 @@
 
 const
     Auditor = require('./Auditor.js'),
-    Action = require('./Action.js'),
-    Resource = require('./Resource.js'),
-    Subject = require('./Subject.js'),
     _private = new WeakMap();
+
+/**
+ * @typedef RequestContext~Request
+ * @property {JSON-LD} action
+ * @property {object} subject
+ * @property {JSON-LD} subject.target
+ * @property {JSON-LD} [subject.assigner]
+ * @property {JSON-LD} [subject.assignee]
+ **
+ * @name validateRequestArgument
+ * @param {RequestContext~Request} request 
+ * @returns {boolean}
+ */
+function validateRequestArgument(request) {
+    if (!request || typeof request !== 'object')
+        return false;
+
+    // validate request.action
+    if (typeof request.action === 'string')
+        request.action = { '@id': request.action };
+    else if (typeof request.action !== 'object' || typeof request.action['@id'] !== 'string')
+        return false;
+    request.action.id = request.action['@id'];
+
+    // validate request.subject
+    if (typeof request.subject !== 'object' || !request.subject.target)
+        return false;
+    for (let [subjName, subject] of Object.entries(request.subject)) {
+        if (typeof subject !== 'object' || subject['@type'] !== 'string')
+            return false;
+    }
+
+    return true;
+} // validateRequestArgument
 
 /**
  * @name RequestContext
@@ -22,90 +53,40 @@ class RequestContext extends Auditor {
     /**
      * @constructs RequestContext
      * @param {Session} session
-     * @param {JSON} param
+     * @param {(RequestContext~Request|RequestContext~Request[])} request
      * @package
      */
-    constructor(session, param) {
+    constructor(session, request) {
         super();
 
-        if (!session || typeof session !== 'object' || typeof session.id !== 'string')
+        if (session instanceof RequestContext || session instanceof ResponseContext) // TODO validieren -> geht das mit dem ResponseContext?
+            session = _private.get(session).session;
+        else if (!session || typeof session !== 'object' || typeof session.id !== 'string')
             this.throw('constructor', new TypeError(`invalid argument`));
-        if (!param || typeof param !== 'object')
+        if (Array.isArray(request) ? !request.every(validateRequestArgument) : !validateRequestArgument(request))
             this.throw('constructor', new TypeError(`invalid argument`));
 
-        _private.set(this, {
-            session: session
-        });
+        /**
+         * INFO XACML request.action:
+         * -> An operation on a resource
+         * INFO XACML request.subject:
+         *  -> An actor whose attributes may be referenced by a predicate
+         *     (Predicate := A statement about attributes whose truth can be evaluated)
+         * NOTE The relation and the function property of the ODRL will be combined into
+         *      this single subjects property of XACML.
+         * NOTE To handle multiple requests simultanously, request.entries contains the different actions and subjects
+         * INFO XACML request.resource:
+         * -> Data, service or system component
+         * INFO XACML request.environment:
+         * -> The set of attributes that are relevant to an authorization decision 
+         *    and are independent of a particular subject, resource or action
+         */
 
-        Object.defineProperties(this, {
-            /**
-             * INFO XACML request.action:
-             * -> An operation on a resource
-             */
-            action: {
-                enumerable: true,
-                value: {}
-            },
-            /**
-             * INFO XACML request.subject:
-             * -> An actor whose attributes may be referenced by a predicate
-             *    (Predicate := A statement about attributes whose truth can be evaluated)
-             * INFO  The relation and the function property of the ODRL will be combined into
-             *       this single subjects property of XACML.
-             */
-            subjects: {
-                enumerable: true,
-                value: {}
-            },
-            /**
-             * INFO XACML request.resource:
-             * -> Data, service or system component
-             */
-            resource: {
-                enumerable: true,
-                value: {}
-            },
-            /**
-             * INFO XACML request.environment:
-             * -> The set of attributes that are relevant to an authorization decision 
-             *    and are independent of a particular subject, resource or action
-             */
-            environment: {
-                enumerable: true,
-                value: {}
-            }
-        });
+        this.entries = Array.isArray(request) ? request : [request];
+        this.resource = {};
+        this.environment = {};
 
-        for (let key in param) {
-            if (key === 'action') {
-                let action = param[key];
-
-                if (typeof action === 'string')
-                    this.action['@id'] = action;
-                else if (action && typeof action === 'object' && typeof action['@id'] === 'string')
-                    Object.assign(this.action, action);
-            } else {
-                let subject = param[key];
-
-                if (subject && typeof subject === 'object' && typeof subject['@type'] === 'string')
-                    Object.defineProperty(this.subjects, key, {
-                        enumerable: true,
-                        get: () => subject,
-                        set: (value) => {
-                            if (
-                                value && typeof value === 'object' && subject['@type'] === value['@type'] &&
-                                (subject['@id'] === value['@id'] || (!subject['@id'] && typeof value['@id'] === 'string'))
-                            )
-                                subject = value;
-                        }
-                    });
-            } // if
-        } // transfer param to this.action and this.subjects
-
-        if (!this.action['@id'])
-            this.throw('constructor', new Error(`invalid action`));
-        if (!this.subjects['target'])
-            this.throw('constructor', new Error(`invalid target`));
+        _private.set(this, { session });
 
         // this.log(undefined, `constructed from Session<${session.id}>`); // TODO ist der toString-call save?
         this.log(undefined, `constructed from ${Auditor.prototype.toString.call(session, undefined, true)}`);
@@ -118,7 +99,7 @@ class RequestContext extends Auditor {
  * @extends PolicyAgent.Auditor
  */
 class ResponseContext extends Auditor {
-    /**
+    /** ResponseContext.constructor *
      * @constructs ResponseContext
      * @param {RequestContext} requestContext
      * @param {JSON} param

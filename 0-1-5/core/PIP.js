@@ -71,10 +71,7 @@ class PIP extends PolicyPoint {
                         resultArr.forEach((result, index) => {
                             let subjName = subjNames[index];
 
-                            if (
-                                !subjects[subjName]['@source'] &&
-                                result && !Array.isArray(result) && typeof result['@id'] === 'string'
-                            ) {
+                            if (result && !subjects[subjName]['@source']) {
                                 Object.defineProperty(result, '@source', {
                                     enumerable: true,
                                     value: this.id

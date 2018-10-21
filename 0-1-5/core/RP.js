@@ -10,6 +10,10 @@ const
     PolicyPoint = require('./PolicyPoint.js'),
     _promify = (callback, ...args) => new Promise((resolve, reject) => callback(...args, (err, result) => err ? reject(err) : resolve(result)));
 
+class Resource {
+    // TODO
+} // Resource
+
 /**
  * @name RP
  * @extends PolicyAgent.PolicyPoint
