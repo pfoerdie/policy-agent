@@ -9,26 +9,6 @@ const
     PolicyPoint = require('./PolicyPoint.js');
 
 /**
- * @name Subject
- * @class
- * @public
- */
-class Subject {
-    /**
-     * @constructs Subject
-     * @param {object} options 
-     * @private
-     */
-    constructor(options) {
-        if (typeof options !== 'object' || typeof options['uid'] !== 'string')
-            throw new TypeError(`invalid argument`);
-
-        Object.assign(this, options);
-    } // Subject.constructor
-
-} // Subject
-
-/**
  * @name _retrieveSubject
  * @param {MongoDB~DataBase} dataBase 
  * @param {object} subject 
@@ -47,9 +27,10 @@ function _retrieveSubject(dataBase, subject) {
                     resolve(undefined);
                 } else if (docs.length === 1) {
                     try {
+                        if (typeof docs[0]['uid'] !== 'string')
+                            throw new Error(`missing uid (${docs[0]['@id']})`);
                         delete docs[0]['_id'];
-                        const subject = new Subject(docs[0]);
-                        resolve(subject);
+                        resolve(docs[0]);
                     } catch (err) {
                         this.throw('_retrieve', err, true); // silent
                         resolve(undefined);
@@ -152,19 +133,20 @@ class SP extends PolicyPoint {
             client = await this.data.driver.client(),
             resultPromise = queryArr
                 ? Promise.all(queryArr.map(query => _retrieveSubject.call(this, client.db, query)))
-                : _retrieveSubject.call(this, client.db, query),
-            success = false;
+                : _retrieveSubject.call(this, client.db, query);
 
-        /** INFO timeout mechanic */
-        await Promise.race([
-            resultPromise,
-            new Promise((resolve, reject) => (0 < this.data.requestTimeout && this.data.requestTimeout < Infinity)
-                ? setTimeout(() => success ? resolve() : reject(this.throw('_retrieve', new Error(`timed out`), true)), this.data.requestTimeout)
-                : resolve()
-            )
-        ]);
+        if (this.data.requestTimeout < Infinity) {
+            // NOTE timeout mechanic
+            try {
+                await Promise.race([
+                    resultPromise,
+                    new Promise((resolve, reject) => setTimeout(() => reject(new Error(`timed out`)), this.data.requestTimeout))
+                ]);
+            } catch (err) {
+                this.throw('_retrieve', err);
+            }
+        }
 
-        success = true;
         return await resultPromise;
     } // SP#_retrieve
 
@@ -186,21 +168,20 @@ class SP extends PolicyPoint {
             client = await this.data.driver.client(),
             resultPromise = queryArr
                 ? Promise.all(queryArr.map(query => _submitSubject.call(this, client.db, query)))
-                : _submitSubject.call(this, client.db, query),
-            success = false;
+                : _submitSubject.call(this, client.db, query);
 
-        /** INFO timeout mechanic */
-        await Promise.race([
-            resultPromise,
-            new Promise((resolve, reject) => (0 < this.data.requestTimeout && this.data.requestTimeout < Infinity)
-                ? resolve()
-                : setTimeout(
-                    () => success ? resolve() : reject(this.throw('_submit', new Error(`timed out`), true)),
-                    this.data.requestTimeout
-                ))
-        ]);
+        if (this.data.requestTimeout < Infinity) {
+            // NOTE timeout mechanic
+            try {
+                await Promise.race([
+                    resultPromise,
+                    new Promise((resolve, reject) => setTimeout(() => reject(new Error(`timed out`)), this.data.requestTimeout))
+                ]);
+            } catch (err) {
+                this.throw('_submit', err);
+            }
+        }
 
-        success = true;
         return await resultPromise;
     } // SP#_submit
 

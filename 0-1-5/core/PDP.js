@@ -76,80 +76,76 @@ class PDP extends PolicyPoint {
         if (!this.data.administrationPoint)
             this.throw('_requestDecision', new Error(`administrationPoint not connected`));
 
-        await this.data.informationPoint._retrieveSubjects(requestContext.subjects);
-
-        let
-            responseContext = new Context.Response(requestContext),
-            /** @type {Map<string, PolicyAgent.Action} */
-            actionMap = new Map(),
-            /** @type {Map<PolicyAgent.Action, object} */
-            recordsMap = new Map();
+        const responseContext = new Context.Response(requestContext);
 
         try {
+            responseContext.entries = await Promise.all(requestContext.entries.map((entry, index) => (async () => {
+                try {
+                    let
+                        subject = await this.data.informationPoint._retrieveSubjects(entry.subject),
+                        action = Object.assign({}, entry.action);
+
+                    action.id = action['@id'];
+                    return { action, subject, index, decision: "NotApplicable" };
+                } catch (err) {
+                    // do nothing
+                }
+            })(/* async instead of promise */)));
+
             let
-                actionQuery = [
-                    // find every related action ...
-                    `MATCH path = (:ODRL:Action {id: $action})-[:implies|includedIn*]->(:ODRL:Action)`,
-                    `UNWIND nodes(path) AS action WITH DISTINCT action`,
-                    `OPTIONAL MATCH (action)-[:includedIn]->(incl:ODRL:Action)`,
-                    // ... and return them inclusive includedIn/implies
-                    `RETURN`,
-                    `action.id AS id,`,
-                    `incl.id AS includedIn,`,
-                    `extract(impl IN (action)-[:implies]->(:ODRL:Action) | endNode(relationships(impl)[0]).id) AS implies`
-                ].join("\n"),
-                actionArr = await this.data.administrationPoint._request(actionQuery, { 'action': requestContext.action['@id'] }),
-                subjects = requestContext.subjects,
-                subjectsQuery = [
-                    `UNWIND $actionList AS actionID`,
-                    // find the action and the target
-                    `MATCH (action:ODRL:Action {id: actionID})`,
-                    `MATCH (target:ODRL:Asset {uid: $target})`,
-                    // if assignee or assigner are present, find them too
-                    subjects.assignee ? `MATCH (assignee:ODRL:Party {uid: $assignee})` : undefined,
-                    subjects.assigner ? `MATCH (assigner:ODRL:Party {uid: $assigner})` : undefined,
-                    // search for every policy, that is related to that target and action
-                    `MATCH (policy:ODRL:Policy)-[ruleType:permission|:obligation|:prohibition]->(rule:ODRL:Rule)`,
+                cypherQuery = [
+                    // IDEA vllt einen index in entry speichern, um später die Ergebnisse zuordnen zu können
+                    `UNWIND $entries AS entry`,
+                    `MATCH (action:ODRL:Action {id: entry.action.id})`,
+                    `MATCH (target:ODRL:Asset {uid: entry.subject.target.uid})`,
+                    `OPTIONAL MATCH (assignee:ODRL:Party {uid: entry.subject.assignee.uid})`,
+                    `OPTIONAL MATCH (assigner:ODRL:Party {uid: entry.subject.assigner.uid})`,
+
+                    `WITH entry.index AS index, action, target, assignee, assigner`,
+                    `MATCH path = (policy:ODRL:Policy)-[ruleRel:permission|:obligation|:prohibition]->(rule:ODRL:Rule)`,
                     `WHERE ( (rule)-[:target]->(target) OR (rule)-[:target]->(:ODRL:AssetCollection)<-[:partOf*]-(target) )`,
                     `AND ( (rule)-[:action]->(action) OR (rule)-[:action]->(:ODRL:Action)-[:value]->(action) )`,
-                    // filter further with by assignee reference ...
-                    subjects.assignee
-                        ? `AND ( (rule)-[:assignee]->(assignee) OR (rule)-[:assignee]->(:ODRL:PartyCollection)<-[*:partOf]-(assignee) OR NOT (rule)-[:assignee]->(:ODRL) )`
-                        : `AND NOT (rule)-[:assignee]->(:ODRL)`,
-                    // ... and assigner reference
-                    subjects.assigner
-                        ? `AND ( (rule)-[:assigner]->(assigner) OR (rule)-[:assigner]->(:ODRL:PartyCollection)<-[*:partOf]-(assigner) OR NOT (rule)-[:assigner]->(:ODRL) )`
-                        : `AND NOT (rule)-[:assigner]->(:ODRL)`,
-                    // TODO constraints, conflict etc.
-                    // return collected results
-                    `RETURN actionID, policy.uid AS policy, rule.uid AS rule, type(ruleType) AS ruleType`
-                ].filter(elem => elem).join("\n"),
-                recordsArr = await this.data.administrationPoint._request(subjectsQuery, {
-                    // parameter for the query
-                    'actionList': actionArr.map(action => action.id),
-                    'target': subjects.target['uid'],
-                    'assignee': subjects.assignee ? subjects.assignee['uid'] : undefined,
-                    'assigner': subjects.assigner ? subjects.assigner['uid'] : undefined
-                });
+                    `AND ( NOT (rule)-[:assignee]->(:ODRL) OR (rule)-[:assignee]->(assignee) OR (rule)-[:assignee]->(:ODRL:PartyCollection)<-[:partOf*]-(assignee) )`,
+                    `AND ( NOT (rule)-[:assigner]->(:ODRL) OR (rule)-[:assigner]->(assigner) OR (rule)-[:assigner]->(:ODRL:PartyCollection)<-[:partOf*]-(assigner) )`,
 
-            actionArr.forEach(action => actionMap.set(action.id, new Action(action.id)));
+                    `RETURN index, policy.uid AS policy, rule.uid AS rule, type(ruleRel) AS ruleType`
+                ].join("\n"),
+                recordsArr = await this.data.administrationPoint._request(cypherQuery, responseContext);
 
-            for (let action of actionArr) {
-                // add actions to a Map for easy access
-                let action = new Action();
-                actionMap.set(action.id, action);
-                recordsMap.set(actionMap.get(action.id), []);
-            }
+            function makeDecision(prev, record) {
+                switch (prev) {
+                    case 'Indeterminate':
+                        break;
+                    case 'NotApplicable':
+                        if (record.ruleType === 'permission') return 'Permission';
+                        if (record.ruleType === 'obligation') return 'Obligation';
+                        if (record.ruleType === 'prohibition') return 'Prohibition';
+                        break;
+                    case 'Permission':
+                        if (record.ruleType !== 'permission') return 'Indeterminate';
+                        break;
+                    case 'Obligation':
+                        if (record.ruleType !== 'obligation') return 'Indeterminate';
+                        break;
+                    case 'Prohibition':
+                        if (record.ruleType !== 'prohibition') return 'Indeterminate';
+                        break;
+                } // switch
+
+                return prev;
+            } // makeDecision
 
             for (let record of recordsArr) {
-                // push each record to the corresponding action
-                recordsMap.get(record['actionID']).push(record);
-            }
+                let entry = responseContext.entries[record.index];
 
-            return responseContext;
+                entry.decision = makeDecision(entry.decision, record);
+                responseContext.decision = makeDecision(responseContext.decision, record);
+            } // for
+
+            // TODO
 
         } catch (err) {
-            responseContext.decision = "NotApplicable";
+            // do nothing, just return the incomplete responseContext
             return responseContext;
         }
 
@@ -174,16 +170,8 @@ class PDP extends PolicyPoint {
          * TODO Unterscheidung von Set/Offer/Aggreement Policies
          */
 
-        function validatePolicy(record) {
-
-        } // validatePolicy
-
-        function validateAction(action) {
-            // NOTE I decided to go for a prohibit-PDP by default, as long as ConflictTerm is not validated
-
-        } // validateAction
-
         // TODO
+        return responseContext;
 
     } // PDP#_requestDecision
 

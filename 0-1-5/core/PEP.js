@@ -10,7 +10,7 @@ const
     SessionMemoryStore = require('session-memory-store')(ExpressSession),
     PolicyPoint = require('./PolicyPoint.js'),
     Auditor = require('./Auditor.js'),
-    RequestContext = require('./Context.js').Request,
+    Context = require('./Context.js'),
     PDP = require('./PDP.js'),
     _private = new WeakMap();
 
@@ -114,44 +114,34 @@ class PEP extends PolicyPoint {
      * @async
      */
     async request(session, param) {
-        const request = {
-            actions: [],
-            subjects: {}
-        };
+        if (!session || typeof session !== 'object' || typeof session.id !== 'string')
+            this.throw('constructor', new TypeError(`invalid argument`));
+        if (typeof param !== 'object' || !param['action'] || !param['target'])
+            this.throw('constructor', new TypeError(`invalid argument`));
 
-        for (let key in param) {
-            if (key === 'action') {
-                let action = param[key];
+        const
+            mainRequest = {
+                action: param['action'],
+                subject: {}
+            },
+            requests = [mainRequest];
 
-                if (typeof action === 'string')
-                    request.actions.push({
-                        '@id': action
-                    });
-                else if (action && typeof action === 'object' && typeof action['@id'] === 'string')
-                    request.actions.push(action);
-            } else {
-                let subject = param[key];
+        Object.entries(param).forEach(([subjName, subject]) => {
+            if (
+                typeof subjName === 'string' && subjName !== 'action' &&
+                subject && typeof subject === 'object' && typeof subject['@type'] === 'string'
+            ) mainRequest.subject[subjName] = subject;
+        });
 
-                if (subject && typeof subject === 'object' && typeof subject['@type'] === 'string')
-                    request.subjects[key] = subject;
-            } // if
-        } // transfer param to request.actions and request.subjects
-
-        // TODO fehlende Subjects aus der Session holen und in request speichern (z.B. assignee)
-
-        if (!request.actions.length === 0)
-            this.throw('constructor', new Error(`invalid action`));
-        if (!request.subjects['target'])
-            this.throw('constructor', new Error(`invalid target`));
-
-        // TODO includedIn und implied actions hinzufügen
+        // TODO fehlende Subjects aus der Session holen (z.B. assignee)
+        // TODO includedIn und implied actions hinzufügen (?)
 
         let promiseArr = [];
         this.data.decisionPoints.forEach(decisionPoint => promiseArr.push(
             (async () => {
                 try {
                     let
-                        requestContext = new RequestContext(session, request),
+                        requestContext = new Context.Request(session, requests),
                         /** @type {PolicyAgent.Context.Response} */
                         responseContext = await decisionPoint._requestDecision(requestContext);
 

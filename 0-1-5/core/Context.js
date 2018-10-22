@@ -12,45 +12,18 @@ const
     _private = new WeakMap();
 
 /**
- * @typedef RequestContext~Request
- * @property {JSON-LD} action
- * @property {object} subject
- * @property {JSON-LD} subject.target
- * @property {JSON-LD} [subject.assigner]
- * @property {JSON-LD} [subject.assignee]
- **
- * @name validateRequestArgument
- * @param {RequestContext~Request} request 
- * @returns {boolean}
- */
-function validateRequestArgument(request) {
-    if (!request || typeof request !== 'object')
-        return false;
-
-    // validate request.action
-    if (typeof request.action === 'string')
-        request.action = { '@id': request.action };
-    else if (typeof request.action !== 'object' || typeof request.action['@id'] !== 'string')
-        return false;
-    request.action.id = request.action['@id'];
-
-    // validate request.subject
-    if (typeof request.subject !== 'object' || !request.subject.target)
-        return false;
-    for (let [subjName, subject] of Object.entries(request.subject)) {
-        if (typeof subject !== 'object' || subject['@type'] !== 'string')
-            return false;
-    }
-
-    return true;
-} // validateRequestArgument
-
-/**
  * @name RequestContext
  * @extends PolicyAgent.Auditor
  */
 class RequestContext extends Auditor {
     /**
+     * @typedef RequestContext~Request
+     * @property {JSON-LD} action
+     * @property {object} subject
+     * @property {JSON-LD} subject.target
+     * @property {JSON-LD} [subject.assigner]
+     * @property {JSON-LD} [subject.assignee]
+     **
      * @constructs RequestContext
      * @param {Session} session
      * @param {(RequestContext~Request|RequestContext~Request[])} request
@@ -62,8 +35,6 @@ class RequestContext extends Auditor {
         if (session instanceof RequestContext || session instanceof ResponseContext) // TODO validieren -> geht das mit dem ResponseContext?
             session = _private.get(session).session;
         else if (!session || typeof session !== 'object' || typeof session.id !== 'string')
-            this.throw('constructor', new TypeError(`invalid argument`));
-        if (Array.isArray(request) ? !request.every(validateRequestArgument) : !validateRequestArgument(request))
             this.throw('constructor', new TypeError(`invalid argument`));
 
         /**
@@ -82,7 +53,31 @@ class RequestContext extends Auditor {
          *    and are independent of a particular subject, resource or action
          */
 
-        this.entries = Array.isArray(request) ? request : [request];
+        this.entries = (Array.isArray(request) ? request : [request]).map((entry) => {
+            if (!entry || typeof entry !== 'object')
+                return undefined;
+
+            // validate entry.action
+            if (typeof entry.action === 'string')
+                entry.action = { '@id': entry.action, id: entry.action };
+            else if (typeof entry.action !== 'object' || typeof entry.action['@id'] !== 'string')
+                return undefined;
+
+            // validate entry.subject
+            if (typeof entry.subject !== 'object' || !entry.subject.target)
+                return undefined;
+            if (Object.entries(entry.subject).some(([subjName, subject]) => !subject || typeof subject !== 'object' || typeof subject['@type'] !== 'string'))
+                return undefined;
+
+            return {
+                action: entry.action,
+                subject: Object.assign({}, entry.subject) // important 
+            };
+        });
+
+        if (!this.entries.every(elem => elem))
+            this.throw('constructor', new TypeError(`invalid argument`));
+
         this.resource = {};
         this.environment = {};
 
@@ -113,35 +108,16 @@ class ResponseContext extends Auditor {
 
         _private.set(this, {
             session: _private.get(requestContext).session,
-            decision: null
+            request: requestContext
         });
 
-        Object.defineProperties(this, {
-
-        });
+        this.entries = [];
+        this.resource = {};
+        // this.environment = {};
+        this.decision = "NotApplicable";
 
         this.log(undefined, `constructed from ${requestContext.toString(undefined, true)}`);
     } // ResponseContext.constructor
-
-    /**
-     * @name ResponseContext#decision
-     * @type {(string|null)} 
-     */
-    get decision() {
-        return _private.get(this).decision;
-    } // ResponseContext#decision<getter>
-
-    set decision(value) {
-        const _attr = _private.get(this);
-
-        if (_attr.decision)
-            this.throw('decision', new Error("already set"));
-        if (typeof value !== 'string')
-            this.throw('decision', new TypeError(`invalid argument`));
-
-        _attr.decision = value;
-        this.log('decision', value);
-    } // ResponseContext#decision<setter>
 
 } // ResponseContext
 

@@ -53,14 +53,15 @@ class PIP extends PolicyPoint {
      * @async
      * @package
      */
-    async _retrieveSubjects(subjects) {
-        if (!subjects || typeof subjects !== 'object')
+    async _retrieveSubjects(requestSubjects) {
+        if (!requestSubjects || typeof requestSubjects !== 'object')
             this.throw('_retrieveSubjects', new TypeError(`invalid argument`));
 
         let
-            subjNames = Object.keys(subjects),
-            queryArr = subjNames.map(name => subjects[name]),
-            promiseArr = [];
+            subjNames = Object.keys(requestSubjects),
+            queryArr = subjNames.map(name => requestSubjects[name]),
+            promiseArr = [],
+            resultSubjects = {};
 
         this.data.subjectsPoints.forEach(subjectsPoint => promiseArr.push(
             (async () => {
@@ -69,15 +70,14 @@ class PIP extends PolicyPoint {
 
                     if (Array.isArray(resultArr) && resultArr.length === subjNames.length)
                         resultArr.forEach((result, index) => {
-                            let subjName = subjNames[index];
-
-                            if (result && !subjects[subjName]['@source']) {
+                            const subjName = subjNames[index];
+                            if (result && !resultSubjects[subjName]) {
                                 Object.defineProperty(result, '@source', {
                                     enumerable: true,
                                     value: this.id
                                 });
 
-                                Object.defineProperty(subjects, subjName, {
+                                Object.defineProperty(resultSubjects, subjName, {
                                     enumerable: true,
                                     value: result
                                 });
@@ -85,13 +85,13 @@ class PIP extends PolicyPoint {
                         });
                 } catch (err) {
                     // do nothing
-                    this.throw(_retrieveSubjects, err, true);
+                    this.throw('_retrieveSubjects', err, true);
                 }
             })(/* NOTE call the async function immediately to get a promise */)
         ));
 
         await Promise.all(promiseArr);
-        return subjects;
+        return resultSubjects;
 
     } // PIP#_retrieveSubjects
 
