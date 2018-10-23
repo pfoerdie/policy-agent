@@ -94,7 +94,6 @@ class PDP extends PolicyPoint {
 
             let
                 cypherQuery = [
-                    // IDEA vllt einen index in entry speichern, um später die Ergebnisse zuordnen zu können
                     `UNWIND $entries AS entry`,
                     `MATCH (action:ODRL:Action {id: entry.action.id})`,
                     `MATCH (target:ODRL:Asset {uid: entry.subject.target.uid})`,

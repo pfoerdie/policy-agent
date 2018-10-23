@@ -33,6 +33,8 @@
 
     expressPEP.connectPDP(accessPDP);
 
+    expressPEP.defineAction('read', 'use', undefined, (/* TODO */) => ("Hello World!"));
+
     accessPDP.connectPIP(myPIP);
     accessPDP.connectPAP(myPAP);
 
@@ -65,5 +67,7 @@
     //#endregion ExpressServer
 
 })(/* closure */)
-    .catch(console.error);
+    .catch(err =>
+        console.error(err)
+    );
     // .catch(err => null);

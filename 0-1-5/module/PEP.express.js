@@ -57,8 +57,7 @@ function initializeExpressRouter() {
             param['assignee'] = null; // IDEA aus der request.session oder dem request.body
 
             let result = await this.request(request.session, param);
-
-            response.send('hello world');
+            response.send("" + result);
 
         } catch (err) {
             // INFO remove the session from the request
