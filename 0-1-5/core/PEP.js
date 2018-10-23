@@ -34,13 +34,13 @@ class PEP extends PolicyPoint {
         this.data.decisionPoints = new Set();
 
         this.data.actions = new Map();
-        this.defineAction('use', undefined, undefined, (/* TODO */) => {
+        this.defineAction('use', undefined, undefined, async (subject) => {
             console.log(`action 'use' used`);
-            return null;
+            return subject;
         });
-        this.defineAction('transfer', undefined, undefined, (/* TODO */) => {
+        this.defineAction('transfer', undefined, undefined, async (subject) => {
             console.log(`action 'transfer' used`);
-            return null;
+            return subject;
         });
     } // PEP.constructor
 
@@ -83,7 +83,8 @@ class PEP extends PolicyPoint {
 
         const
             requestSubject = {},
-            requestEntries = [];
+            requestEntries = [],
+            actionMapping = {};
 
         Object.entries(param).forEach(([subjName, subject]) => {
             if (
@@ -92,22 +93,30 @@ class PEP extends PolicyPoint {
             ) requestSubject[subjName] = subject;
         });
 
-        const addEntry = (action, subject) => {
+        const addEntry = (action) => {
             // NOTE recursive, but should be determined
             // TODO check that
-            const _action = this.data.actions.get(action['@id']);
-            requestEntries.push({ action, subject });
+            const
+                _action = this.data.actions.get(action['@id']),
+                entry = { action, subject: requestSubject };
+
+            if (typeof actionMapping[_action.id] === 'number')
+                this.throw('request', new Error(`circular actions`));
+
+            actionMapping[_action.id] = requestEntries.length;
+            requestEntries.push(entry);
+
             if (_action.includedIn && !requestEntries.includes(entry => _action.includedIn.id !== entry.action['@id']))
-                addEntry({ '@id': _action.includedIn.id }, subject);
+                addEntry({ '@id': _action.includedIn.id });
             _action.implies.forEach((implAction) => {
                 if (!requestEntries.includes(entry => implAction.id !== entry.action['@id']))
-                    addEntry({ '@id': implAction.id }, subject);
+                    addEntry({ '@id': implAction.id });
             });
-        }; // addAction
-
-        addEntry(param['action'], requestSubject);
+        }; // addEntry
 
         // TODO fehlende Subjects aus der Session holen (z.B. assignee)
+
+        addEntry(param['action'], requestSubject);
 
         let
             promiseArr = [],
@@ -146,25 +155,24 @@ class PEP extends PolicyPoint {
         // TODO Auswahl des richtigen ResponseContexts
 
         let context = responseContexts[0];
+        if (context.decision !== 'Permission' || context.entries[0].decision !== 'Permission')
+            this.throw('request', new Error(`permission denied`));
 
         const executeAction = async (action) => {
             let
                 inclResult = action.includedIn ? await executeAction(action.includedIn) : undefined,
                 implResult = await Promise.all(action.implies.map(implAction => executeAction(implAction))),
-                implObj = {};
+                implObj = {},
+                entry = context.entries[actionMapping[action.id]];
 
             action.implies.forEach((action, index) => { implObj[action.id] = implResult[index] });
 
-            return await action.callback(undefined /* TODO hier muss eigentlich das zugehörige target aus den entries hin oder so!! */, inclResult, implObj);
+            return await action.callback(inclResult || entry.subject.target, implObj);
         }; // executeAction
 
         // TODO bisher wird nur die Gesamtentscheidung berücksichtigt
 
-        if (context.decision !== 'Permission')
-            this.throw('request', new Error(`permission denied`));
-
         return await executeAction(this.data.actions.get(param['action']['@id']));
-
 
         // TODO Aktionen ausführen (Deny-biased PEP vs Permit-biased PEP)
         // TODO Rückgabewert feststellen

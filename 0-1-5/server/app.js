@@ -33,7 +33,7 @@
 
     expressPEP.connectPDP(accessPDP);
 
-    expressPEP.defineAction('read', 'use', undefined, (/* TODO */) => ("Hello World!"));
+    expressPEP.defineAction('read', 'use', undefined, subj => JSON.stringify(subj, undefined, "****").replace(/\*/g, "&nbsp;").replace(/\n/g, "<br>"));
 
     accessPDP.connectPIP(myPIP);
     accessPDP.connectPAP(myPAP);
