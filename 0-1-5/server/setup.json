@@ -51,6 +51,11 @@
             "permission": [
                 {
                     "@type": "Permission",
+                    "action": "use",
+                    "target": "/collection/public"
+                },
+                {
+                    "@type": "Permission",
                     "action": "read",
                     "target": "/collection/public"
                 }

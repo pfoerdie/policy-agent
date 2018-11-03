@@ -70,6 +70,12 @@ class PDP extends PolicyPoint {
     async _requestDecision(requestContext) {
         if (!(requestContext instanceof Context.Request))
             this.throw('_requestDecision', new TypeError(`invalid argument`));
+        if (requestContext.environment['PDP'])
+            this.throw('_requestDecision', new Error(`decision already requested`));
+        else Object.defineProperty(responseContext.environment, 'PDP', {
+            enumerable: true,
+            value: this.id
+        });
 
         if (!this.data.informationPoint)
             this.throw('_requestDecision', new Error(`informationPoint not connected`));
@@ -79,37 +85,44 @@ class PDP extends PolicyPoint {
         const responseContext = new Context.Response(requestContext);
 
         try {
-            responseContext.entries = await Promise.all(requestContext.entries.map((entry, index) => (async () => {
-                try {
-                    let
-                        subject = await this.data.informationPoint._retrieveSubjects(entry.subject),
-                        action = Object.assign({}, entry.action);
+            const
+                /** @type {Array<object>} */
+                requestSubjects = [],
+                /** @type {Array<Array<[number, string]>>} */
+                indexMatching = [];
 
-                    action.id = action['@id'];
-                    return { action, subject, index, decision: "NotApplicable" };
-                } catch (err) {
-                    // do nothing
+            requestContext.entries.forEach((entry, index) => {
+                Object.entries(entry.subject).forEach(([name, subject]) => {
+                    let tmpIndex = requestSubjects.indexOf(subject);
+                    if (tmpIndex >= 0) {
+                        indexMatching[tmpIndex].push([index, name]);
+                    } else {
+                        requestSubjects.push(subject);
+                        indexMatching.push([[index, name]]);
+                    }
+                });
+            });
+
+            /** @type {Array<(object|undefined)>} */
+            const responseSubjects = await this.data.informationPoint._retrieveSubjects(requestSubjects);
+
+            responseSubjects.forEach((subject, index) => {
+                if (subject) {
+                    indexMatching[index].forEach(([entryIndex, subjName]) => {
+                        let responseEntry = responseContext.entries[entryIndex];
+                        if (!responseEntry.subject) responseEntry.subject = {};
+                        responseEntry.subject[subjName] = subject['uid'];
+                    });
+                    responseContext.resource[subject['uid']] = subject;
                 }
-            })(/* async instead of promise */)));
+            });
 
-            let
-                cypherQuery = [
-                    `UNWIND $entries AS entry`,
-                    `MATCH (action:ODRL:Action {id: entry.action.id})`,
-                    `MATCH (target:ODRL:Asset {uid: entry.subject.target.uid})`,
-                    `OPTIONAL MATCH (assignee:ODRL:Party {uid: entry.subject.assignee.uid})`,
-                    `OPTIONAL MATCH (assigner:ODRL:Party {uid: entry.subject.assigner.uid})`,
+            requestContext.entries.forEach((entry, index) => {
+                responseContext.entries[index].action = Object.assign({}, entry.action, { id: entry.action['@id'] });
+            });
 
-                    `WITH entry.index AS index, action, target, assignee, assigner`,
-                    `MATCH path = (policy:ODRL:Policy)-[ruleRel:permission|:obligation|:prohibition]->(rule:ODRL:Rule)`,
-                    `WHERE ( (rule)-[:target]->(target) OR (rule)-[:target]->(:ODRL:AssetCollection)<-[:partOf*]-(target) )`,
-                    `AND ( (rule)-[:action]->(action) OR (rule)-[:action]->(:ODRL:Action)-[:value]->(action) )`,
-                    `AND ( NOT (rule)-[:assignee]->(:ODRL) OR (rule)-[:assignee]->(assignee) OR (rule)-[:assignee]->(:ODRL:PartyCollection)<-[:partOf*]-(assignee) )`,
-                    `AND ( NOT (rule)-[:assigner]->(:ODRL) OR (rule)-[:assigner]->(assigner) OR (rule)-[:assigner]->(:ODRL:PartyCollection)<-[:partOf*]-(assigner) )`,
-
-                    `RETURN index, policy.uid AS policy, rule.uid AS rule, type(ruleRel) AS ruleType`
-                ].join("\n"),
-                recordsArr = await this.data.administrationPoint._request(cypherQuery, responseContext);
+            /** @type {Array<PolicyAgent.PAP~Record>} */
+            const recordsArr = await this.data.administrationPoint._requestPolicies(responseContext);
 
             function makeDecision(prev, record) {
                 switch (prev) {
@@ -174,8 +187,16 @@ class PDP extends PolicyPoint {
 
     } // PDP#_requestDecision
 
-} // PDP
+    async _finalizeRequest(responseContext) {
+        if (!(responseContext instanceof Context.Response))
+            this.throw('_finalizeRequest', new TypeError(`invalid argument`));
+        if (requestContext.environment['PDP'] !== this.id)
+            this.throw('_finalizeRequest', new Error(`wrong decision point`));
 
-Object.defineProperties(PDP, {});
+        // TODO
+
+    } // PDP#_finalizeRequest
+
+} // PDP
 
 module.exports = PDP;

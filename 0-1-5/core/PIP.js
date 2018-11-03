@@ -48,40 +48,77 @@ class PIP extends PolicyPoint {
 
     /**
      * @name PIP#_retrieveSubjects
-     * @param {object} subjects
-     * @returns {object} The modified subjects, though modifications are made on the original object anyway.
+     * @param {object[]} requestSubjects
      * @async
      * @package
      */
     async _retrieveSubjects(requestSubjects) {
-        if (!requestSubjects || typeof requestSubjects !== 'object')
+        if (!Array.isArray(requestSubjects) || requestSubjects.some(elem => !elem || typeof elem !== 'object'))
             this.throw('_retrieveSubjects', new TypeError(`invalid argument`));
 
         let
-            subjNames = Object.keys(requestSubjects),
-            queryArr = subjNames.map(name => requestSubjects[name]),
-            promiseArr = [],
-            resultSubjects = {};
+            responseSubjects = requestSubjects.map(val => undefined),
+            promiseArr = [];
 
         this.data.subjectsPoints.forEach(subjectsPoint => promiseArr.push(
             (async () => {
                 try {
-                    let resultArr = await subjectsPoint._retrieve(queryArr);
+                    let resultArr = await subjectsPoint._retrieve(requestSubjects);
 
-                    if (Array.isArray(resultArr) && resultArr.length === subjNames.length)
+                    if (Array.isArray(resultArr) && resultArr.length === requestSubjects.length)
                         resultArr.forEach((result, index) => {
-                            const subjName = subjNames[index];
-                            if (result && !resultSubjects[subjName]) {
-                                Object.defineProperty(result, '@source', {
-                                    enumerable: true,
-                                    value: this.id
-                                });
+                            if (result && !responseSubjects[index])
+                                responseSubjects[index] = result;
+                        });
+                } catch (err) {
+                    this.throw('_retrieveSubjects', err, true); // silent
+                }
+            })(/* NOTE call the async function immediately to get a promise */)
+        ));
 
-                                Object.defineProperty(resultSubjects, subjName, {
-                                    enumerable: true,
-                                    value: result
-                                });
-                            }
+        await Promise.all(promiseArr);
+        return responseSubjects;
+
+    } // PIP#_retrieveSubjects
+
+    /**
+     * @name PIP#_retrieveResource
+     * @param {PolicyAgent.Context.Response} requestContext
+     * @async
+     * @package
+     */
+    async _retrieveTargetResource(responseContext) {
+        if (!(responseContext instanceof Context.Response))
+            this.throw('_retrieveResource', new TypeError(`invalid argument`));
+        if (!responseContext.environment['PIP'])
+            this.throw('_retrieveSubjects', new Error(`subjects must be retrieved first`));
+        if (responseContext.environment['PIP'] !== this.id)
+            this.throw('_retrieveSubjects', new Error(`another PIP already used`));
+
+        const
+            /** @type {Array<string>} */
+            requestTargets = [];
+
+        responseContext.entries.forEach((entry) => {
+            if (!requestTargets.includes(entry.subject.target))
+                requestTargets.push(entry.subject.target);
+        });
+
+        let
+            statusArr = requestTargets.map(val => false),
+            promiseArr = [];
+
+        this.data.resourcePoints.forEach(resourcePoint => promiseArr.push(
+            (async () => {
+                try {
+                    let resultArr = await resourcePoint._retrieve(requestTargets.map(target => responseContext.resource[target]));
+
+                    if (Array.isArray(resultArr) && resultArr.length === requestTargets.length)
+                        resultArr.forEach((result, index) => {
+                            if (result && !statusArr[index]) {
+                                responseContext.resource[requestTargets[index]]['@value'] = result;
+                                statusArr[index] = true;
+                            } // if
                         });
                 } catch (err) {
                     // do nothing
@@ -91,13 +128,6 @@ class PIP extends PolicyPoint {
         ));
 
         await Promise.all(promiseArr);
-        return resultSubjects;
-
-    } // PIP#_retrieveSubjects
-
-    async _retrieveResource(/* TODO */) {
-
-        // TODO
 
     } // PIP#_retrieveResource
 

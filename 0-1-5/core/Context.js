@@ -111,9 +111,9 @@ class ResponseContext extends Auditor {
             request: requestContext
         });
 
-        this.entries = [];
+        this.entries = requestContext.entries.map((entry, index) => ({ index, decision: "NotApplicable" }));
         this.resource = {};
-        // this.environment = {};
+        this.environment = requestContext.environment;
         this.decision = "NotApplicable";
 
         this.log(undefined, `constructed from ${requestContext.toString(undefined, true)}`);

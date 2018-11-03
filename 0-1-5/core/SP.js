@@ -26,13 +26,11 @@ function _retrieveSubject(dataBase, subject) {
                     this.throw('_retrieve', err, true); // silent
                     resolve(undefined);
                 } else if (docs.length === 1) {
-                    try {
-                        if (typeof docs[0]['uid'] !== 'string')
-                            throw new Error(`missing uid (${docs[0]['@id']})`);
+                    if (typeof docs[0]['uid'] === 'string') {
                         delete docs[0]['_id'];
                         resolve(docs[0]);
-                    } catch (err) {
-                        this.throw('_retrieve', err, true); // silent
+                    } else {
+                        this.throw('_retrieve', `missing uid (${docs[0]['@id']})`, true); // silent
                         resolve(undefined);
                     }
                 } else {

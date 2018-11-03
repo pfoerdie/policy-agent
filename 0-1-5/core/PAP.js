@@ -8,21 +8,42 @@ const
     UUID = require('uuid/v4'),
     Neo4j = require('neo4j-driver').v1,
     PolicyPoint = require('./PolicyPoint.js'),
-    _toArray = (val) => Array.isArray(val) ? val : val !== undefined ? [val] : [];
+    ResponseContext = require('./Context.js').response,
+    _toArray = (val) => Array.isArray(val) ? val : val !== undefined ? [val] : [],
+    _retrievePoliciesQuery = [
+        `UNWIND $entries AS entry`,
+        `MATCH (action:ODRL:Action {id: entry.action.id})`,
+        `MATCH (target:ODRL:Asset {uid: entry.subject.target})`,
+        `OPTIONAL MATCH (assignee:ODRL:Party {uid: entry.subject.assignee})`,
+        `OPTIONAL MATCH (assigner:ODRL:Party {uid: entry.subject.assigner})`,
+
+        `WITH entry.index AS index, action, target, assignee, assigner`,
+        `MATCH path = (policy:ODRL:Policy)-[ruleRel:permission|:obligation|:prohibition]->(rule:ODRL:Rule)`,
+        `WHERE ( (rule)-[:target]->(target) OR (rule)-[:target]->(:ODRL:AssetCollection)<-[:partOf*]-(target) )`,
+        `AND ( (rule)-[:action]->(action) OR (rule)-[:action]->(:ODRL:Action)-[:value]->(action) )`,
+        `AND ( NOT (rule)-[:assignee]->(:ODRL) OR (rule)-[:assignee]->(assignee) OR (rule)-[:assignee]->(:ODRL:PartyCollection)<-[:partOf*]-(assignee) )`,
+        `AND ( NOT (rule)-[:assigner]->(:ODRL) OR (rule)-[:assigner]->(assigner) OR (rule)-[:assigner]->(:ODRL:PartyCollection)<-[:partOf*]-(assigner) )`,
+
+        `RETURN index, policy.uid AS policy, rule.uid AS rule, type(ruleRel) AS ruleType`
+    ].join("\n");
 
 /**
- * @name _prettifyRecord
- * @param {Neo4j~Record} record 
- * @returns {object}
+ * @name Record
+ * @class
  */
-function _prettifyRecord(record) {
-    let pretty = {};
-    record['keys'].forEach(key => Object.defineProperty(pretty, key, {
-        enumerable: true,
-        value: record['_fields'][record['_fieldLookup'][key]]
-    }));
-    return pretty;
-} // _prettifyRecord
+class Record {
+    /**
+     * @constructs Record
+     * @param {Neo4j~Record} record 
+     */
+    constructor(record) {
+        record['keys'].forEach(key => Object.defineProperty(this, key, {
+            enumerable: true,
+            value: record['_fields'][record['_fieldLookup'][key]]
+        }));
+    } // Record.constructor
+
+} // Record
 
 /**
  * @function _makeSubmitQuery
@@ -402,13 +423,30 @@ class PAP extends PolicyPoint {
 
             session.close();
             return resultArr
-                ? resultArr.map(result => result['records'].map(_prettifyRecord))
-                : result['records'].map(_prettifyRecord);
+                ? resultArr.map(result => result['records'].map(record => new Record(record)))
+                : result['records'].map(record => new Record(record));
 
         } catch (err) {
             this.throw('_request', err);
         }
     } // PAP#_request
+
+    async _requestPolicies(responseContext) {
+        if (!(responseContext instanceof ResponseContext))
+            this.throw('_requestPolicies', new TypeError(`invalid argument`));
+
+        try {
+            let
+                session = this.data.driver.session(),
+                result = await session.run(_retrievePoliciesQuery, responseContext);
+
+            session.close();
+            return result['records'].map(record => new Record(record));
+
+        } catch (err) {
+            this.throw('_requestPolicies', err);
+        }
+    } // PAP#_requestPolicies
 
     /**
      * @name PAP#_submitODRL
