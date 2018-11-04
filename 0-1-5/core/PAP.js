@@ -8,7 +8,7 @@ const
     UUID = require('uuid/v4'),
     Neo4j = require('neo4j-driver').v1,
     PolicyPoint = require('./PolicyPoint.js'),
-    ResponseContext = require('./Context.js').response,
+    ResponseContext = require('./Context.js').Response,
     _toArray = (val) => Array.isArray(val) ? val : val !== undefined ? [val] : [],
     _retrievePoliciesQuery = [
         `UNWIND $entries AS entry`,

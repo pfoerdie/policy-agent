@@ -5,12 +5,9 @@
  */
 
 const
-    UUID = require('uuid/v4'),
     PolicyPoint = require('./PolicyPoint.js'),
-    Context = require('./Context.js'),
     SP = require('./SP.js'),
-    RP = require('./RP.js'),
-    _source = Symbol();
+    RP = require('./RP.js');
 
 /**
  * @name PIP
@@ -48,32 +45,43 @@ class PIP extends PolicyPoint {
 
     /**
      * @name PIP#_retrieveSubjects
-     * @param {object[]} requestSubjects
+     * @param {(object|object[])} requestSubjects
      * @async
      * @package
      */
     async _retrieveSubjects(requestSubjects) {
-        if (!Array.isArray(requestSubjects) || requestSubjects.some(elem => !elem || typeof elem !== 'object'))
+        const multiReq = Array.isArray(requestSubjects);
+
+        if (multiReq ? requestSubjects.some(elem => !elem || typeof elem !== 'object') : !requestSubjects || typeof requestSubjects !== 'object')
             this.throw('_retrieveSubjects', new TypeError(`invalid argument`));
 
         let
-            responseSubjects = requestSubjects.map(val => undefined),
+            responseSubjects = multiReq ? requestSubjects.map(val => undefined) : undefined,
             promiseArr = [];
 
         this.data.subjectsPoints.forEach(subjectsPoint => promiseArr.push(
             (async () => {
                 try {
-                    let resultArr = await subjectsPoint._retrieve(requestSubjects);
+                    let requestResult = await subjectsPoint._retrieve(requestSubjects);
 
-                    if (Array.isArray(resultArr) && resultArr.length === requestSubjects.length)
-                        resultArr.forEach((result, index) => {
-                            if (result && !responseSubjects[index])
-                                responseSubjects[index] = result;
-                        });
+                    if (multiReq) {
+                        if (Array.isArray(requestResult) && requestResult.length === requestSubjects.length)
+                            requestResult.forEach((result, index) => {
+                                if (result && !responseSubjects[index]) {
+                                    result['@source'] = this.id;
+                                    responseSubjects[index] = result;
+                                }
+                            });
+                    } else {
+                        if (requestResult && !responseSubjects) {
+                            responseSubjects['@source'] = this.id;
+                            responseSubjects = requestResult;
+                        }
+                    }
                 } catch (err) {
                     this.throw('_retrieveSubjects', err, true); // silent
                 }
-            })(/* NOTE call the async function immediately to get a promise */)
+            })(/* NOTE async call instead of promise */)
         ));
 
         await Promise.all(promiseArr);
@@ -83,51 +91,44 @@ class PIP extends PolicyPoint {
 
     /**
      * @name PIP#_retrieveResource
-     * @param {PolicyAgent.Context.Response} requestContext
+     * @param {(object|object[])} responseSubjects
      * @async
      * @package
      */
-    async _retrieveTargetResource(responseContext) {
-        if (!(responseContext instanceof Context.Response))
+    async _retrieveResource(responseSubjects) {
+        const multiReq = Array.isArray(responseSubjects);
+
+        if (multiReq ? responseSubjects.some(elem => typeof elem !== 'object' || typeof elem['uid'] !== 'string') : typeof responseSubjects !== 'object' || typeof responseSubjects['uid'] !== 'string')
             this.throw('_retrieveResource', new TypeError(`invalid argument`));
-        if (!responseContext.environment['PIP'])
-            this.throw('_retrieveSubjects', new Error(`subjects must be retrieved first`));
-        if (responseContext.environment['PIP'] !== this.id)
-            this.throw('_retrieveSubjects', new Error(`another PIP already used`));
-
-        const
-            /** @type {Array<string>} */
-            requestTargets = [];
-
-        responseContext.entries.forEach((entry) => {
-            if (!requestTargets.includes(entry.subject.target))
-                requestTargets.push(entry.subject.target);
-        });
 
         let
-            statusArr = requestTargets.map(val => false),
+            responseResource = multiReq ? responseSubjects.map(val => undefined) : undefined,
             promiseArr = [];
 
         this.data.resourcePoints.forEach(resourcePoint => promiseArr.push(
             (async () => {
                 try {
-                    let resultArr = await resourcePoint._retrieve(requestTargets.map(target => responseContext.resource[target]));
+                    let requestResult = await resourcePoint._retrieve(responseSubjects);
 
-                    if (Array.isArray(resultArr) && resultArr.length === requestTargets.length)
-                        resultArr.forEach((result, index) => {
-                            if (result && !statusArr[index]) {
-                                responseContext.resource[requestTargets[index]]['@value'] = result;
-                                statusArr[index] = true;
-                            } // if
-                        });
+                    if (multiReq) {
+                        if (Array.isArray(requestResult) && requestResult.length === requestSubjects.length)
+                            requestResult.forEach((result, index) => {
+                                if (result && !responseResource[index])
+                                    responseResource[index] = result;
+                            });
+                    } else {
+                        if (requestResult && !responseResource)
+                            responseResource = requestResult;
+                    }
                 } catch (err) {
                     // do nothing
-                    this.throw('_retrieveSubjects', err, true);
+                    this.throw('_retrieveResource', err, true);
                 }
-            })(/* NOTE call the async function immediately to get a promise */)
+            })(/* NOTE async call instead of promise */)
         ));
 
         await Promise.all(promiseArr);
+        return responseResource;
 
     } // PIP#_retrieveResource
 
@@ -138,9 +139,7 @@ class PIP extends PolicyPoint {
      * -    delete
      */
 
-    static async _submitSubjects(context) {
-        if (!(context instanceof Context.Response))
-            this.throw('_submitSubjects', new TypeError(`invalid argument`));
+    static async _submitSubjects() {
 
         // TODO
 

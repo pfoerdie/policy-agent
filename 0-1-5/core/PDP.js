@@ -72,7 +72,7 @@ class PDP extends PolicyPoint {
             this.throw('_requestDecision', new TypeError(`invalid argument`));
         if (requestContext.environment['PDP'])
             this.throw('_requestDecision', new Error(`decision already requested`));
-        else Object.defineProperty(responseContext.environment, 'PDP', {
+        else Object.defineProperty(requestContext.environment, 'PDP', {
             enumerable: true,
             value: this.id
         });

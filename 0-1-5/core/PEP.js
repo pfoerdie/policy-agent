@@ -13,13 +13,17 @@ const
     PDP = require('./PDP.js');
 
 async function _actionUse(target) {
-    console.log(`action 'use' used`);
+    if (target && !target['@value'] && target['@source'])
+        target['@value'] = await PolicyPoint.getComponent(target['@source'])._retrieveResource(target);
+
     return target;
 } // _actionUse
 
-async function _actionTransfer(data) {
-    console.log(`action 'transfer' used`);
-    return data;
+async function _actionTransfer(target) {
+    if (target && target['@value'] && target['@source'])
+        await PolicyPoint.getComponent(target['@source'])._submitResource(target);
+
+    return true;
 } // _actionTransfer
 
 /**
@@ -142,9 +146,9 @@ class PEP extends PolicyPoint {
                     );
                 } catch (err) {
                     // do nothing
-                    // console.error(err);
+                    console.error(err);
                 }
-            })(/* NOTE call the async function immediately to get a promise */)
+            })(/* NOTE async call instead of promise */)
         ));
 
         await Promise.all(promiseArr);
@@ -166,9 +170,6 @@ class PEP extends PolicyPoint {
         let resultContext = responseContexts[0];
         if (resultContext.decision !== 'Permission' || resultContext.entries[0].decision !== 'Permission')
             this.throw('request', new Error(`permission denied`));
-
-        await PolicyPoint.getComponent(resultContext.environment['PIP'])._retrieveTargetResource(resultContext);
-        // TODO <- das funktioniert nicht mehr, bitte anhand des Modells umsetzen!!!
 
         const executeAction = async (action, ...args) => {
             let
@@ -197,7 +198,6 @@ class PEP extends PolicyPoint {
             } // while
 
             return tmpResult;
-
         }; // executeAction
 
         // TODO bisher wird nur die Gesamtentscheidung berücksichtigt
