@@ -44,6 +44,52 @@ function _retrieveSubject(dataBase, subject) {
  * @name _submitSubject
  * @param {MongoDB~DataBase} dataBase 
  * @param {object} subject 
+ * @returns {Promise<(object|object[])>}
+ * @this {SP}
+ * @private
+ */
+function _submitSubject(dataBase, subject) {
+    return new Promise((resolve, reject) => {
+        dataBase
+            .collection(subject['@type'])
+            .update(subject)
+            .toArray((err, result) => {
+                if (err) {
+                    this.throw('_retrieve', err, true); // silent
+                    resolve(false);
+                } else {
+                    console.log(result);
+                    resolve(true);
+                }
+            })
+    });
+} // _submitSubject
+
+/**
+ * @name _timeoutPromise
+ * @param {Promise} origPromise 
+ * @param {number} toTime 
+ * @this {SP}
+ * @private
+ * @async
+ */
+async function _timeoutPromise(origPromise, toTime) {
+    if (toTime === Infinity)
+        return await origPromise;
+
+    let timeout, toPromise = new Promise((resolve, reject) => {
+        timeout = setTimeout(() => reject(new Error(`timed out`));
+    }, toTime));
+
+    await Promise.race([origPromise, toPromise]);
+    clearTimeout(timeout);
+    return await origPromise;
+} // _timeoutPromise
+
+/**
+ * @name _submitSubject
+ * @param {MongoDB~DataBase} dataBase 
+ * @param {object} subject 
  * @returns {Promise}
  * @this {SP}
  * @private
@@ -133,19 +179,11 @@ class SP extends PolicyPoint {
                 ? Promise.all(queryArr.map(query => _retrieveSubject.call(this, client.db, query)))
                 : _retrieveSubject.call(this, client.db, query);
 
-        if (this.data.requestTimeout < Infinity) {
-            // NOTE timeout mechanic
-            try {
-                await Promise.race([
-                    resultPromise,
-                    new Promise((resolve, reject) => setTimeout(() => reject(new Error(`timed out`)), this.data.requestTimeout))
-                ]);
-            } catch (err) {
-                this.throw('_retrieve', err);
-            }
+        try {
+            return await _timeoutPromise(resultPromise, this.data.requestTimeout);
+        } catch (err) {
+            this.throw('_retrieve', err);
         }
-
-        return await resultPromise;
     } // SP#_retrieve
 
     /**
@@ -160,7 +198,7 @@ class SP extends PolicyPoint {
             queryInvalid = (query) => (!query || typeof query !== 'object' || typeof query['@type'] !== 'string');
 
         if (queryArr ? queryArr.some(queryInvalid) : queryInvalid(query))
-            this.throw('_request', new TypeError(`invalid argument`));
+            this.throw('_submit', new TypeError(`invalid argument`));
 
         let
             client = await this.data.driver.client(),
@@ -168,19 +206,11 @@ class SP extends PolicyPoint {
                 ? Promise.all(queryArr.map(query => _submitSubject.call(this, client.db, query)))
                 : _submitSubject.call(this, client.db, query);
 
-        if (this.data.requestTimeout < Infinity) {
-            // NOTE timeout mechanic
-            try {
-                await Promise.race([
-                    resultPromise,
-                    new Promise((resolve, reject) => setTimeout(() => reject(new Error(`timed out`)), this.data.requestTimeout))
-                ]);
-            } catch (err) {
-                this.throw('_submit', err);
-            }
+        try {
+            return await _timeoutPromise(resultPromise, this.data.requestTimeout);
+        } catch (err) {
+            this.throw('_submit', err);
         }
-
-        return await resultPromise;
     } // SP#_submit
 
 } // SP

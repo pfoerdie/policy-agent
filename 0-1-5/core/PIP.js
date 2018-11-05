@@ -139,15 +139,53 @@ class PIP extends PolicyPoint {
      * -    delete
      */
 
-    static async _submitSubjects() {
+    async _submitSubjects(responseSubjects) {
+        const multiReq = Array.isArray(responseSubjects);
 
-        // TODO
+        if (multiReq ? responseSubjects.some(elem => !elem || typeof elem !== 'object') : !responseSubjects || typeof responseSubjects !== 'object')
+            this.throw('_submitSubjects', new TypeError(`invalid argument`));
+
+        if (multiReq)
+            responseSubjects.forEach((elem) => {
+                delete elem['@value'];
+                delete elem['@source'];
+            });
+        else {
+            delete responseSubjects['@value'];
+            delete responseSubjects['@source'];
+        }
+
+        let promiseArr = [];
+        this.data.subjectsPoints.forEach(subjectsPoint => promiseArr.push(
+            (async () => {
+                try {
+                    await subjectsPoint._submit(responseSubjects);
+                } catch (err) {
+                    this.throw('_submitSubjects', err, true); // silent
+                }
+            })(/* NOTE async call instead of promise */)
+        ));
+        await Promise.all(promiseArr);
 
     } // PIP._submitSubjects
 
-    static async _submitResource(/* TODO */) {
+    async _submitResource(responseSubjects) {
+        const multiReq = Array.isArray(responseSubjects);
 
-        // TODO
+        if (multiReq ? responseSubjects.some(elem => !elem || typeof elem !== 'object') : !responseSubjects || typeof responseSubjects !== 'object')
+            this.throw('_submitResource', new TypeError(`invalid argument`));
+
+        let promiseArr = [];
+        this.data.resourcePoints.forEach(resourcePoint => promiseArr.push(
+            (async () => {
+                try {
+                    await resourcePoint._submit(responseSubjects);
+                } catch (err) {
+                    this.throw('_submitResource', err, true); // silent
+                }
+            })(/* NOTE async call instead of promise */)
+        ));
+        await Promise.all(promiseArr);
 
     } // PIP._submitResource
 

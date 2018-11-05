@@ -66,9 +66,35 @@ class RP extends PolicyPoint {
 
     } // RP#_retrieve
 
-    async _submit() {
+    async _submit(query) {
+        const
+            queryArr = Array.isArray(query) ? query : undefined;
 
-        // TODO
+        if (queryArr ? queryArr.some(query => typeof query !== 'object') : typeof query !== 'object')
+            this.throw('_retrieve', new TypeError(`invalid argument`));
+
+        const _retrieve = (query) => new Promise((resolve, reject) => {
+            switch (query['type']) {
+
+                case 'File':
+                    let
+                        filePath = Path.join(this.data.root, query['path'].replace(/^(?:\.|\/|\\)*/, "")),
+                        data = query['@value'];
+                    if (data)
+                        Fs.writeFile(filePath, data, (err) => err ? resolve(false) : resolve(true));
+                    else
+                        resolve(false);
+                    break;
+
+                default:
+                    resolve(false);
+
+            } // switch
+        });
+
+        return queryArr
+            ? await Promise.all(queryArr.map(query => _retrieve(query)))
+            : await _retrieve(query);
 
     } // RP#_submit
 
