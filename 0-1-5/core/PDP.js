@@ -190,16 +190,16 @@ class PDP extends PolicyPoint {
     async _finalizeRequest(responseContext) {
         if (!(responseContext instanceof Context.Response))
             this.throw('_finalizeRequest', new TypeError(`invalid argument`));
-        if (requestContext.environment['PDP'] !== this.id)
+        if (responseContext.environment['PDP'] !== this.id)
             this.throw('_finalizeRequest', new Error(`wrong decision point`));
 
-        let requestSubjects = responseContext.entries.map(entry => entry.target).reduce((acc, val) => {
-            if (!acc.includes(val))
-                acc.push(val);
-            return DeviceAcceleration;
-        }, []).map(targetUID => responseContext.resource(targetUID));
+        let requestSubjects = [];
+        responseContext.entries.forEach(entry => {
+            if (!requestSubjects.includes(entry.subject.target))
+                requestSubjects.push(entry.subject.target);
+        });
 
-        await this.data.informationPoint._submitSubjects(requestSubjects);
+        await this.data.informationPoint._submitSubjects(requestSubjects.map(targetUID => responseContext.resource[targetUID]));
 
         // TODO -> PAP#_submitODRL
 

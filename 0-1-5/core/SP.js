@@ -56,15 +56,13 @@ function _submitSubject(dataBase, subject) {
     return new Promise((resolve, reject) => {
         dataBase
             .collection(subject['@type'])
-            .update(subject)
-            .toArray((err, result) => {
-                if (err) {
-                    this.throw('_retrieve', err, true); // silent
-                    resolve(false);
-                } else {
-                    console.log(result);
-                    resolve(true);
-                }
+            .update({ 'uid': subject['uid'] }, subject)
+            .then((result) => {
+                resolve(result['result']['ok'] === 1);
+            })
+            .catch((err) => {
+                this.throw('_retrieve', err, true); // silent
+                resolve(false);
             })
     });
 } // _submitSubject

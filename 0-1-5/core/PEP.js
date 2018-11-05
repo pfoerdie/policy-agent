@@ -13,17 +13,17 @@ const
     PDP = require('./PDP.js');
 
 async function _actionUse(target) {
-    if (target && !target['@value'] && target['@source'])
-        target['@value'] = await PolicyPoint.getComponent(target['@source'])._retrieveResource(target);
-
-    return target;
+    if (target && !target['@value'] && target['@source']) {
+        let informationPoint = PolicyPoint.getComponent(target['@source']);
+        if (informationPoint)
+            target['@value'] = await informationPoint._retrieveResource(target);
+    }
+    return Object.freeze(target);
 } // _actionUse
 
 async function _actionTransfer(target) {
-    if (target && target['@value'] && target['@source'])
+    if (target && target['@value'] && target['@source'] && target['uid'])
         await PolicyPoint.getComponent(target['@source'])._submitResource(target);
-
-    return true;
 } // _actionTransfer
 
 /**
@@ -201,8 +201,11 @@ class PEP extends PolicyPoint {
         }; // executeAction
 
         // TODO bisher wird nur die Gesamtentscheidung berücksichtigt
-        let result = await executeAction(this.data.actions.get(param['action']['@id']));
-        await resultContext._finalizeRequest(resultContext);
+        let
+            result = await executeAction(this.data.actions.get(param['action']['@id'])),
+            decisionPoint = PolicyPoint.getComponent(resultContext.environment['PDP']);
+
+        await decisionPoint._finalizeRequest(resultContext);
         return result;
 
         // TODO Aktionen ausführen (Deny-biased PEP vs Permit-biased PEP)

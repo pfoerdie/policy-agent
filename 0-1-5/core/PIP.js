@@ -145,12 +145,15 @@ class PIP extends PolicyPoint {
         if (multiReq ? responseSubjects.some(elem => !elem || typeof elem !== 'object') : !responseSubjects || typeof responseSubjects !== 'object')
             this.throw('_submitSubjects', new TypeError(`invalid argument`));
 
-        if (multiReq)
-            responseSubjects.forEach((elem) => {
-                delete elem['@value'];
-                delete elem['@source'];
+        if (multiReq) {
+            responseSubjects = responseSubjects.map((elem) => {
+                let submitSubject = Object.assign({}, elem);
+                delete submitSubject['@value'];
+                delete submitSubject['@source'];
+                return submitSubject;
             });
-        else {
+        } else {
+            responseSubjects = Object.assign({}, responseSubjects);
             delete responseSubjects['@value'];
             delete responseSubjects['@source'];
         }
