@@ -202,6 +202,7 @@ class PEP extends PolicyPoint {
 
         // TODO bisher wird nur die Gesamtentscheidung berücksichtigt
         let result = await executeAction(this.data.actions.get(param['action']['@id']));
+        await resultContext._finalizeRequest(resultContext);
         return result;
 
         // TODO Aktionen ausführen (Deny-biased PEP vs Permit-biased PEP)

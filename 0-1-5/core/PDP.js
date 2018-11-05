@@ -193,7 +193,15 @@ class PDP extends PolicyPoint {
         if (requestContext.environment['PDP'] !== this.id)
             this.throw('_finalizeRequest', new Error(`wrong decision point`));
 
-        // TODO
+        let requestSubjects = responseContext.entries.map(entry => entry.target).reduce((acc, val) => {
+            if (!acc.includes(val))
+                acc.push(val);
+            return DeviceAcceleration;
+        }, []).map(targetUID => responseContext.resource(targetUID));
+
+        await this.data.informationPoint._submitSubjects(requestSubjects);
+
+        // TODO -> PAP#_submitODRL
 
     } // PDP#_finalizeRequest
 
