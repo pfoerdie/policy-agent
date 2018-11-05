@@ -12,9 +12,11 @@ const
  * @name _retrieveSubject
  * @param {MongoDB~DataBase} dataBase 
  * @param {object} subject 
- * @returns {Promise<(object|object[])>}
+ * @returns {Promise<object>}
  * @this {SP}
  * @private
+ * 
+ * {@link http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#find MongoDB Driver API - Collection#find}
  */
 function _retrieveSubject(dataBase, subject) {
     return new Promise((resolve, reject) => {
@@ -44,9 +46,11 @@ function _retrieveSubject(dataBase, subject) {
  * @name _submitSubject
  * @param {MongoDB~DataBase} dataBase 
  * @param {object} subject 
- * @returns {Promise<(object|object[])>}
+ * @returns {Promise}
  * @this {SP}
  * @private
+ * 
+ * {@link http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#update MongoDB Driver API - Collection#update}
  */
 function _submitSubject(dataBase, subject) {
     return new Promise((resolve, reject) => {
@@ -73,32 +77,18 @@ function _submitSubject(dataBase, subject) {
  * @private
  * @async
  */
-async function _timeoutPromise(origPromise, toTime) {
-    if (toTime === Infinity)
+async function _timeoutPromise(origPromise, duration) {
+    if (duration === Infinity || duration < 0)
         return await origPromise;
 
     let timeout, toPromise = new Promise((resolve, reject) => {
-        timeout = setTimeout(() => reject(new Error(`timed out`));
-    }, toTime));
+        timeout = setTimeout(() => reject(new Error(`timed out`)), duration);
+    });
 
     await Promise.race([origPromise, toPromise]);
     clearTimeout(timeout);
     return await origPromise;
 } // _timeoutPromise
-
-/**
- * @name _submitSubject
- * @param {MongoDB~DataBase} dataBase 
- * @param {object} subject 
- * @returns {Promise}
- * @this {SP}
- * @private
- */
-function _submitSubject(dataBase, subject) {
-
-    // TODO
-
-} // _submitSubject
 
 /**
  * @name SP
