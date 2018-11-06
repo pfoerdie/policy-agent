@@ -81,38 +81,59 @@ function _makeSubmitQuery(varName, odrl) {
 
         case 'Action':
 
-            if (odrl['id'] !== 'use' && odrl['id'] !== 'transfer') {
-                if (typeof odrl['includedIn'] === 'string') {
-                    const includedIn_name = varName + "incl";
-                    queryBlocks.push(`MERGE (${includedIn_name}:ODRL:Action {id: "${odrl['includedIn']}"})`);
-                    queryBlocks.push(`ON CREATE SET ${includedIn_name}.blank = true`);
-                    queryBlocks.push(`MERGE (${varName})-[:includedIn]->(${includedIn_name})`);
-                } else {
-                    this.throw('_makeSubmitQuery', new Error(`missing includedIn (${odrl['id']})`));
-                }
+            if (typeof odrl['includedIn'] === 'string') {
+                const incl_name = varName + "incl";
+                queryBlocks.push(
+                    `MERGE (${incl_name}:ODRL:Action {id: "${odrl['includedIn']}"})`,
+                    `ON CREATE SET ${incl_name}.blank = true`,
+                    `MERGE (${varName})-[:includedIn]->(${incl_name})`
+                );
             } // ODRL~Action.includedIn
 
             if (odrl['implies']) {
-                _toArray(odrl['implies']).forEach((implies_elem, index) => {
-                    const implies_name = varName + "impl" + index;
-                    if (typeof implies_elem === 'string') {
-                        queryBlocks.push(`MERGE (${implies_name}:ODRL:Action {id: "${implies_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${implies_name}.blank = true`);
-                    } else {
-                        queryBlocks.push(_makeSubmitQuery(implies_name, implies_elem));
+                _toArray(odrl['implies']).forEach((impl_elem, index) => {
+                    if (typeof impl_elem === 'string') {
+                        const impl_name = varName + "impl" + index;
+                        queryBlocks.push(
+                            `MERGE (${impl_name}:ODRL {id: "${impl_elem}"})`,
+                            `ON CREATE SET ${impl_name}.blank = true`,
+                            `MERGE (${varName})-[:implies]->(${impl_name})`
+                        );
                     }
-                    queryBlocks.push(`MERGE (${varName})-[:implies]->(${implies_name})`);
                 });
             } // ODRL~Action.implies
 
-            // NOTE ODRL~Action.refinement is only defined in requests to submit arguments
+            if (odrl['refinement']) {
+                _toArray(odrl['refinement']).forEach((refi_elem, index) => {
+                    const refi_name = varName + "refi" + index;
+                    if (typeof refi_elem === 'string') {
+                        queryBlocks.push(
+                            `MERGE (${refi_name}:ODRL {id: "${refi_elem}"})`,
+                            `ON CREATE SET ${refi_name}.blank = true`
+                        );
+                    } else {
+                        queryBlocks.push(_makeSubmitQuery(refi_name, refi_elem));
+                    }
+                    queryBlocks.push(`MERGE (${varName})-[:refinement]->(${refi_name})`);
+                });
+            } // ODRL~Action.refinement
 
             break; // ODRL~Action
 
         case 'AssetCollection':
 
             if (odrl['refinement']) {
-                throw `not implementet jet`; // TODO implement
+                _toArray(odrl['refinement']).forEach((refi_elem, index) => {
+                    const refi_name = varName + "refi" + index;
+                    if (typeof refi_elem === 'string') {
+                        queryBlocks.push(`MERGE (${refi_name}:ODRL {id: "${refi_elem}"})`,
+                            `ON CREATE SET ${refi_name}.blank = true`
+                        );
+                    } else {
+                        queryBlocks.push(_makeSubmitQuery(refi_name, refi_elem));
+                    }
+                    queryBlocks.push(`MERGE (${varName})-[:refinement]->(${refi_name})`);
+                });
             }// ODRL~AssetCollection.refinement
 
             // NOTE ODRL~AssetCollection -> no break
@@ -125,8 +146,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['partOf']).forEach((partOf_elem, index) => {
                     const partOf_name = varName + "part" + index;
                     if (typeof partOf_elem === 'string') {
-                        queryBlocks.push(`MERGE (${partOf_name}:ODRL:AssetCollection {uid: "${partOf_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${partOf_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${partOf_name}:ODRL:AssetCollection {uid: "${partOf_elem}"})`,
+                            `ON CREATE SET ${partOf_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(partOf_name, partOf_elem));
                     }
@@ -141,7 +164,18 @@ function _makeSubmitQuery(varName, odrl) {
         case 'PartyCollection':
 
             if (odrl['refinement']) {
-                throw `not implementet jet`; // TODO implement
+                _toArray(odrl['refinement']).forEach((refi_elem, index) => {
+                    const refi_name = varName + "refi" + index;
+                    if (typeof refi_elem === 'string') {
+                        queryBlocks.push(
+                            `MERGE (${refi_name}:ODRL {id: "${refi_elem}"})`,
+                            `ON CREATE SET ${refi_name}.blank = true`
+                        );
+                    } else {
+                        queryBlocks.push(_makeSubmitQuery(refi_name, refi_elem));
+                    }
+                    queryBlocks.push(`MERGE (${varName})-[:refinement]->(${refi_name})`);
+                });
             } // ODRL~PartyCollection.refinement
 
             // NOTE ODRL~PartyCollection -> no break
@@ -154,8 +188,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['partOf']).forEach((partOf_elem, index) => {
                     const partOf_name = varName + "part" + index;
                     if (typeof partOf_elem === 'string') {
-                        queryBlocks.push(`MERGE (${partOf_name}:ODRL:PartyCollection {uid: "${partOf_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${partOf_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${partOf_name}:ODRL:PartyCollection {uid: "${partOf_elem}"})`,
+                            `ON CREATE SET ${partOf_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(partOf_name, partOf_elem));
                     }
@@ -179,8 +215,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['permission']).forEach((permission_elem, index) => {
                     const permission_name = varName + "perm" + index;
                     if (typeof permission_elem === 'string') {
-                        queryBlocks.push(`MERGE (${permission_name}:ODRL:Rule {uid: "${permission_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${permission_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${permission_name}:ODRL:Rule {uid: "${permission_elem}"})`,
+                            `ON CREATE SET ${permission_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(permission_name, permission_elem));
                     }
@@ -192,8 +230,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['obligation']).forEach((obligation_elem, index) => {
                     const obligation_name = varName + "obli" + index;
                     if (typeof obligation_elem === 'string') {
-                        queryBlocks.push(`MERGE (${obligation_name}:ODRL:Rule {uid: "${obligation_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${obligation_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${obligation_name}:ODRL:Rule {uid: "${obligation_elem}"})`,
+                            `ON CREATE SET ${obligation_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(obligation_name, obligation_elem));
                     }
@@ -205,8 +245,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['prohibition']).forEach((prohibition_elem, index) => {
                     const prohibition_name = varName + "proh" + index;
                     if (typeof prohibition_elem === 'string') {
-                        queryBlocks.push(`MERGE (${prohibition_name}:ODRL:Rule {uid: "${prohibition_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${prohibition_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${prohibition_name}:ODRL:Rule {uid: "${prohibition_elem}"})`,
+                            `ON CREATE SET ${prohibition_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(prohibition_name, prohibition_elem));
                     }
@@ -252,9 +294,11 @@ function _makeSubmitQuery(varName, odrl) {
             if (odrl['action']) {
                 const action_name = varName + "acti";
                 if (typeof odrl['action'] === 'string') {
-                    queryBlocks.push(`MERGE (${action_name}:ODRL:Action {id: "${odrl['action']}"})`);
-                    queryBlocks.push(`ON CREATE SET ${action_name}.blank = true`);
-                    queryBlocks.push(`MERGE (${varName})-[:action]->(${action_name})`);
+                    queryBlocks.push(
+                        `MERGE (${action_name}:ODRL:Action {id: "${odrl['action']}"})`,
+                        `ON CREATE SET ${action_name}.blank = true`,
+                        `MERGE (${varName})-[:action]->(${action_name})`
+                    );
                 } else {
                     throw `not implemented jet`; // TODO implement action with refinement
                 }
@@ -265,8 +309,10 @@ function _makeSubmitQuery(varName, odrl) {
             if (odrl['target']) {
                 const target_name = varName + "targ";
                 if (typeof odrl['target'] === 'string') {
-                    queryBlocks.push(`MERGE (${target_name}:ODRL:Asset {uid: "${odrl['target']}"})`);
-                    queryBlocks.push(`ON CREATE SET ${target_name}.blank = true`);
+                    queryBlocks.push(
+                        `MERGE (${target_name}:ODRL:Asset {uid: "${odrl['target']}"})`,
+                        `ON CREATE SET ${target_name}.blank = true`
+                    );
                 } else {
                     queryBlocks.push(_makeSubmitQuery(target_name, odrl['target']));
                 }
@@ -277,8 +323,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['assignee']).forEach((assignee_elem, index) => {
                     const assignee_name = varName + "anee" + index;
                     if (typeof assignee_elem === 'string') {
-                        queryBlocks.push(`MERGE (${assignee_name}:ODRL:Party {uid: "${assignee_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${assignee_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${assignee_name}:ODRL:Party {uid: "${assignee_elem}"})`,
+                            `ON CREATE SET ${assignee_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(assignee_name, assignee_elem));
                     }
@@ -290,8 +338,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['assigner']).forEach((assigner_elem, index) => {
                     const assigner_name = varName + "aner" + index;
                     if (typeof assigner_elem === 'string') {
-                        queryBlocks.push(`MERGE (${assigner_name}:ODRL:Party {uid: "${assigner_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${assigner_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${assigner_name}:ODRL:Party {uid: "${assigner_elem}"})`,
+                            `ON CREATE SET ${assigner_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(assigner_name, assigner_elem));
                     }
