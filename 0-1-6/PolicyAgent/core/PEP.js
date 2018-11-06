@@ -41,7 +41,8 @@ class PEP extends PolicyPoint {
         });
 
         this.data.decisionPoints = new Set();
-        this.data.actions = new Map();
+        this.data.actionDefinition = new Map();
+        this.data.actionCallbacks = new Map();
     } // PEP.constructor
 
     /**
@@ -68,12 +69,45 @@ class PEP extends PolicyPoint {
      * @async
      */
     async request(session, param) {
+        if (!session || typeof session !== 'object' || typeof session.id !== 'string')
+            this.throw('request', new TypeError(`invalid argument`));
+        if (typeof param !== 'object' || !param['action'] || !param['target'])
+            this.throw('request', new TypeError(`invalid argument`));
+        if (param && param['action'] && typeof param['action']['@id'] === 'string')
+            param['action'] = param['action']['@id'];
+        else if (typeof param['action'] !== 'string')
+            this.throw('request', new Error(`invalid action`));
+        if (!this.data.actionDefinition.has(param['action']))
+            this.throw('request', new Error(`action unknown`));
 
-        // TODO
+        const requestMap = new Map();
+
+        (addRequest = (param) => {
+            const
+                requestID = `${param['action']}-${UUID()}`,
+                actionDefinition = this.data.actionDefinition.get(param['action']);
+
+            requestMap.set(requestID, Object.assign({
+                '@type': "Request",
+                '@id': requestID,
+                'target': param['target'],
+                'assigner': param['assigner'] || undefined,
+                'assignee': param['assignee'] || undefined
+            }, actionDefinition));
+
+            // IDEA falls target/assigner/assignee eine @id besitzen, 
+            // sollten sie referenziert und der requestMap hinzugefügt werden, 
+            // um doppelten Load einzusparen
+
+            if (actionDefinition.includedIn)
+                addRequest(Object.assign({}, param, { 'action': actionDefinition.includedIn }));
+
+            actionDefinition.implies.forEach(impl => addRequest(Object.assign({}, param, { 'action': impl })));
+        })(param);
 
         const requestContext = {
             '@context': "PolicyAgent~RequestContext",
-            '@graph': []
+            '@graph': requestMap.entries().map(entry => entry[1])
         };
 
         // TODO
@@ -87,8 +121,33 @@ class PEP extends PolicyPoint {
      * @param {string[]} [implies=[]] 
      * @param {function} callback 
      */
-    defineAction(actionName, includedIn, implies = [], callback) {
-        // TODO
+    defineAction(actionName, callback, includedIn, implies = [], target = undefined) {
+        if (!actionName || typeof actionName !== 'string')
+            this.throw('defineAction', new TypeError(`invalid argument`));
+        if (typeof callback !== 'function')
+            this.throw('defineAction', new TypeError(`invalid argument`));
+        if (this.data.actionDefinition.has(actionName))
+            this.throw('defineAction', new Error(`'${actionName}' already defined`));
+        if (actionName === 'use' || actionName === 'transfer') {
+            includedIn = undefined;
+            implies = [];
+        } else if (!includedIn || typeof includedIn !== 'string')
+            this.throw('defineAction', new TypeError(`invalid argument`));
+        if (!Array.isArray(implies) || implies.some(elem => typeof elem !== 'string'))
+            this.throw('defineAction', new TypeError(`invalid argument`));
+        if (includedIn && !this.data.actionDefinition.has(includedIn))
+            this.throw('defineAction', new Error(`includedIn unknown`));
+        if (!implies.every(elem => this.data.actionDefinition.has(elem)))
+            this.throw('defineAction', new Error(`implies unknown`));
+        if (target !== 'undefined' && (!target || typeof target['@type'] !== 'string'))
+            this.throw('defineAction', new Error(`invalid target`));;
+
+        this.data.actionCallbacks.set(actionName, callback);
+        this.data.actionDefinition.set(actionName, {
+            action: actionName,
+            includedIn, implies, target
+        });
+
     } // PEP#defineAction
 
 } // PEP

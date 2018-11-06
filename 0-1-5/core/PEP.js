@@ -77,17 +77,17 @@ class PEP extends PolicyPoint {
      */
     async request(session, param) {
         if (!session || typeof session !== 'object' || typeof session.id !== 'string')
-            this.throw('constructor', new TypeError(`invalid argument`));
+            this.throw('request', new TypeError(`invalid argument`));
         if (typeof param !== 'object' || !param['action'] || !param['target'])
-            this.throw('constructor', new TypeError(`invalid argument`));
+            this.throw('request', new TypeError(`invalid argument`));
         if (typeof param['action'] === 'string')
             param['action'] = {
                 '@id': param['action']
             };
         else if (typeof param['action']['@id'] !== 'string')
-            this.throw('constructor', new Error(`invalid action`));
+            this.throw('request', new Error(`invalid action`));
         if (!this.data.actions.has(param['action']['@id']))
-            this.throw('constructor', new Error(`action unknown`));
+            this.throw('request', new Error(`action unknown`));
 
         const
             requestSubject = {},

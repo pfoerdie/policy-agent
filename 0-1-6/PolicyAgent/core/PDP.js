@@ -71,14 +71,73 @@ class PDP extends PolicyPoint {
         if (!PolicyPoint.validate('PolicyAgent~RequestContext', requestContext))
             this.throw('_requestDecision', new TypeError(`invalid argument`));
 
+        if (!this.data.informationPoint)
+            this.throw('_requestDecision', new Error(`informationPoint not connected`));
+        if (!this.data.administrationPoint)
+            this.throw('_requestDecision', new Error(`administrationPoint not connected`));
+
+        let
+            requestMap = new Map(requestContext['@graph'].map(elem => [elem['@id'], elem])),
+            responseMap = new Map(),
+            requestSubjects = [],
+            indexMatching = [];
+
+        requestMap.forEach((entry, id) => {
+            if (entry['@type'] === 'Request') {
+                const response = {
+                    '@type': "Response",
+                    '@id': id,
+                    'action': entry['action']
+                };
+
+                for (let name of ['target', 'assigner', 'assignee']) {
+                    let subject = typeof entry[name] === 'string'
+                        ? requestMap[entry[name]]
+                        : entry[name];
+
+                    if (subject && subject['@type'] !== "Request" && subject['@type'] !== "Response") {
+                        let tmpIndex = requestSubjects.findIndex(elem => elem === subject || (elem['@id'] && elem['@id'] === subject['@id']));
+
+                        if (tmpIndex < 0) {
+                            requestSubjects.push(subject);
+                            indexMatching.push([[id, name]]);
+                        } else {
+                            indexMatching[tmpIndex].push([id, name]);
+                        }
+                    }
+                } // for
+
+                responseMap.set(id, response);
+            }
+        });
+
+        let responseSubjects = await this.data.informationPoint._retrieveSubjects(requestSubjects);
+
+        indexMatching.forEach((matching, index) => {
+            let subject = responseSubjects[index];
+
+            if (!subject || !subject['uid']) return;
+
+            if (!responseMap.has(subject['uid'])) {
+                responseMap.set(subject['uid'], {
+                    '@type': match[1] === 'target' ? 'Asset' : 'Party',
+                    '@id': subject['uid'],
+                    'subject': subject,
+                    '@source': this.data.informationPoint.id
+                });
+            }
+
+            matching.forEach(([id, name]) => {
+                responseMap.get(id)[name] = subject['uid'];
+            });
+        });
+
         // TODO
 
-        const responseContext = {
+        return {
             '@context': "PolicyAgent~ResponseContext",
-            '@graph': []
+            '@graph': responseMap.entries().map(entry => entry[1])
         };
-
-        // TODO
 
     } // PDP#_requestDecision
 
