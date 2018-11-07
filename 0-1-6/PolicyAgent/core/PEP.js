@@ -80,20 +80,39 @@ class PEP extends PolicyPoint {
         if (!this.data.actionDefinition.has(param['action']))
             this.throw('request', new Error(`action unknown`));
 
+        /**
+         * @typedef {JSON} PEP~Request
+         * @property {string} @type="PEP~Request"
+         * @property {string} @id
+         * @property {PEP~Action#id} action
+         * @property {PEP~Action#id} [includedIn]
+         * @property {PEP~Action#id[]} [implies]
+         * @property {(PEP~Subject|PEP~Subject#@id)} target
+         * @property {(PEP~Subject|PEP~Subject#@id)} [assignee]
+         * @property {(PEP~Subject|PEP~Subject#@id)} [assigner]
+         * 
+         * @typedef {JSON} PEP~Subject
+         * @property {string} @type
+         * @property {string} [@id]
+         */
+
+        /** @type {Map<string, (PEP~Request|PEP~Subject)>} */
         const requestMap = new Map();
 
         (addRequest = (param) => {
             const
                 requestID = `${param['action']}-${UUID()}`,
-                actionDefinition = this.data.actionDefinition.get(param['action']);
+                actionDefinition = this.data.actionDefinition.get(param['action']),
+                /** @type {PEP~Request} */
+                request = Object.assign({
+                    '@type': "PEP~Request",
+                    '@id': requestID,
+                    'target': param['target'],
+                    'assigner': param['assigner'] || undefined,
+                    'assignee': param['assignee'] || undefined
+                }, actionDefinition);
 
-            requestMap.set(requestID, Object.assign({
-                '@type': "Request",
-                '@id': requestID,
-                'target': param['target'],
-                'assigner': param['assigner'] || undefined,
-                'assignee': param['assignee'] || undefined
-            }, actionDefinition));
+            requestMap.set(requestID, request);
 
             // IDEA falls target/assigner/assignee eine @id besitzen, 
             // sollten sie referenziert und der requestMap hinzugefügt werden, 
