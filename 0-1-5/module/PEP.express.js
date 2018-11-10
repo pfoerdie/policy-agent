@@ -57,7 +57,12 @@ function initializeExpressRouter() {
             param['assignee'] = null; // IDEA aus der request.session oder dem request.body
 
             let result = await this.request(request.session, param);
-            response.send("" + result);
+
+            if (result && result['type'] === 'File' && typeof result['mimeType'] === 'string' && result['@value'])
+                response.type(result['mimeType']).send(result['@value']);
+            else
+                response.status(404).send();
+
 
         } catch (err) {
             // INFO remove the session from the request
@@ -85,8 +90,7 @@ class ExpressPEP extends PEP {
         this.data.cookieSecret = UUID();
         this.data.cookieMaxAge = 60 * 60 * 24 * 7;
 
-        // TODO this.data.requestAction = 'use';
-        this.data.requestAction = 'read';
+        this.data.requestAction = 'use';
 
         initializeExpressRouter.call(this);
 

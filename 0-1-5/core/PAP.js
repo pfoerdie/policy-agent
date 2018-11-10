@@ -8,35 +8,45 @@ const
     UUID = require('uuid/v4'),
     Neo4j = require('neo4j-driver').v1,
     PolicyPoint = require('./PolicyPoint.js'),
-    _toArray = (val) => Array.isArray(val) ? val : val !== undefined ? [val] : [];
+    ResponseContext = require('./Context.js').Response,
+    _toArray = (val) => Array.isArray(val) ? val : val !== undefined ? [val] : [],
+    _retrievePoliciesQuery = [
+        `UNWIND $entries AS entry`,
+        `MATCH (action:ODRL:Action {id: entry.action.id})`,
+        `MATCH (target:ODRL:Asset {uid: entry.subject.target})`,
+        `OPTIONAL MATCH (assignee:ODRL:Party {uid: entry.subject.assignee})`,
+        `OPTIONAL MATCH (assigner:ODRL:Party {uid: entry.subject.assigner})`,
+
+        `WITH entry.index AS index, action, target, assignee, assigner`,
+        `MATCH path = (policy:ODRL:Policy)-[ruleRel:permission|:obligation|:prohibition]->(rule:ODRL:Rule)`,
+        `WHERE ( (rule)-[:target]->(target) OR (rule)-[:target]->(:ODRL:AssetCollection)<-[:partOf*]-(target) )`,
+        `AND ( (rule)-[:action]->(action) OR (rule)-[:action]->(:ODRL:Action)-[:value]->(action) )`,
+        `AND ( NOT (rule)-[:assignee]->(:ODRL) OR (rule)-[:assignee]->(assignee) OR (rule)-[:assignee]->(:ODRL:PartyCollection)<-[:partOf*]-(assignee) )`,
+        `AND ( NOT (rule)-[:assigner]->(:ODRL) OR (rule)-[:assigner]->(assigner) OR (rule)-[:assigner]->(:ODRL:PartyCollection)<-[:partOf*]-(assigner) )`,
+
+        `RETURN index, policy.uid AS policy, rule.uid AS rule, type(ruleRel) AS ruleType`
+    ].join("\n");
 
 /**
-* @name Entry
-* @class
-*/
-class Entry {
-    constructor(record = {}) {
+<<<<<<< HEAD
+=======
+ * @name Record
+ * @class
+>>>>>>> 3da3984f4daa53ae7b6c748cc8e2f1ce8be4e72d
+ */
+class Record {
+    /**
+     * @constructs Record
+     * @param {Neo4j~Record} record 
+     */
+    constructor(record) {
         record['keys'].forEach(key => Object.defineProperty(this, key, {
             enumerable: true,
             value: record['_fields'][record['_fieldLookup'][key]]
         }));
-    } // Entry.constructor
+    } // Record.constructor
 
-} // Entry
-
-/**
- * @name _prettifyRecord
- * @param {Neo4j~Record} record 
- * @returns {object}
- */
-function _prettifyRecord(record) {
-    let pretty = {};
-    record['keys'].forEach(key => Object.defineProperty(pretty, key, {
-        enumerable: true,
-        value: record['_fields'][record['_fieldLookup'][key]]
-    }));
-    return pretty;
-} // _prettifyRecord
+} // Record
 
 /**
  * @function _makeSubmitQuery
@@ -74,38 +84,59 @@ function _makeSubmitQuery(varName, odrl) {
 
         case 'Action':
 
-            if (odrl['id'] !== 'use' && odrl['id'] !== 'transfer') {
-                if (typeof odrl['includedIn'] === 'string') {
-                    const includedIn_name = varName + "incl";
-                    queryBlocks.push(`MERGE (${includedIn_name}:ODRL:Action {id: "${odrl['includedIn']}"})`);
-                    queryBlocks.push(`ON CREATE SET ${includedIn_name}.blank = true`);
-                    queryBlocks.push(`MERGE (${varName})-[:includedIn]->(${includedIn_name})`);
-                } else {
-                    this.throw('_makeSubmitQuery', new Error(`missing includedIn (${odrl['id']})`));
-                }
+            if (typeof odrl['includedIn'] === 'string') {
+                const incl_name = varName + "incl";
+                queryBlocks.push(
+                    `MERGE (${incl_name}:ODRL:Action {id: "${odrl['includedIn']}"})`,
+                    `ON CREATE SET ${incl_name}.blank = true`,
+                    `MERGE (${varName})-[:includedIn]->(${incl_name})`
+                );
             } // ODRL~Action.includedIn
 
             if (odrl['implies']) {
-                _toArray(odrl['implies']).forEach((implies_elem, index) => {
-                    const implies_name = varName + "impl" + index;
-                    if (typeof implies_elem === 'string') {
-                        queryBlocks.push(`MERGE (${implies_name}:ODRL:Action {id: "${implies_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${implies_name}.blank = true`);
-                    } else {
-                        queryBlocks.push(_makeSubmitQuery(implies_name, implies_elem));
+                _toArray(odrl['implies']).forEach((impl_elem, index) => {
+                    if (typeof impl_elem === 'string') {
+                        const impl_name = varName + "impl" + index;
+                        queryBlocks.push(
+                            `MERGE (${impl_name}:ODRL {id: "${impl_elem}"})`,
+                            `ON CREATE SET ${impl_name}.blank = true`,
+                            `MERGE (${varName})-[:implies]->(${impl_name})`
+                        );
                     }
-                    queryBlocks.push(`MERGE (${varName})-[:implies]->(${implies_name})`);
                 });
             } // ODRL~Action.implies
 
-            // NOTE ODRL~Action.refinement is only defined in requests to submit arguments
+            if (odrl['refinement']) {
+                _toArray(odrl['refinement']).forEach((refi_elem, index) => {
+                    const refi_name = varName + "refi" + index;
+                    if (typeof refi_elem === 'string') {
+                        queryBlocks.push(
+                            `MERGE (${refi_name}:ODRL {id: "${refi_elem}"})`,
+                            `ON CREATE SET ${refi_name}.blank = true`
+                        );
+                    } else {
+                        queryBlocks.push(_makeSubmitQuery(refi_name, refi_elem));
+                    }
+                    queryBlocks.push(`MERGE (${varName})-[:refinement]->(${refi_name})`);
+                });
+            } // ODRL~Action.refinement
 
             break; // ODRL~Action
 
         case 'AssetCollection':
 
             if (odrl['refinement']) {
-                throw `not implementet jet`; // TODO implement
+                _toArray(odrl['refinement']).forEach((refi_elem, index) => {
+                    const refi_name = varName + "refi" + index;
+                    if (typeof refi_elem === 'string') {
+                        queryBlocks.push(`MERGE (${refi_name}:ODRL {id: "${refi_elem}"})`,
+                            `ON CREATE SET ${refi_name}.blank = true`
+                        );
+                    } else {
+                        queryBlocks.push(_makeSubmitQuery(refi_name, refi_elem));
+                    }
+                    queryBlocks.push(`MERGE (${varName})-[:refinement]->(${refi_name})`);
+                });
             }// ODRL~AssetCollection.refinement
 
             // NOTE ODRL~AssetCollection -> no break
@@ -118,8 +149,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['partOf']).forEach((partOf_elem, index) => {
                     const partOf_name = varName + "part" + index;
                     if (typeof partOf_elem === 'string') {
-                        queryBlocks.push(`MERGE (${partOf_name}:ODRL:AssetCollection {uid: "${partOf_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${partOf_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${partOf_name}:ODRL:AssetCollection {uid: "${partOf_elem}"})`,
+                            `ON CREATE SET ${partOf_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(partOf_name, partOf_elem));
                     }
@@ -134,7 +167,18 @@ function _makeSubmitQuery(varName, odrl) {
         case 'PartyCollection':
 
             if (odrl['refinement']) {
-                throw `not implementet jet`; // TODO implement
+                _toArray(odrl['refinement']).forEach((refi_elem, index) => {
+                    const refi_name = varName + "refi" + index;
+                    if (typeof refi_elem === 'string') {
+                        queryBlocks.push(
+                            `MERGE (${refi_name}:ODRL {id: "${refi_elem}"})`,
+                            `ON CREATE SET ${refi_name}.blank = true`
+                        );
+                    } else {
+                        queryBlocks.push(_makeSubmitQuery(refi_name, refi_elem));
+                    }
+                    queryBlocks.push(`MERGE (${varName})-[:refinement]->(${refi_name})`);
+                });
             } // ODRL~PartyCollection.refinement
 
             // NOTE ODRL~PartyCollection -> no break
@@ -147,8 +191,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['partOf']).forEach((partOf_elem, index) => {
                     const partOf_name = varName + "part" + index;
                     if (typeof partOf_elem === 'string') {
-                        queryBlocks.push(`MERGE (${partOf_name}:ODRL:PartyCollection {uid: "${partOf_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${partOf_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${partOf_name}:ODRL:PartyCollection {uid: "${partOf_elem}"})`,
+                            `ON CREATE SET ${partOf_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(partOf_name, partOf_elem));
                     }
@@ -172,8 +218,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['permission']).forEach((permission_elem, index) => {
                     const permission_name = varName + "perm" + index;
                     if (typeof permission_elem === 'string') {
-                        queryBlocks.push(`MERGE (${permission_name}:ODRL:Rule {uid: "${permission_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${permission_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${permission_name}:ODRL:Rule {uid: "${permission_elem}"})`,
+                            `ON CREATE SET ${permission_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(permission_name, permission_elem));
                     }
@@ -185,8 +233,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['obligation']).forEach((obligation_elem, index) => {
                     const obligation_name = varName + "obli" + index;
                     if (typeof obligation_elem === 'string') {
-                        queryBlocks.push(`MERGE (${obligation_name}:ODRL:Rule {uid: "${obligation_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${obligation_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${obligation_name}:ODRL:Rule {uid: "${obligation_elem}"})`,
+                            `ON CREATE SET ${obligation_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(obligation_name, obligation_elem));
                     }
@@ -198,8 +248,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['prohibition']).forEach((prohibition_elem, index) => {
                     const prohibition_name = varName + "proh" + index;
                     if (typeof prohibition_elem === 'string') {
-                        queryBlocks.push(`MERGE (${prohibition_name}:ODRL:Rule {uid: "${prohibition_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${prohibition_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${prohibition_name}:ODRL:Rule {uid: "${prohibition_elem}"})`,
+                            `ON CREATE SET ${prohibition_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(prohibition_name, prohibition_elem));
                     }
@@ -245,9 +297,11 @@ function _makeSubmitQuery(varName, odrl) {
             if (odrl['action']) {
                 const action_name = varName + "acti";
                 if (typeof odrl['action'] === 'string') {
-                    queryBlocks.push(`MERGE (${action_name}:ODRL:Action {id: "${odrl['action']}"})`);
-                    queryBlocks.push(`ON CREATE SET ${action_name}.blank = true`);
-                    queryBlocks.push(`MERGE (${varName})-[:action]->(${action_name})`);
+                    queryBlocks.push(
+                        `MERGE (${action_name}:ODRL:Action {id: "${odrl['action']}"})`,
+                        `ON CREATE SET ${action_name}.blank = true`,
+                        `MERGE (${varName})-[:action]->(${action_name})`
+                    );
                 } else {
                     throw `not implemented jet`; // TODO implement action with refinement
                 }
@@ -258,8 +312,10 @@ function _makeSubmitQuery(varName, odrl) {
             if (odrl['target']) {
                 const target_name = varName + "targ";
                 if (typeof odrl['target'] === 'string') {
-                    queryBlocks.push(`MERGE (${target_name}:ODRL:Asset {uid: "${odrl['target']}"})`);
-                    queryBlocks.push(`ON CREATE SET ${target_name}.blank = true`);
+                    queryBlocks.push(
+                        `MERGE (${target_name}:ODRL:Asset {uid: "${odrl['target']}"})`,
+                        `ON CREATE SET ${target_name}.blank = true`
+                    );
                 } else {
                     queryBlocks.push(_makeSubmitQuery(target_name, odrl['target']));
                 }
@@ -270,8 +326,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['assignee']).forEach((assignee_elem, index) => {
                     const assignee_name = varName + "anee" + index;
                     if (typeof assignee_elem === 'string') {
-                        queryBlocks.push(`MERGE (${assignee_name}:ODRL:Party {uid: "${assignee_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${assignee_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${assignee_name}:ODRL:Party {uid: "${assignee_elem}"})`,
+                            `ON CREATE SET ${assignee_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(assignee_name, assignee_elem));
                     }
@@ -283,8 +341,10 @@ function _makeSubmitQuery(varName, odrl) {
                 _toArray(odrl['assigner']).forEach((assigner_elem, index) => {
                     const assigner_name = varName + "aner" + index;
                     if (typeof assigner_elem === 'string') {
-                        queryBlocks.push(`MERGE (${assigner_name}:ODRL:Party {uid: "${assigner_elem}"})`);
-                        queryBlocks.push(`ON CREATE SET ${assigner_name}.blank = true`);
+                        queryBlocks.push(
+                            `MERGE (${assigner_name}:ODRL:Party {uid: "${assigner_elem}"})`,
+                            `ON CREATE SET ${assigner_name}.blank = true`
+                        );
                     } else {
                         queryBlocks.push(_makeSubmitQuery(assigner_name, assigner_elem));
                     }
@@ -416,13 +476,30 @@ class PAP extends PolicyPoint {
 
             session.close();
             return resultArr
-                ? resultArr.map(result => result['records'].map(_prettifyRecord))
-                : result['records'].map(_prettifyRecord);
+                ? resultArr.map(result => result['records'].map(record => new Record(record)))
+                : result['records'].map(record => new Record(record));
 
         } catch (err) {
             this.throw('_request', err);
         }
     } // PAP#_request
+
+    async _requestPolicies(responseContext) {
+        if (!(responseContext instanceof ResponseContext))
+            this.throw('_requestPolicies', new TypeError(`invalid argument`));
+
+        try {
+            let
+                session = this.data.driver.session(),
+                result = await session.run(_retrievePoliciesQuery, responseContext);
+
+            session.close();
+            return result['records'].map(record => new Record(record));
+
+        } catch (err) {
+            this.throw('_requestPolicies', err);
+        }
+    } // PAP#_requestPolicies
 
     /**
      * @name PAP#_submitODRL

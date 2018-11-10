@@ -29,21 +29,72 @@ class RP extends PolicyPoint {
         super(options);
 
         if (typeof options['root'] !== 'string')
-            this.throw('constructor', new TypeError(`invalid param`));
+            this.throw('constructor', new TypeError(`invalid options`));
 
         this.data.root = options['root'];
 
     } // RP.constructor
 
-    async _retrieve() {
+    /**
+     * 
+     * @param {(object|object[])} resourceID 
+     */
+    async _retrieve(query) {
+        const
+            queryArr = Array.isArray(query) ? query : undefined;
 
-        // TODO
+        if (queryArr ? queryArr.some(query => typeof query !== 'object') : typeof query !== 'object')
+            this.throw('_retrieve', new TypeError(`invalid argument`));
+
+        const _retrieve = (query) => new Promise((resolve, reject) => {
+            switch (query['type']) {
+
+                case 'File':
+                    let filePath = Path.join(this.data.root, query['path'].replace(/^(?:\.|\/|\\)*/, ""));
+                    Fs.readFile(filePath, (err, data) => err ? resolve(undefined) : resolve(data));
+                    break;
+
+                default:
+                    resolve(undefined);
+
+            } // switch
+        });
+
+        return queryArr
+            ? await Promise.all(queryArr.map(query => _retrieve(query)))
+            : await _retrieve(query);
 
     } // RP#_retrieve
 
-    async _submit() {
+    async _submit(query) {
+        const
+            queryArr = Array.isArray(query) ? query : undefined;
 
-        // TODO
+        if (queryArr ? queryArr.some(query => typeof query !== 'object') : typeof query !== 'object')
+            this.throw('_retrieve', new TypeError(`invalid argument`));
+
+        const _retrieve = (query) => new Promise((resolve, reject) => {
+            switch (query['type']) {
+
+                case 'File':
+                    let
+                        filePath = Path.join(this.data.root, query['path'].replace(/^(?:\.|\/|\\)*/, "")),
+                        data = query['@value'];
+                    if (data)
+                        Fs.writeFile(filePath, data, (err) => err ? resolve(false) : resolve(true));
+                    else
+                        resolve(false);
+                    break;
+
+                default:
+                    resolve(false);
+
+            } // switch
+        });
+
+        return queryArr
+            ? await Promise.all(queryArr.map(query => _retrieve(query)))
+            : await _retrieve(query);
 
     } // RP#_submit
 

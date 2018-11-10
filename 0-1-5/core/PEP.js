@@ -12,6 +12,20 @@ const
     Context = require('./Context.js'),
     PDP = require('./PDP.js');
 
+async function _actionUse(target) {
+    if (target && !target['@value'] && target['@source']) {
+        let informationPoint = PolicyPoint.getComponent(target['@source']);
+        if (informationPoint)
+            target['@value'] = await informationPoint._retrieveResource(target);
+    }
+    return Object.freeze(target);
+} // _actionUse
+
+async function _actionTransfer(target) {
+    if (target && target['@value'] && target['@source'] && target['uid'])
+        await PolicyPoint.getComponent(target['@source'])._submitResource(target);
+} // _actionTransfer
+
 /**
  * @name PEP
  * @extends PolicyAgent.PolicyPoint
@@ -34,14 +48,8 @@ class PEP extends PolicyPoint {
         this.data.decisionPoints = new Set();
 
         this.data.actions = new Map();
-        this.defineAction('use', undefined, undefined, async (subject) => {
-            console.log(`action 'use' used`);
-            return subject;
-        });
-        this.defineAction('transfer', undefined, undefined, async (subject) => {
-            console.log(`action 'transfer' used`);
-            return subject;
-        });
+        this.defineAction('use', undefined, undefined, _actionUse.bind(this));
+        this.defineAction('transfer', undefined, undefined, _actionTransfer.bind(this));
     } // PEP.constructor
 
     /**
@@ -69,17 +77,17 @@ class PEP extends PolicyPoint {
      */
     async request(session, param) {
         if (!session || typeof session !== 'object' || typeof session.id !== 'string')
-            this.throw('constructor', new TypeError(`invalid argument`));
+            this.throw('request', new TypeError(`invalid argument`));
         if (typeof param !== 'object' || !param['action'] || !param['target'])
-            this.throw('constructor', new TypeError(`invalid argument`));
+            this.throw('request', new TypeError(`invalid argument`));
         if (typeof param['action'] === 'string')
             param['action'] = {
                 '@id': param['action']
             };
         else if (typeof param['action']['@id'] !== 'string')
-            this.throw('constructor', new Error(`invalid action`));
+            this.throw('request', new Error(`invalid action`));
         if (!this.data.actions.has(param['action']['@id']))
-            this.throw('constructor', new Error(`action unknown`));
+            this.throw('request', new Error(`action unknown`));
 
         const
             requestSubject = {},
@@ -125,17 +133,22 @@ class PEP extends PolicyPoint {
         this.data.decisionPoints.forEach(decisionPoint => promiseArr.push(
             (async () => {
                 try {
-                    let
-                        requestContext = new Context.Request(session, requestEntries),
-                        /** @type {PolicyAgent.Context.Response} */
-                        responseContext = await decisionPoint._requestDecision(requestContext);
+                    let requestContext = new Context.Request(session, requestEntries);
 
-                    responseContexts.push(responseContext);
+                    Object.defineProperty(requestContext.environment, 'PEP', {
+                        enumerable: true,
+                        value: this.id
+                    });
+
+                    responseContexts.push(
+                        /** @type {PolicyAgent.Context.Response} */
+                        await decisionPoint._requestDecision(requestContext)
+                    );
                 } catch (err) {
                     // do nothing
-                    // console.error(err);
+                    console.error(err);
                 }
-            })(/* NOTE call the async function immediately to get a promise */)
+            })(/* NOTE async call instead of promise */)
         ));
 
         await Promise.all(promiseArr);
@@ -154,28 +167,48 @@ class PEP extends PolicyPoint {
 
         // TODO Auswahl des richtigen ResponseContexts
 
-        let context = responseContexts[0];
-        if (context.decision !== 'Permission' || context.entries[0].decision !== 'Permission')
+        let resultContext = responseContexts[0];
+        if (resultContext.decision !== 'Permission' || resultContext.entries[0].decision !== 'Permission')
             this.throw('request', new Error(`permission denied`));
 
-        const executeAction = async (action) => {
+        const executeAction = async (action, ...args) => {
             let
-                inclResult = action.includedIn ? await executeAction(action.includedIn) : undefined,
-                implResult = await Promise.all(action.implies.map(implAction => executeAction(implAction))),
-                implObj = {},
-                entry = context.entries[actionMapping[action.id]];
+                actionStack = [],
+                tmpAction = action;
 
-            action.implies.forEach((action, index) => { implObj[action.id] = implResult[index] });
+            do {
+                actionStack.push(tmpAction);
+                tmpAction = tmpAction.includedIn;
+            } while (tmpAction);
 
-            return await action.callback(inclResult || entry.subject.target, implObj);
+            let
+                isTransfer = actionStack[actionStack.length - 1].id === 'transfer',
+                tmpResult = resultContext.resource[resultContext.entries[actionMapping[action.id]].subject.target];
+
+            while (actionStack.length > 0) {
+                tmpAction = isTransfer ? actionStack.shift() : actionStack.pop();
+
+                let implObj = {};
+                tmpAction.implies.forEach((implAction) => Object.defineProperty(implObj, implAction.id, {
+                    enumerable: true,
+                    value: (...implArgs) => executeAction(implAction, ...implArgs)
+                }));
+
+                tmpResult = await tmpAction.callback(tmpResult, implObj, ...args);
+            } // while
+
+            return tmpResult;
         }; // executeAction
 
         // TODO bisher wird nur die Gesamtentscheidung berücksichtigt
+        let
+            result = await executeAction(this.data.actions.get(param['action']['@id'])),
+            decisionPoint = PolicyPoint.getComponent(resultContext.environment['PDP']);
 
-        return await executeAction(this.data.actions.get(param['action']['@id']));
+        await decisionPoint._finalizeRequest(resultContext);
+        return result;
 
         // TODO Aktionen ausführen (Deny-biased PEP vs Permit-biased PEP)
-        // TODO Rückgabewert feststellen
 
     } // PEP#request
 
@@ -207,6 +240,7 @@ class PEP extends PolicyPoint {
 
         this.data.actions.set(actionName, {
             id: actionName,
+            topLvl: includedIn ? this.data.actions.get(includedIn).topLvl : actionName,
             includedIn: includedIn ? this.data.actions.get(includedIn) : undefined,
             implies: implies.map(elem => this.data.actions.get(elem)),
             callback: callback

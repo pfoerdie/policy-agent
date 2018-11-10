@@ -33,7 +33,12 @@
 
     expressPEP.connectPDP(accessPDP);
 
-    expressPEP.defineAction('read', 'use', undefined, subj => JSON.stringify(subj, undefined, "****").replace(/\*/g, "&nbsp;").replace(/\n/g, "<br>"));
+    expressPEP.defineAction('read', 'use', undefined, target => target['@value'].toString());
+    expressPEP.defineAction('login', 'use', undefined, target => {
+        console.log(target);
+        // TODO die Session wird hier benötigt
+        return false;
+    });
 
     accessPDP.connectPIP(myPIP);
     accessPDP.connectPAP(myPAP);

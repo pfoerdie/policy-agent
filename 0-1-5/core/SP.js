@@ -12,9 +12,11 @@ const
  * @name _retrieveSubject
  * @param {MongoDB~DataBase} dataBase 
  * @param {object} subject 
- * @returns {Promise<(object|object[])>}
+ * @returns {Promise<object>}
  * @this {SP}
  * @private
+ * 
+ * {@link http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#find MongoDB Driver API - Collection#find}
  */
 function _retrieveSubject(dataBase, subject) {
     return new Promise((resolve, reject) => {
@@ -26,13 +28,11 @@ function _retrieveSubject(dataBase, subject) {
                     this.throw('_retrieve', err, true); // silent
                     resolve(undefined);
                 } else if (docs.length === 1) {
-                    try {
-                        if (typeof docs[0]['uid'] !== 'string')
-                            throw new Error(`missing uid (${docs[0]['@id']})`);
+                    if (typeof docs[0]['uid'] === 'string') {
                         delete docs[0]['_id'];
                         resolve(docs[0]);
-                    } catch (err) {
-                        this.throw('_retrieve', err, true); // silent
+                    } else {
+                        this.throw('_retrieve', `missing uid (${docs[0]['@id']})`, true); // silent
                         resolve(undefined);
                     }
                 } else {
@@ -49,12 +49,44 @@ function _retrieveSubject(dataBase, subject) {
  * @returns {Promise}
  * @this {SP}
  * @private
+ * 
+ * {@link http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#update MongoDB Driver API - Collection#update}
  */
 function _submitSubject(dataBase, subject) {
-
-    // TODO
-
+    return new Promise((resolve, reject) => {
+        dataBase
+            .collection(subject['@type'])
+            .update({ 'uid': subject['uid'] }, subject)
+            .then((result) => {
+                resolve(result['result']['ok'] === 1);
+            })
+            .catch((err) => {
+                this.throw('_retrieve', err, true); // silent
+                resolve(false);
+            })
+    });
 } // _submitSubject
+
+/**
+ * @name _timeoutPromise
+ * @param {Promise} origPromise 
+ * @param {number} toTime 
+ * @this {SP}
+ * @private
+ * @async
+ */
+async function _timeoutPromise(origPromise, duration) {
+    if (duration === Infinity || duration < 0)
+        return await origPromise;
+
+    let timeout, toPromise = new Promise((resolve, reject) => {
+        timeout = setTimeout(() => reject(new Error(`timed out`)), duration);
+    });
+
+    await Promise.race([origPromise, toPromise]);
+    clearTimeout(timeout);
+    return await origPromise;
+} // _timeoutPromise
 
 /**
  * @name SP
@@ -135,19 +167,11 @@ class SP extends PolicyPoint {
                 ? Promise.all(queryArr.map(query => _retrieveSubject.call(this, client.db, query)))
                 : _retrieveSubject.call(this, client.db, query);
 
-        if (this.data.requestTimeout < Infinity) {
-            // NOTE timeout mechanic
-            try {
-                await Promise.race([
-                    resultPromise,
-                    new Promise((resolve, reject) => setTimeout(() => reject(new Error(`timed out`)), this.data.requestTimeout))
-                ]);
-            } catch (err) {
-                this.throw('_retrieve', err);
-            }
+        try {
+            return await _timeoutPromise(resultPromise, this.data.requestTimeout);
+        } catch (err) {
+            this.throw('_retrieve', err);
         }
-
-        return await resultPromise;
     } // SP#_retrieve
 
     /**
@@ -162,7 +186,7 @@ class SP extends PolicyPoint {
             queryInvalid = (query) => (!query || typeof query !== 'object' || typeof query['@type'] !== 'string');
 
         if (queryArr ? queryArr.some(queryInvalid) : queryInvalid(query))
-            this.throw('_request', new TypeError(`invalid argument`));
+            this.throw('_submit', new TypeError(`invalid argument`));
 
         let
             client = await this.data.driver.client(),
@@ -170,19 +194,11 @@ class SP extends PolicyPoint {
                 ? Promise.all(queryArr.map(query => _submitSubject.call(this, client.db, query)))
                 : _submitSubject.call(this, client.db, query);
 
-        if (this.data.requestTimeout < Infinity) {
-            // NOTE timeout mechanic
-            try {
-                await Promise.race([
-                    resultPromise,
-                    new Promise((resolve, reject) => setTimeout(() => reject(new Error(`timed out`)), this.data.requestTimeout))
-                ]);
-            } catch (err) {
-                this.throw('_submit', err);
-            }
+        try {
+            return await _timeoutPromise(resultPromise, this.data.requestTimeout);
+        } catch (err) {
+            this.throw('_submit', err);
         }
-
-        return await resultPromise;
     } // SP#_submit
 
 } // SP
