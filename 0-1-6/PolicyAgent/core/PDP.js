@@ -6,7 +6,6 @@
 
 const
     PolicyPoint = require('./PolicyPoint.js'),
-    Context = require('./Context.js'),
     PIP = require('./PIP.js'),
     PAP = require('./PAP.js');
 
@@ -61,7 +60,7 @@ class PDP extends PolicyPoint {
 
     /**
      * @name PDP#_requestDecision
-     * @param {Context} context
+     * @param {PolicyAgent~RequestContext} requestContext
      * @async
      * 
      * INFO 7.17 Authorization decision:
@@ -97,48 +96,56 @@ class PDP extends PolicyPoint {
          * @property {PolicyAgent.PIP#id} @source
          */
 
-        let
-            /** @type {Map<string, (PolicyAgent.PEP~Request|PolicyAgent.PEP~Subject)>} Contains all data of the request. */
-            requestMap = new Map(requestContext['@graph'].map(elem => [elem['@id'], elem])),
+        const
+            /** @type {Array<PolicyAgent.PEP~Request>} */
+            requestArr = requestContext['@graph'].filter(elem => elem['@type'] === "PEP~Request"),
+            /** @type {Map<string, JSON>} Contains all data of the request. */
+            requestGraph = new Map(requestContext['@graph'].map(elem => [elem['@id'], elem])),
+            /** @type {Array<PDP~Response>} */
+            responseArr = [],
             /** @type {Map<string, (PDP~Response|PDP~Resource)>} Contains all data of the response. */
-            responseMap = new Map(),
+            responseGraph = new Map();
+
+        let
             /** @type {Array<PolicyAgent.PEP~Subject>} This array is used to require the subjects from the PIP. */
             requestSubjects = [],
             /** @type {Array<Array<[PolicyAgent.PEP~Request#id, string]>>} Required to coordinate the subjects for each request. */
-            indexMatching = [];
+            indexMatching = [],
+            /** @type {Array<PolicyAgent.PIP~Subject>} This array contains all subjects found that were included in the requests. */
+            responseSubjects,
+            /** @type {Array<PolicyAgent.PAP~Record>} */
+            policySet;
 
-        requestMap.forEach((entry, id) => {
-            if (entry['@type'] === 'PEP~Request') {
-                const response = {
-                    '@type': "PDP~Response",
-                    '@id': id,
-                    'action': entry['action']
-                };
+        requestArr.forEach((entry, id) => {
+            const response = {
+                '@type': "PDP~Response",
+                '@id': id,
+                'action': entry['action']
+            };
 
-                for (let name of ['target', 'assigner', 'assignee']) {
-                    /** @type {PolicyAgent.PEP~Subject} */
-                    let subject = typeof entry[name] === 'string'
-                        ? requestMap[entry[name]]
-                        : entry[name];
+            for (let name of ['target', 'assigner', 'assignee']) {
+                /** @type {PolicyAgent.PEP~Subject} */
+                let subject = typeof entry[name] === 'string'
+                    ? requestGraph[entry[name]]
+                    : entry[name];
 
-                    if (subject && subject['@type'] !== "PEP~Request") {
-                        let tmpIndex = requestSubjects.findIndex(elem => elem === subject || (elem['@id'] && elem['@id'] === subject['@id']));
+                if (subject && subject['@type'] !== "PEP~Request") {
+                    let tmpIndex = requestSubjects.findIndex(elem => elem === subject || (elem['@id'] && elem['@id'] === subject['@id']));
 
-                        if (tmpIndex < 0) {
-                            requestSubjects.push(subject);
-                            indexMatching.push([[id, name]]);
-                        } else {
-                            indexMatching[tmpIndex].push([id, name]);
-                        }
+                    if (tmpIndex < 0) {
+                        requestSubjects.push(subject);
+                        indexMatching.push([[id, name]]);
+                    } else {
+                        indexMatching[tmpIndex].push([id, name]);
                     }
-                } // for
+                }
+            } // for
 
-                responseMap.set(id, response);
-            }
+            responseArr.push(response);
+            responseGraph.set(id, response);
         });
 
-        /** @type {Array<PolicyAgent.PIP~Subject>} This array contains all subjects found that were included in the requests. */
-        let responseSubjects = await this.data.informationPoint._retrieveSubjects(requestSubjects);
+        responseSubjects = await this.data.informationPoint._retrieveSubjects(requestSubjects);
 
         indexMatching.forEach((matching, index) => {
             /** @type {PolicyAgent.PIP~Subject} */
@@ -146,25 +153,26 @@ class PDP extends PolicyPoint {
 
             if (!subject || !subject['uid']) return;
 
-            if (!responseMap.has(subject['uid'])) {
-                responseMap.set(subject['uid'], {
-                    '@type': match[1] === 'target' ? 'Asset' : 'Party',
+            if (!responseGraph.has(subject['uid'])) {
+                /** @type {PDP~Resource} */
+                responseGraph.set(subject['uid'], {
+                    '@type': "PDP~Resource",
                     '@id': subject['uid'],
                     'subject': subject,
                     '@source': this.data.informationPoint.id
                 });
             }
 
-            matching.forEach(([id, name]) => {
-                responseMap.get(id)[name] = subject['uid'];
-            });
+            matching.forEach(([id, name]) => { responseGraph.get(id)[name] = subject['uid'] });
         });
+
+        policySet = await this.data.administrationPoint._requestPolicies(responseArr);
 
         // TODO
 
         return {
             '@context': "PolicyAgent~ResponseContext",
-            '@graph': responseMap.entries().map(entry => entry[1])
+            '@graph': responseGraph.entries().map(entry => entry[1])
         };
 
     } // PDP#_requestDecision
