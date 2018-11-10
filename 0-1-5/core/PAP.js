@@ -28,11 +28,8 @@ const
     ].join("\n");
 
 /**
-<<<<<<< HEAD
-=======
  * @name Record
  * @class
->>>>>>> 3da3984f4daa53ae7b6c748cc8e2f1ce8be4e72d
  */
 class Record {
     /**
