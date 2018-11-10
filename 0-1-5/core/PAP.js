@@ -11,6 +11,20 @@ const
     _toArray = (val) => Array.isArray(val) ? val : val !== undefined ? [val] : [];
 
 /**
+* @name Entry
+* @class
+*/
+class Entry {
+    constructor(record = {}) {
+        record['keys'].forEach(key => Object.defineProperty(this, key, {
+            enumerable: true,
+            value: record['_fields'][record['_fieldLookup'][key]]
+        }));
+    } // Entry.constructor
+
+} // Entry
+
+/**
  * @name _prettifyRecord
  * @param {Neo4j~Record} record 
  * @returns {object}
