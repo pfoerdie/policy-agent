@@ -43,6 +43,9 @@ class PEP extends PolicyPoint {
         this.data.decisionPoints = new Set();
         this.data.actionDefinition = new Map();
         this.data.actionCallbacks = new Map();
+
+        this.defineAction('use', () => undefined); // TODO
+        this.defineAction('transfer', () => undefined); // TODO
     } // PEP.constructor
 
     /**
@@ -97,22 +100,22 @@ class PEP extends PolicyPoint {
          */
 
         /** @type {Map<string, (PEP~Request|PEP~Subject)>} */
-        const requestMap = new Map();
+        const requestGraph = new Map();
 
-        (addRequest = (param) => {
+        const addRequest = (param) => {
             const
                 requestID = `${param['action']}-${UUID()}`,
                 actionDefinition = this.data.actionDefinition.get(param['action']),
                 /** @type {PEP~Request} */
-                request = Object.assign({
+                request = Object.assign({}, actionDefinition, {
                     '@type': "PEP~Request",
                     '@id': requestID,
                     'target': param['target'],
                     'assigner': param['assigner'] || undefined,
                     'assignee': param['assignee'] || undefined
-                }, actionDefinition);
+                });
 
-            requestMap.set(requestID, request);
+            requestGraph.set(requestID, request);
 
             // IDEA falls target/assigner/assignee eine @id besitzen, 
             // sollten sie referenziert und der requestMap hinzugefügt werden, 
@@ -122,14 +125,20 @@ class PEP extends PolicyPoint {
                 addRequest(Object.assign({}, param, { 'action': actionDefinition.includedIn }));
 
             actionDefinition.implies.forEach(impl => addRequest(Object.assign({}, param, { 'action': impl })));
-        })(param);
+        };
+
+        addRequest(param);
 
         const requestContext = {
             '@context': "PolicyAgent~RequestContext",
-            '@graph': requestMap.entries().map(entry => entry[1])
+            '@graph': []
         };
 
+        requestGraph.forEach(elem => requestContext['@graph'].push(elem));
+
         // TODO
+
+        return 0;
 
     } // PEP#request
 
@@ -158,7 +167,7 @@ class PEP extends PolicyPoint {
             this.throw('defineAction', new Error(`includedIn unknown`));
         if (!implies.every(elem => this.data.actionDefinition.has(elem)))
             this.throw('defineAction', new Error(`implies unknown`));
-        if (target !== 'undefined' && (!target || typeof target['@type'] !== 'string'))
+        if (target !== undefined && (!target || typeof target['@type'] !== 'string'))
             this.throw('defineAction', new Error(`invalid target`));;
 
         this.data.actionCallbacks.set(actionName, callback);

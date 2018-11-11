@@ -170,10 +170,13 @@ class PDP extends PolicyPoint {
 
         // TODO
 
-        return {
+        const responseContext = {
             '@context': "PolicyAgent~ResponseContext",
-            '@graph': responseGraph.entries().map(entry => entry[1])
+            '@graph': []
         };
+
+        responseGraph.forEach(elem => responseContext['@graph'].push(elem));
+        return responseContext;
 
     } // PDP#_requestDecision
 
