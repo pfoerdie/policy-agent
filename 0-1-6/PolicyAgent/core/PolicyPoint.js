@@ -116,15 +116,14 @@ class PolicyPoint extends Auditor {
         switch (type) {
 
             case 'PolicyAgent~RequestContext':
+                return value
+                    && value['@context'] === type
+                    && typeof value['requests'] === 'object';
+
             case 'PolicyAgent~ResponseContext':
                 return value
                     && value['@context'] === type
-                    && Array.isArray(value['@graph'])
-                    && value['@graph'].every(
-                        elem => elem
-                            && typeof elem['@id'] === 'string'
-                            && typeof elem['@type'] === 'string'
-                    );
+                    && typeof value['responses'] === 'object';
 
             default:
                 throw Auditor.prototype.throw(this, 'validate', new Error(`unknown type`));

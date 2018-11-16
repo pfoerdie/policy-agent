@@ -75,38 +75,24 @@ class PDP extends PolicyPoint {
         if (!this.data.administrationPoint)
             this.throw('_requestDecision', new Error(`administrationPoint not connected`));
 
-        /**
-         * @typedef {JSON} PDP~Response
-         * @property {string} @type="PDP~Response"
-         * @property {PolicyAgent.PEP~Request#@id} @id
-         * @property {ODRL.Action#id} action
-         * @property {ODRL.Action#refinement} [refinement]
-         * @property {object} [environment]
-         * @property {ODRL.Action#id} [includedIn]
-         * @property {ODRL.Action#id[]} [implies]
-         * @property {ODRL.Asset#uid} target
-         * @property {ODRL.Party#uid} [assignee]
-         * @property {ODRL.Party#uid} [assigner]
-         * 
-         * @typedef {JSON} PDP~Resource
-         * @property {string} @type="PDP~Resource"
-         * @property {PolicyAgent.PIP~Subject#uid} @id
-         * @property {PolicyAgent.PIP~Subject} subject
-         * @property {PolicyAgent.PIP~Resource} resource
-         * @property {PolicyAgent.PIP#id} @source
-         */
-
-        const
-            /** @type {Array<PolicyAgent.PEP~Request>} */
-            requestArr = requestContext['@graph'].filter(elem => elem['@type'] === "PEP~Request"),
-            /** @type {Map<string, JSON>} Contains all data of the request. */
-            requestGraph = new Map(requestContext['@graph'].map(elem => [elem['@id'], elem])),
-            /** @type {Array<PDP~Response>} */
-            responseArr = [],
-            /** @type {Map<string, (PDP~Response|PDP~Resource)>} Contains all data of the response. */
-            responseGraph = new Map();
-
         let
+            environment = {},
+            /** @type {PolicyAgent~ResponseContext} */
+            responseContext = Object.create({}, {
+                '@type': {
+                    enumerable: true,
+                    value: "PolicyAgent~ResponseContext"
+                },
+                'responses': {
+                    enumerable: true,
+                    value: {}
+                },
+                'subjects': {
+                    enumerable: true,
+                    value: {}
+                }
+            }),
+            defaultSubjects = {},
             /** @type {Array<PolicyAgent.PEP~Subject>} This array is used to require the subjects from the PIP. */
             requestSubjects = [],
             /** @type {Array<Array<[PolicyAgent.PEP~Request#id, string]>>} Required to coordinate the subjects for each request. */
@@ -116,66 +102,73 @@ class PDP extends PolicyPoint {
             /** @type {Array<PolicyAgent.PAP~Record>} */
             policySet;
 
-        requestArr.forEach((entry, id) => {
-            const response = {
-                '@type': "PDP~Response",
-                '@id': id,
-                'action': entry['action']
-            };
+        for (let subjType of ['target', 'assigner', 'assignee']) {
+            if (requestContext[subjType]) {
+                requestSubjects.push(requestContext[subjType]);
+                indexMatching.push([undefined, subjType]);
+            }
+        } // for
 
-            for (let name of ['target', 'assigner', 'assignee']) {
-                /** @type {PolicyAgent.PEP~Subject} */
-                let subject = typeof entry[name] === 'string'
-                    ? requestGraph[entry[name]]
-                    : entry[name];
+        for (let requestID in requestContext['requests']) {
+            let
+                request = requestContext['requests'][requestID],
+                response = {
+                    '@id': requestID
+                };
 
-                if (subject && subject['@type'] !== "PEP~Request") {
-                    let tmpIndex = requestSubjects.findIndex(elem => elem === subject || (elem['@id'] && elem['@id'] === subject['@id']));
-
-                    if (tmpIndex < 0) {
-                        requestSubjects.push(subject);
-                        indexMatching.push([[id, name]]);
-                    } else {
-                        indexMatching[tmpIndex].push([id, name]);
-                    }
+            for (let subjType of ['target', 'assigner', 'assignee']) {
+                if (request[subjType]) {
+                    requestSubjects.push(request[subjType]);
+                    indexMatching.push([requestID, subjType]);
                 }
             } // for
 
-            responseArr.push(response);
-            responseGraph.set(id, response);
-        });
+            Object.defineProperty(responseContext['responses'], requestID, {
+                enumerable: true,
+                value: response
+            });
+        } // for
 
         responseSubjects = await this.data.informationPoint._retrieveSubjects(requestSubjects);
 
-        indexMatching.forEach((matching, index) => {
+        indexMatching.forEach(([requestID, subjType], index) => {
             /** @type {PolicyAgent.PIP~Subject} */
             let subject = responseSubjects[index];
 
-            if (!subject || !subject['uid']) return;
+            if (!subject || !subject['uid'])
+                return;
 
-            if (!responseGraph.has(subject['uid'])) {
-                /** @type {PDP~Resource} */
-                responseGraph.set(subject['uid'], {
-                    '@type': "PDP~Resource",
-                    '@id': subject['uid'],
-                    'subject': subject,
-                    '@source': this.data.informationPoint.id
+            if (!responseContext['subjects'][subject['uid']])
+                Object.defineProperty(responseContext['subjects'], subject['uid'], {
+                    enumerable: true,
+                    value: subject
                 });
-            }
 
-            matching.forEach(([id, name]) => { responseGraph.get(id)[name] = subject['uid'] });
+            Object.defineProperty(requestID ? requestContext['requests'][requestID] : defaultSubjects, subjType, {
+                enumerable: true,
+                value: subject['uid']
+            });
         });
 
-        policySet = await this.data.administrationPoint._requestPolicies(responseArr);
+        for (let requestID in responseContext['responses']) {
+            let
+                request = requestContext['requests'][requestID],
+                response = responseContext['responses'][requestID];
+
+            for (let subjType of ['target', 'assigner', 'assignee']) {
+                if (!request[subjType] && defaultSubjects[subjType]) {
+                    Object.defineProperty(response, subjType, {
+                        enumerable: true,
+                        value: defaultSubjects[subjType]
+                    });
+                }
+            } // for
+        } // for
+
+        policySet = await this.data.administrationPoint._requestPolicies(responseContext['responses']);
 
         // TODO
 
-        const responseContext = {
-            '@context': "PolicyAgent~ResponseContext",
-            '@graph': []
-        };
-
-        responseGraph.forEach(elem => responseContext['@graph'].push(elem));
         return responseContext;
 
     } // PDP#_requestDecision

@@ -74,67 +74,88 @@ class PEP extends PolicyPoint {
     async request(session, param) {
         if (!session || typeof session !== 'object' || typeof session.id !== 'string')
             this.throw('request', new TypeError(`invalid argument`));
-        if (typeof param !== 'object' || !param['action'] || !param['target'])
+        if (!param || typeof param !== 'object')
             this.throw('request', new TypeError(`invalid argument`));
-        if (param && param['action'] && typeof param['action']['@id'] === 'string')
+        if (!param['target'] || typeof param['target']['@type'] !== 'string')
+            this.throw('request', new Error(`invalid target`));
+        if (param['action'] && typeof param['action']['@id'] === 'string')
             param['action'] = param['action']['@id'];
         else if (typeof param['action'] !== 'string')
             this.throw('request', new Error(`invalid action`));
         if (!this.data.actionDefinition.has(param['action']))
             this.throw('request', new Error(`action unknown`));
 
-        /**
-         * @typedef {JSON} PEP~Request
-         * @property {string} @type="PEP~Request"
-         * @property {string} @id
-         * @property {PEP~Action#id} action
-         * @property {PEP~Action#id} [includedIn]
-         * @property {PEP~Action#id[]} [implies]
-         * @property {(PEP~Subject|PEP~Subject#@id)} target
-         * @property {(PEP~Subject|PEP~Subject#@id)} [assignee]
-         * @property {(PEP~Subject|PEP~Subject#@id)} [assigner]
-         * 
-         * @typedef {JSON} PEP~Subject
-         * @property {string} @type
-         * @property {string} [@id]
-         */
+        const
+            /** @type {PolicyAgent~RequestContext} */
+            requestContext = Object.create({}, {
+                '@context': {
+                    enumerable: true,
+                    value: "PolicyAgent~RequestContext"
+                },
+                'requests': {
+                    enumerable: true,
+                    value: {}
+                }
+            });
 
-        /** @type {Map<string, (PEP~Request|PEP~Subject)>} */
-        const requestGraph = new Map();
+        Object.defineProperty(requestContext, 'target', {
+            enumerable: true,
+            value: param['target']
+        });
 
-        const addRequest = (param) => {
+        if (param['assigner'] && typeof param['assigner']['@type'] === 'string')
+            Object.defineProperty(requestContext, 'assigner', {
+                enumerable: true,
+                value: param['assigner']
+            });
+
+        if (param['assignee'] && typeof param['assignee']['@type'] === 'string')
+            Object.defineProperty(requestContext, 'assignee', {
+                enumerable: true,
+                value: param['assignee']
+            });
+
+        const addRequest = (action, param) => {
             const
-                requestID = `${param['action']}-${UUID()}`,
-                actionDefinition = this.data.actionDefinition.get(param['action']),
-                /** @type {PEP~Request} */
-                request = Object.assign({}, actionDefinition, {
-                    '@type': "PEP~Request",
-                    '@id': requestID,
-                    'target': param['target'],
-                    'assigner': param['assigner'] || undefined,
-                    'assignee': param['assignee'] || undefined
-                });
+                requestID = `${action}-${UUID()}`,
+                actionDefinition = this.data.actionDefinition.get(action),
+                request = Object.assign({ '@id': requestID }, actionDefinition);
 
-            requestGraph.set(requestID, request);
-
-            // IDEA falls target/assigner/assignee eine @id besitzen, 
-            // sollten sie referenziert und der requestMap hinzugefügt werden, 
-            // um doppelten Load einzusparen
+            Object.defineProperty(requestContext['requests'], requestID, {
+                enumerable: true,
+                value: request
+            });
 
             if (actionDefinition.includedIn)
-                addRequest(Object.assign({}, param, { 'action': actionDefinition.includedIn }));
+                addRequest(actionDefinition.includedIn, undefined);
 
-            actionDefinition.implies.forEach(impl => addRequest(Object.assign({}, param, { 'action': impl })));
+            actionDefinition.implies.forEach(impl => addRequest(impl, undefined));
         };
 
-        addRequest(param);
+        addRequest(param['action']);
 
-        const requestContext = {
-            '@context': "PolicyAgent~RequestContext",
-            '@graph': []
-        };
 
-        requestGraph.forEach(elem => requestContext['@graph'].push(elem));
+        let
+            promiseArr = [],
+            responseContexts = [];
+
+        this.data.decisionPoints.forEach(decisionPoint => promiseArr.push(
+            (async () => {
+                try {
+                    responseContexts.push(
+                        /** @type {PolicyAgent.Context.Response} */
+                        await decisionPoint._requestDecision(requestContext)
+                    );
+                } catch (err) {
+                    // do nothing
+                    console.error(err);
+                }
+            })(/* NOTE async call instead of promise */)
+        ));
+
+        await Promise.all(promiseArr);
+        if (responseContexts.length === 0)
+            this.throw('request', new Error(`failed to resolve`));
 
         // TODO
 
