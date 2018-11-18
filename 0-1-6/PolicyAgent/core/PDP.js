@@ -5,9 +5,11 @@
  */
 
 const
+    UUID = require('uuid/v4'),
     PolicyPoint = require('./PolicyPoint.js'),
     PIP = require('./PIP.js'),
-    PAP = require('./PAP.js');
+    PAP = require('./PAP.js'),
+    _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
 
 /**
  * @name PDP
@@ -75,22 +77,16 @@ class PDP extends PolicyPoint {
         if (!this.data.administrationPoint)
             this.throw('_requestDecision', new Error(`administrationPoint not connected`));
 
+        /* 1. - create ResponseContext */
+
         let
             environment = {},
             /** @type {PolicyAgent~ResponseContext} */
             responseContext = Object.create({}, {
-                '@type': {
-                    enumerable: true,
-                    value: "PolicyAgent~ResponseContext"
-                },
-                'responses': {
-                    enumerable: true,
-                    value: {}
-                },
-                'subjects': {
-                    enumerable: true,
-                    value: {}
-                }
+                '@type': { enumerable: true, value: "ResponseContext" },
+                '@id': { enumerable: true, value: UUID() },
+                'responses': { enumerable: true, value: {} },
+                'subjects': { enumerable: true, value: {} }
             }),
             defaultSubjects = {},
             /** @type {Array<PolicyAgent.PEP~Subject>} This array is used to require the subjects from the PIP. */
@@ -102,6 +98,8 @@ class PDP extends PolicyPoint {
             /** @type {Array<PolicyAgent.PAP~Record>} */
             policySet;
 
+        /* 2. - retrieve requested subjects */
+
         for (let subjType of ['target', 'assigner', 'assignee']) {
             if (requestContext[subjType]) {
                 requestSubjects.push(requestContext[subjType]);
@@ -110,11 +108,14 @@ class PDP extends PolicyPoint {
         } // for
 
         for (let requestID in requestContext['requests']) {
+            /* create response from each request */
             let
                 request = requestContext['requests'][requestID],
                 response = {
                     '@id': requestID
                 };
+
+            /* add custom subjects if necessary */
 
             for (let subjType of ['target', 'assigner', 'assignee']) {
                 if (request[subjType]) {
@@ -123,14 +124,12 @@ class PDP extends PolicyPoint {
                 }
             } // for
 
-            Object.defineProperty(responseContext['responses'], requestID, {
-                enumerable: true,
-                value: response
-            });
+            _enumerate(responseContext['responses'], requestID, response);
         } // for
 
         responseSubjects = await this.data.informationPoint._retrieveSubjects(requestSubjects);
 
+        /* write subjects to the ResponseContext ... */
         indexMatching.forEach(([requestID, subjType], index) => {
             /** @type {PolicyAgent.PIP~Subject} */
             let subject = responseSubjects[index];
@@ -139,31 +138,24 @@ class PDP extends PolicyPoint {
                 return;
 
             if (!responseContext['subjects'][subject['uid']])
-                Object.defineProperty(responseContext['subjects'], subject['uid'], {
-                    enumerable: true,
-                    value: subject
-                });
+                _enumerate(responseContext['subjects'], subject['uid'], subject);
 
-            Object.defineProperty(requestID ? requestContext['requests'][requestID] : defaultSubjects, subjType, {
-                enumerable: true,
-                value: subject['uid']
-            });
+            _enumerate(requestID ? requestContext['requests'][requestID] : defaultSubjects, subjType, subject['uid']);
         });
 
+        /* ... and all missing entries with the defaults */
         for (let requestID in responseContext['responses']) {
             let
                 request = requestContext['requests'][requestID],
                 response = responseContext['responses'][requestID];
 
             for (let subjType of ['target', 'assigner', 'assignee']) {
-                if (!request[subjType] && defaultSubjects[subjType]) {
-                    Object.defineProperty(response, subjType, {
-                        enumerable: true,
-                        value: defaultSubjects[subjType]
-                    });
-                }
+                if (!request[subjType] && defaultSubjects[subjType])
+                    _enumerate(response, subjType, defaultSubjects[subjType]);
             } // for
         } // for
+
+        /* 3. - retrieve Policies for the collected data in the responses */
 
         policySet = await this.data.administrationPoint._requestPolicies(responseContext['responses']);
 

@@ -9,7 +9,8 @@ const
     ExpressSession = require('express-session'),
     SessionMemoryStore = require('session-memory-store')(ExpressSession),
     PolicyPoint = require('./PolicyPoint.js'),
-    PDP = require('./PDP.js');
+    PDP = require('./PDP.js'),
+    _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
 
 /**
  * @name _executeAction
@@ -85,46 +86,42 @@ class PEP extends PolicyPoint {
         if (!this.data.actionDefinition.has(param['action']))
             this.throw('request', new Error(`action unknown`));
 
+        /* 1. - create RequestContext */
+
         const
             /** @type {PolicyAgent~RequestContext} */
             requestContext = Object.create({}, {
-                '@context': {
-                    enumerable: true,
-                    value: "PolicyAgent~RequestContext"
-                },
-                'requests': {
-                    enumerable: true,
-                    value: {}
-                }
+                '@type': { enumerable: true, value: "RequestContext" },
+                '@id': { enumerable: true, value: UUID() },
+                'requests': { enumerable: true, value: {} }
             });
 
-        Object.defineProperty(requestContext, 'target', {
-            enumerable: true,
-            value: param['target']
-        });
+        /* 1.1. - add default subjects */
 
+        _enumerate(requestContext, 'target', param['target']);
         if (param['assigner'] && typeof param['assigner']['@type'] === 'string')
-            Object.defineProperty(requestContext, 'assigner', {
-                enumerable: true,
-                value: param['assigner']
-            });
-
+            _enumerate(requestContext, 'assigner', param['assigner']);
         if (param['assignee'] && typeof param['assignee']['@type'] === 'string')
-            Object.defineProperty(requestContext, 'assignee', {
-                enumerable: true,
-                value: param['assignee']
-            });
+            _enumerate(requestContext, 'assignee', param['assignee']);
+
+        /* 1.2. - add action requests */
 
         const addRequest = (action, param) => {
             const
                 requestID = `${action}-${UUID()}`,
                 actionDefinition = this.data.actionDefinition.get(action),
-                request = Object.assign({ '@id': requestID }, actionDefinition);
+                request = Object.create({}, { '@id': { enumerable: true, value: requestID } });
 
-            Object.defineProperty(requestContext['requests'], requestID, {
-                enumerable: true,
-                value: request
-            });
+            _enumerate(request, 'action', actionDefinition.action);
+
+            if (actionDefinition.target && param[actionDefinition.target] && typeof param[actionDefinition.target]['@type'] === 'string')
+                _enumerate(request, 'target', param[actionDefinition.target]);
+            if (actionDefinition.assigner && param[actionDefinition.assigner] && typeof param[actionDefinition.assigner]['@type'] === 'string')
+                _enumerate(request, 'assigner', param[actionDefinition.assigner]);
+            if (actionDefinition.assignee && param[actionDefinition.assignee] && typeof param[actionDefinition.assignee]['@type'] === 'string')
+                _enumerate(request, 'assignee', param[actionDefinition.assignee]);
+
+            _enumerate(requestContext['requests'], requestID, request);
 
             if (actionDefinition.includedIn)
                 addRequest(actionDefinition.includedIn, undefined);
@@ -134,6 +131,7 @@ class PEP extends PolicyPoint {
 
         addRequest(param['action']);
 
+        /* 2. - send RequestContext to PDP#_requestDecision */
 
         let
             promiseArr = [],
@@ -154,6 +152,9 @@ class PEP extends PolicyPoint {
         ));
 
         await Promise.all(promiseArr);
+
+        /* 3. - choose ResponseContext */
+
         if (responseContexts.length === 0)
             this.throw('request', new Error(`failed to resolve`));
 
@@ -170,7 +171,7 @@ class PEP extends PolicyPoint {
      * @param {string[]} [implies=[]] 
      * @param {function} callback 
      */
-    defineAction(actionName, callback, includedIn, implies = [], target = undefined) {
+    defineAction(actionName, callback, includedIn, implies = [], target = undefined, assigner = undefined, assignee = undefined) {
         if (!actionName || typeof actionName !== 'string')
             this.throw('defineAction', new TypeError(`invalid argument`));
         if (typeof callback !== 'function')
@@ -188,13 +189,18 @@ class PEP extends PolicyPoint {
             this.throw('defineAction', new Error(`includedIn unknown`));
         if (!implies.every(elem => this.data.actionDefinition.has(elem)))
             this.throw('defineAction', new Error(`implies unknown`));
-        if (target !== undefined && (!target || typeof target['@type'] !== 'string'))
-            this.throw('defineAction', new Error(`invalid target`));;
+        if (target && typeof target['@type'] !== 'string')
+            this.throw('defineAction', new Error(`invalid target`));
+        if (assigner && typeof assigner['@type'] !== 'string')
+            this.throw('defineAction', new Error(`invalid assigner`));
+        if (assignee && typeof assignee['@type'] !== 'string')
+            this.throw('defineAction', new Error(`invalid assignee`));
 
         this.data.actionCallbacks.set(actionName, callback);
         this.data.actionDefinition.set(actionName, {
             action: actionName,
-            includedIn, implies, target
+            includedIn, implies,
+            target, assigner, assignee
         });
 
     } // PEP#defineAction
