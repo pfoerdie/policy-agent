@@ -16,14 +16,14 @@ const
         `OPTIONAL MATCH (assignee:ODRL:Party {uid: entry.assignee})`,
         `OPTIONAL MATCH (assigner:ODRL:Party {uid: entry.assigner})`,
 
-        `WITH entry.id AS entry, action, target, assignee, assigner`,
+        `WITH entry.id AS entryID, action, target, assignee, assigner`,
         `MATCH path = (policy:ODRL:Policy)-[ruleRel:permission|:obligation|:prohibition]->(rule:ODRL:Rule)`,
         `WHERE ( (rule)-[:target]->(target) OR (rule)-[:target]->(:ODRL:AssetCollection)<-[:partOf*]-(target) )`,
         `AND ( (rule)-[:action]->(action) OR (rule)-[:action]->(:ODRL:Action)-[:value]->(action) )`,
         `AND ( NOT (rule)-[:assignee]->(:ODRL) OR (rule)-[:assignee]->(assignee) OR (rule)-[:assignee]->(:ODRL:PartyCollection)<-[:partOf*]-(assignee) )`,
         `AND ( NOT (rule)-[:assigner]->(:ODRL) OR (rule)-[:assigner]->(assigner) OR (rule)-[:assigner]->(:ODRL:PartyCollection)<-[:partOf*]-(assigner) )`,
 
-        `RETURN entry, policy.uid AS policy, rule.uid AS rule, type(ruleRel) AS ruleType`
+        `RETURN entryID AS id, policy.uid AS policy, rule.uid AS rule, type(ruleRel) AS ruleType`
     ].join("\n");
 
 /**
@@ -43,6 +43,43 @@ class Record {
     } // Record.constructor
 
 } // Record
+
+/**
+ * @name _requestNeo4j
+ * @param {(string|string[])} query 
+ * @param {object} [param] 
+ * @returns {(Record|Record[])} TODO verify
+ * @this {PAP}
+ * @async
+ * @private
+ */
+async function _requestNeo4j(query, param) {
+    const queryArr = Array.isArray(query) ? query : null;
+
+    if (queryArr ? queryArr.some(query => typeof query !== 'string') : typeof query !== 'string')
+        this.throw('_requestNeo4j', new TypeError(`invalid argument`));
+    if (param && typeof param !== 'object')
+        this.throw('_requestNeo4j', new TypeError(`invalid argument`));
+
+    try {
+        let
+            session = this.data.driver.session(),
+            result = queryArr
+                ? await Promise.all(queryArr.map(query => session.run(query, param)))
+                : await session.run(query, param),
+            resultArr = queryArr ? result : null;
+
+        // IDEA Neo4j~Tx (transactions) benutzen, um bei Fehlern im Nachhinein Änderungen rückgängig zu machen
+
+        session.close();
+        return resultArr
+            ? resultArr.map(result => result['records'].map(record => new Record(record)))
+            : result['records'].map(record => new Record(record));
+
+    } catch (err) {
+        this.throw('_requestNeo4j', err);
+    }
+} // _requestNeo4j
 
 /**
  * @function _makeSubmitQuery
@@ -446,64 +483,18 @@ class PAP extends PolicyPoint {
     } // PAP#ping
 
     /**
-     * @name PAP#_request
-     * @param {(string|string[])} query Query in the cypher query language.
-     * @returns {(object|object[])} Prettified records of the Neo4j result.
-     * @package
+     * @name PAP#_retrievePolicies
+     * @param {Array<PDP~Response>} responseArr 
+     * @returns {Record[]}
      * @async
+     * @package
      */
-    async _request(query, param) {
-        const queryArr = Array.isArray(query) ? query : null;
+    async _retrievePolicies(responseArr) {
+        if (!Array.isArray(responseArr) || responseArr.some(elem => !elem || typeof elem !== 'object'))
+            this.throw('_retrievePolicies', new TypeError(`invalid argument`));
 
-        if (queryArr ? queryArr.some(query => typeof query !== 'string') : typeof query !== 'string')
-            this.throw('_request', new TypeError(`invalid argument`));
-        if (param && typeof param !== 'object')
-            this.throw('_request', new TypeError(`invalid argument`));
-
-        try {
-            let
-                session = this.data.driver.session(),
-                result = queryArr
-                    ? await Promise.all(queryArr.map(query => session.run(query, param)))
-                    : await session.run(query, param),
-                resultArr = queryArr ? result : null;
-
-            // IDEA Neo4j~Tx (transactions) benutzen, um bei Fehlern im Nachhinein Änderungen rückgängig zu machen
-
-            session.close();
-            return resultArr
-                ? resultArr.map(result => result['records'].map(record => new Record(record)))
-                : result['records'].map(record => new Record(record));
-
-        } catch (err) {
-            this.throw('_request', err);
-        }
-    } // PAP#_request
-
-    async _requestPolicies(responseArr) {
-        if (!Array.isArray(responseArr) || responseArr.some(elem => !elem || elem['@type'] !== 'PDP~Response'))
-            this.throw('_requestPolicies', new TypeError(`invalid argument`));
-
-        try {
-            let
-                session = this.data.driver.session(),
-                result = await session.run(_retrievePoliciesQuery, {
-                    'entries': responseArr.map((entry) => ({
-                        'id': entry['@id'],
-                        'action': entry.action,
-                        'target': entry.target,
-                        'assigner': entry.assigner,
-                        'assignee': entry.assignee
-                    }))
-                });
-
-            session.close();
-            return result['records'].map(record => new Record(record));
-
-        } catch (err) {
-            this.throw('_requestPolicies', err);
-        }
-    } // PAP#_requestPolicies
+        return await _requestNeo4j.call(this, _retrievePoliciesQuery, { 'entries': responseArr });
+    } // PAP#_retrievePolicies
 
     /**
      * @name PAP#_submitODRL
@@ -523,8 +514,8 @@ class PAP extends PolicyPoint {
         console.log(cypherQueries.join("\n;\n\n"));
         // TODO überprüfen und code freischalten
 
-        await this._request(cypherQueries);
-        await this._request(`MATCH (n:ODRL {blank: true}) DETACH DELETE n`);
+        await _requestNeo4j.call(this, cypherQueries);
+        await _requestNeo4j.call(this, `MATCH (n:ODRL {blank: true}) DETACH DELETE n`);
 
         this.log('_submitODRL', "completed");
 

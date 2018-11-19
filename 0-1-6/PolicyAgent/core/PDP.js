@@ -62,14 +62,14 @@ class PDP extends PolicyPoint {
 
     /**
      * @name PDP#_requestDecision
-     * @param {PolicyAgent~RequestContext} requestContext
+     * @param {RequestContext} requestContext
      * @async
      * 
      * INFO 7.17 Authorization decision:
      *   -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
      */
     async _requestDecision(requestContext) {
-        if (!PolicyPoint.validate('PolicyAgent~RequestContext', requestContext))
+        if (!PolicyPoint.validate('RequestContext', requestContext))
             this.throw('_requestDecision', new TypeError(`invalid argument`));
 
         if (!this.data.informationPoint)
@@ -81,7 +81,7 @@ class PDP extends PolicyPoint {
 
         let
             environment = {},
-            /** @type {PolicyAgent~ResponseContext} */
+            /** @type {ResponseContext} */
             responseContext = Object.create({}, {
                 '@type': { enumerable: true, value: "ResponseContext" },
                 '@id': { enumerable: true, value: UUID() },
@@ -89,14 +89,14 @@ class PDP extends PolicyPoint {
                 'subjects': { enumerable: true, value: {} }
             }),
             defaultSubjects = {},
-            /** @type {Array<PolicyAgent.PEP~Subject>} This array is used to require the subjects from the PIP. */
+            /** @type {Array<PEP~Subject>} This array is used to require the subjects from the PIP. */
             requestSubjects = [],
-            /** @type {Array<Array<[PolicyAgent.PEP~Request#id, string]>>} Required to coordinate the subjects for each request. */
+            /** @type {Array<Array<[PEP~Request#id, string]>>} Required to coordinate the subjects for each request. */
             indexMatching = [],
-            /** @type {Array<PolicyAgent.PIP~Subject>} This array contains all subjects found that were included in the requests. */
+            /** @type {Array<PIP~Subject>} This array contains all subjects found that were included in the requests. */
             responseSubjects,
-            /** @type {Array<PolicyAgent.PAP~Record>} */
-            policySet;
+            /** @type {Array<PAP~Record>} */
+            applicablePolicies;
 
         /* 2. - retrieve requested subjects */
 
@@ -111,9 +111,10 @@ class PDP extends PolicyPoint {
             /* create response from each request */
             let
                 request = requestContext['requests'][requestID],
-                response = {
-                    '@id': requestID
-                };
+                response = {};
+
+            _enumerate(response, 'id', requestID);
+            _enumerate(response, 'action', request['action']);
 
             /* add custom subjects if necessary */
 
@@ -131,7 +132,7 @@ class PDP extends PolicyPoint {
 
         /* write subjects to the ResponseContext ... */
         indexMatching.forEach(([requestID, subjType], index) => {
-            /** @type {PolicyAgent.PIP~Subject} */
+            /** @type {PIP~Subject} */
             let subject = responseSubjects[index];
 
             if (!subject || !subject['uid'])
@@ -157,7 +158,9 @@ class PDP extends PolicyPoint {
 
         /* 3. - retrieve Policies for the collected data in the responses */
 
-        policySet = await this.data.administrationPoint._requestPolicies(responseContext['responses']);
+        applicablePolicies = await this.data.administrationPoint._retrievePolicies(
+            Object.entries(responseContext['responses']).map(entry => entry[1])
+        );
 
         // TODO
 

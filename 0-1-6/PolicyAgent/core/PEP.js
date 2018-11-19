@@ -12,15 +12,13 @@ const
     PDP = require('./PDP.js'),
     _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
 
-/**
- * @name _executeAction
- * @param TODO
- * @private
- * @async
- */
-async function _executeAction() {
-    // TODO
-} // _executeAction
+async function _actionUse(target, impl, session) {
+    return "USE";
+} // _actionUse
+
+async function _actionTransfer(args, impl, session) {
+    return "TRANSFER";
+} // _actionTransfer
 
 /**
 * @name PEP
@@ -45,8 +43,8 @@ class PEP extends PolicyPoint {
         this.data.actionDefinition = new Map();
         this.data.actionCallbacks = new Map();
 
-        this.defineAction('use', () => undefined); // TODO
-        this.defineAction('transfer', () => undefined); // TODO
+        this.defineAction('use', _actionUse.bind(this));
+        this.defineAction('transfer', _actionTransfer.bind(this));
     } // PEP.constructor
 
     /**
@@ -72,7 +70,7 @@ class PEP extends PolicyPoint {
      * @returns {*}
      * @async
      */
-    async request(session, param) {
+    async request(session, param, args) {
         if (!session || typeof session !== 'object' || typeof session.id !== 'string')
             this.throw('request', new TypeError(`invalid argument`));
         if (!param || typeof param !== 'object')
@@ -89,7 +87,7 @@ class PEP extends PolicyPoint {
         /* 1. - create RequestContext */
 
         const
-            /** @type {PolicyAgent~RequestContext} */
+            /** @type {RequestContext} */
             requestContext = Object.create({}, {
                 '@type': { enumerable: true, value: "RequestContext" },
                 '@id': { enumerable: true, value: UUID() },
@@ -106,30 +104,33 @@ class PEP extends PolicyPoint {
 
         /* 1.2. - add action requests */
 
-        const addRequest = (action, param) => {
+        const addRequest = (action) => {
             const
                 requestID = `${action}-${UUID()}`,
-                actionDefinition = this.data.actionDefinition.get(action),
-                request = Object.create({}, { '@id': { enumerable: true, value: requestID } });
+                actionDef = this.data.actionDefinition.get(action),
+                request = {};
 
-            _enumerate(request, 'action', actionDefinition.action);
+            _enumerate(request, 'id', requestID);
+            _enumerate(request, 'action', actionDef.action);
 
-            if (actionDefinition.target && param[actionDefinition.target] && typeof param[actionDefinition.target]['@type'] === 'string')
-                _enumerate(request, 'target', param[actionDefinition.target]);
-            if (actionDefinition.assigner && param[actionDefinition.assigner] && typeof param[actionDefinition.assigner]['@type'] === 'string')
-                _enumerate(request, 'assigner', param[actionDefinition.assigner]);
-            if (actionDefinition.assignee && param[actionDefinition.assignee] && typeof param[actionDefinition.assignee]['@type'] === 'string')
-                _enumerate(request, 'assignee', param[actionDefinition.assignee]);
+            // if (actionDef.target && param[actionDef.target] && typeof param[actionDef.target]['@type'] === 'string')
+            //     _enumerate(request, 'target', param[actionDef.target]);
+            // if (actionDef.assigner && param[actionDef.assigner] && typeof param[actionDef.assigner]['@type'] === 'string')
+            //     _enumerate(request, 'assigner', param[actionDef.assigner]);
+            // if (actionDef.assignee && param[actionDef.assignee] && typeof param[actionDef.assignee]['@type'] === 'string')
+            //     _enumerate(request, 'assignee', param[actionDef.assignee]);
 
             _enumerate(requestContext['requests'], requestID, request);
 
-            if (actionDefinition.includedIn)
-                addRequest(actionDefinition.includedIn, undefined);
+            if (actionDef.includedIn)
+                _enumerate(request, 'includedIn', addRequest(actionDef.includedIn));
 
-            actionDefinition.implies.forEach(impl => addRequest(impl, undefined));
-        };
+            _enumerate(request, 'implies', actionDef.implies.map(impl => addRequest(impl)));
 
-        addRequest(param['action']);
+            return requestID;
+        }; // addRequest
+
+        const entryPoint = addRequest(param['action']);
 
         /* 2. - send RequestContext to PDP#_requestDecision */
 
@@ -141,7 +142,7 @@ class PEP extends PolicyPoint {
             (async () => {
                 try {
                     responseContexts.push(
-                        /** @type {PolicyAgent.Context.Response} */
+                        /** @type {ResponseContext} */
                         await decisionPoint._requestDecision(requestContext)
                     );
                 } catch (err) {
@@ -158,20 +159,66 @@ class PEP extends PolicyPoint {
         if (responseContexts.length === 0)
             this.throw('request', new Error(`failed to resolve`));
 
+        const resultContext = responseContexts[0]; // TODO bessere Auswahl des Contexts
+
+        const executeAction = async (requestID, args) => {
+            let
+                tmpRequest = requestContext['requests'][requestID],
+                requestStack = [tmpRequest];
+
+            while (tmpRequest.includedIn) {
+                tmpRequest = requestContext['requests'][tmpRequest.includedIn];
+                requestStack.push(tmpRequest);
+            }
+
+            let
+                isTransfer = requestStack[requestStack.length - 1]['action'] === 'transfer',
+                tmpResult = isTransfer
+                    ? args
+                    : resultContext.subjects[resultContext['responses'][requestStack[0]['id']]['target']];
+
+            while (requestStack.length > 0) {
+                let
+                    currRequest = isTransfer ? requestStack.shift() : requestStack.pop(),
+                    currResponse = resultContext['responses'][currRequest['id']],
+                    callback = this.data.actionCallbacks.get(currResponse['action']),
+                    implObj = {};
+
+                for (let implReq of currRequest.implies) {
+                    _enumerate(
+                        implObj,
+                        resultContext['responses'][implReq]['action'],
+                        (args) => executeAction(implAction, args)
+                    );
+                } // for
+
+                tmpResult = await callback(tmpResult, implObj, session);
+            } // while
+
+            return tmpResult;
+
+            // TODO dieses Vorgehen ist nicht optimal
+
+        }; // executeAction
+
+        let result = await executeAction(entryPoint, args);
+
         // TODO
 
-        return 0;
+        return result;
 
     } // PEP#request
 
     /**
      * @name PEP#defineAction
      * @param {string} actionName 
+     * @param {function} callback 
      * @param {string} includedIn 
      * @param {string[]} [implies=[]] 
-     * @param {function} callback 
      */
-    defineAction(actionName, callback, includedIn, implies = [], target = undefined, assigner = undefined, assignee = undefined) {
+    defineAction(actionName, callback, includedIn, implies = []
+        // , target = undefined, assigner = undefined, assignee = undefined
+    ) {
         if (!actionName || typeof actionName !== 'string')
             this.throw('defineAction', new TypeError(`invalid argument`));
         if (typeof callback !== 'function')
@@ -189,18 +236,24 @@ class PEP extends PolicyPoint {
             this.throw('defineAction', new Error(`includedIn unknown`));
         if (!implies.every(elem => this.data.actionDefinition.has(elem)))
             this.throw('defineAction', new Error(`implies unknown`));
-        if (target && typeof target['@type'] !== 'string')
-            this.throw('defineAction', new Error(`invalid target`));
-        if (assigner && typeof assigner['@type'] !== 'string')
-            this.throw('defineAction', new Error(`invalid assigner`));
-        if (assignee && typeof assignee['@type'] !== 'string')
-            this.throw('defineAction', new Error(`invalid assignee`));
+        // if (target && typeof target['@type'] !== 'string')
+        //     this.throw('defineAction', new Error(`invalid target`));
+        // if (assigner && typeof assigner['@type'] !== 'string')
+        //     this.throw('defineAction', new Error(`invalid assigner`));
+        // if (assignee && typeof assignee['@type'] !== 'string')
+        //     this.throw('defineAction', new Error(`invalid assignee`));
+
+        // let topLvlAction = includedIn;
+        // while (topLvlAction !== 'use' && topLvlAction !== 'transfer') {
+        //     topLvlAction = this.data.actionDefinition.get(topLvlAction).includedIn;
+        // } // while
 
         this.data.actionCallbacks.set(actionName, callback);
         this.data.actionDefinition.set(actionName, {
+            // type: topLvlAction,
             action: actionName,
             includedIn, implies,
-            target, assigner, assignee
+            // target, assigner, assignee
         });
 
     } // PEP#defineAction

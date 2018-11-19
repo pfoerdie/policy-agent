@@ -115,14 +115,14 @@ class PolicyPoint extends Auditor {
     static validate(type, value) {
         switch (type) {
 
-            case 'PolicyAgent~RequestContext':
+            case 'RequestContext':
                 return value
-                    && value['@context'] === type
+                    && value['@type'] === type
                     && typeof value['requests'] === 'object';
 
-            case 'PolicyAgent~ResponseContext':
+            case 'ResponseContext':
                 return value
-                    && value['@context'] === type
+                    && value['@type'] === type
                     && typeof value['responses'] === 'object';
 
             default:

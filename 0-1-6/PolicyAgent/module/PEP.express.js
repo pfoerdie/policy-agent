@@ -13,7 +13,7 @@ const
 module.exports = (PEP) => {
 
     /**
-     * Must be called after all other this.data for the ExpressPEP have been set.
+     * Must be called after all other this.data for the ExpressPEP has been set.
      * @name ExpressPEP~initializeExpressRouter
      * @return {Express~Router}
      * @this {ExpressPEP}
@@ -49,7 +49,7 @@ module.exports = (PEP) => {
                 };
 
                 param['target'] = {
-                    '@type': "content", // TODO wie komme ich an den richtigen Typ?
+                    '@type': "File", // TODO wie komme ich an den richtigen Typ?
                     '@id': request.url // IDEA oder aus dem request.body
                 };
 
@@ -59,7 +59,7 @@ module.exports = (PEP) => {
 
                 let result = await this.request(request.session, param);
 
-                if (result && result['type'] === 'File' && typeof result['mimeType'] === 'string' && result['@value'])
+                if (result && result['@type'] === 'File' && typeof result['mimeType'] === 'string' && result['@value'])
                     response.type(result['mimeType']).send(result['@value']);
                 else
                     response.status(404).send();
