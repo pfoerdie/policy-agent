@@ -7,7 +7,36 @@
 const
     PolicyPoint = require('./PolicyPoint.js'),
     SP = require('./SP.js'),
-    RP = require('./RP.js');
+    RP = require('./RP.js'),
+    _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
+
+class Subject {
+    constructor(param, source) {
+        if (!param || typeof param['uid'] !== 'string')
+            throw new TypeError(`invalid argument`);
+        if (!(source instanceof PIP))
+            throw new TypeError(`invalid argument`);
+
+        Object.entries(param).forEach(
+            ([key, value]) => _enumerate(this, key, value)
+        );
+
+        let value = undefined;
+        Object.defineProperty(this, '@value', {
+            get: async () => {
+                if (!value) value = await source._retrieveResource(this) || undefined;
+                return value;
+            },
+            set: async (val) => {
+                if (value ? typeof val === typeof value : val) {
+                    value = val;
+                    await source._submitResource(this);
+                }
+            }
+        });
+    } // Subject.constructor
+
+} // Subject
 
 /**
  * @name PIP
@@ -68,14 +97,12 @@ class PIP extends PolicyPoint {
                         if (Array.isArray(requestResult) && requestResult.length === requestSubjects.length)
                             requestResult.forEach((result, index) => {
                                 if (result && !responseSubjects[index]) {
-                                    result['@source'] = this.id;
-                                    responseSubjects[index] = result;
+                                    responseSubjects[index] = new Subject(result, this);
                                 }
                             });
                     } else {
                         if (requestResult && !responseSubjects) {
-                            responseSubjects['@source'] = this.id;
-                            responseSubjects = requestResult;
+                            responseSubjects = new Subject(requestResult, this);
                         }
                     }
                 } catch (err) {
@@ -98,7 +125,7 @@ class PIP extends PolicyPoint {
     async _retrieveResource(responseSubjects) {
         const multiReq = Array.isArray(responseSubjects);
 
-        if (multiReq ? responseSubjects.some(elem => typeof elem !== 'object' || typeof elem['uid'] !== 'string') : typeof responseSubjects !== 'object' || typeof responseSubjects['uid'] !== 'string')
+        if (multiReq ? responseSubjects.some(!(elem instanceof Subject)) : !(responseSubjects instanceof Subject))
             this.throw('_retrieveResource', new TypeError(`invalid argument`));
 
         let
@@ -175,8 +202,8 @@ class PIP extends PolicyPoint {
     async _submitResource(responseSubjects) {
         const multiReq = Array.isArray(responseSubjects);
 
-        if (multiReq ? responseSubjects.some(elem => !elem || typeof elem !== 'object') : !responseSubjects || typeof responseSubjects !== 'object')
-            this.throw('_submitResource', new TypeError(`invalid argument`));
+        if (multiReq ? responseSubjects.some(!(elem instanceof Subject)) : !(responseSubjects instanceof Subject))
+            this.throw('_retrieveResource', new TypeError(`invalid argument`));
 
         let promiseArr = [];
         this.data.resourcePoints.forEach(resourcePoint => promiseArr.push(

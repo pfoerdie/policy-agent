@@ -43,11 +43,11 @@ class RP extends PolicyPoint {
         const
             queryArr = Array.isArray(query) ? query : undefined;
 
-        if (queryArr ? queryArr.some(query => typeof query !== 'object') : typeof query !== 'object')
+        if (queryArr ? queryArr.some(query => !query || typeof query['@type'] !== 'string') : !query || typeof query['@type'] !== 'string')
             this.throw('_retrieve', new TypeError(`invalid argument`));
 
         const _retrieve = (query) => new Promise((resolve, reject) => {
-            switch (query['type']) {
+            switch (query['@type']) {
 
                 case 'File':
                     let filePath = Path.join(this.data.root, query['path'].replace(/^(?:\.|\/|\\)*/, ""));
@@ -60,9 +60,11 @@ class RP extends PolicyPoint {
             } // switch
         });
 
-        return queryArr
+        let result = queryArr
             ? await Promise.all(queryArr.map(query => _retrieve(query)))
             : await _retrieve(query);
+
+        return result;
 
     } // RP#_retrieve
 
