@@ -7,33 +7,59 @@
 const
     PolicyPoint = require('./PolicyPoint.js'),
     SP = require('./SP.js'),
-    RP = require('./RP.js'),
-    _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
+    RP = require('./RP.js');
 
+/**
+ * @name Subject
+ * @class
+ */
 class Subject {
+    /**
+     * @constructs Subject
+     * @param {JSON} param 
+     * @param {PIP} source 
+     */
     constructor(param, source) {
-        if (!param || typeof param['uid'] !== 'string')
-            throw new TypeError(`invalid argument`);
-        if (!(source instanceof PIP))
+        if (!(param && typeof param === 'object' && source instanceof PIP))
             throw new TypeError(`invalid argument`);
 
-        Object.entries(param).forEach(
-            ([key, value]) => _enumerate(this, key, value)
-        );
+        Object.entries(param).forEach(([key, value]) => Object.defineProperty(this, key, {
+            writable: key !== 'uid' && !key.startsWith('@'),
+            value: value
+        }));
 
-        let value = undefined;
-        Object.defineProperty(this, '@value', {
-            get: async () => {
-                if (!value) value = await source._retrieveResource(this) || undefined;
-                return value;
-            },
-            set: async (val) => {
-                if (value ? typeof val === typeof value : val) {
-                    value = val;
-                    await source._submitResource(this);
+        if (typeof this['uid'] !== 'string' || typeof this['@id'] !== 'string' || typeof this['@type'] !== 'string')
+            throw new Error(`necessary attributes missing`);
+
+        let
+            resource = undefined;
+
+        Object.defineProperties(this, {
+
+            getResource: {
+                value: async () => {
+                    if (resource === undefined)
+                        resource = await source._retrieveResource(this) || undefined;
+                    return resource;
                 }
-            }
+            } // Subject#getResource
+            ,
+            submitResource: {
+                value: async (value) => {
+                    if (resource ? typeof value === typeof resource : value) {
+                        await source._submitResource(this, value);
+                        resource = value;
+                    }
+                }
+            } // Subject#submitResource
+            ,
+            updateSubject: {
+                value: async () => {
+                    // TODO
+                }
+            } // Subject#updateSubject
         });
+
     } // Subject.constructor
 
 } // Subject
@@ -41,6 +67,7 @@ class Subject {
 /**
  * @name PIP
  * @extends PolicyAgent.PolicyPoint
+ * @class
  */
 class PIP extends PolicyPoint {
     /**
@@ -70,6 +97,39 @@ class PIP extends PolicyPoint {
     } // PIP#connect
 
     /**
+     * @name PIP#_subjectRequest
+     * @param {object} query 
+     * @param {Array<object>} [query.find]
+     * @param {Array<object>} [query.create]
+     * @param {Array<object>} [query.update]
+     * @param {Array<object>} [query.delete]
+     * @return {{find: object[], create: boolean[], update: boolean[], delete: boolean[]}}
+     * @async
+     */
+    async _subjectRequest(query = {}) {
+        let result = await Promise.all([
+            Array.isArray(query.find) ?
+                Promise.all(findArr.map(elem => Promise.race(
+                    this.data.SPs.map(subjectsPoint => subjectsPoint._find(elem))
+                ))) : [],
+            Array.isArray(query.create) ?
+                Promise.all(createArr.map(elem => Promise.race(
+                    this.data.SPs.map(subjectsPoint => subjectsPoint._create(elem))
+                ))) : [],
+            Array.isArray(query.update) ?
+                Promise.all(updateArr.map(elem => Promise.race(
+                    this.data.SPs.map(subjectsPoint => subjectsPoint._update(elem))
+                ))) : [],
+            Array.isArray(query.delete) ?
+                Promise.all(deleteArr.map(elem => Promise.race(
+                    this.data.SPs.map(subjectsPoint => subjectsPoint._delete(elem))
+                ))) : []
+        ]); // result
+
+        return { find: result[0], create: result[1], update: result[2], delete: result[3] };
+    } // PIP#_subjectRequest
+
+    /**
      * @name PIP#_retrieveSubjects
      * @param {(object|object[])} requestSubjects
      * @async
@@ -88,7 +148,7 @@ class PIP extends PolicyPoint {
         this.data.SPs.forEach(subjectsPoint => promiseArr.push(
             (async () => {
                 try {
-                    let requestResult = await subjectsPoint._retrieve(requestSubjects);
+                    let requestResult = await subjectsPoint._find(requestSubjects);
 
                     if (multiReq) {
                         if (Array.isArray(requestResult) && requestResult.length === requestSubjects.length)

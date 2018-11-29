@@ -21,9 +21,10 @@ async function _actionTransfer(args, impl, session) {
 } // _actionTransfer
 
 /**
-* @name PEP
-* @extends PolicyAgent.PolicyPoint
-*/
+ * @name PEP
+ * @extends PolicyAgent.PolicyPoint
+ * @class
+ */
 class PEP extends PolicyPoint {
     /**
      * @constructs PEP

@@ -14,6 +14,7 @@ const
 /**
  * @name PDP
  * @extends PolicyAgent.PolicyPoint
+ * @class
  */
 class PDP extends PolicyPoint {
     /**
@@ -104,7 +105,8 @@ class PDP extends PolicyPoint {
             _enumerate(responseContext['responses'], requestID, response);
         } // for
 
-        responseSubjects = await this.data.PIP._retrieveSubjects(requestSubjects);
+        // responseSubjects = await this.data.PIP._retrieveSubjects(requestSubjects);
+        responseSubjects = (await this.data.PIP._subjectRequest({ find: requestSubjects })).find;
 
         /* write subjects to the ResponseContext ... */
         indexMatching.forEach(([requestID, subjType], index) => {

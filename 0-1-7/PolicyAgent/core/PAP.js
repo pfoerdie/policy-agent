@@ -436,6 +436,7 @@ function _makeSubmitQuery(varName, odrl) {
 /**
  * @name PAP
  * @extends PolicyAgent.PolicyPoint
+ * @class
  */
 class PAP extends PolicyPoint {
     /**
