@@ -113,27 +113,30 @@ class SP extends PolicyPoint {
         if (!subject || typeof subject['@type'] !== 'string')
             this.throw('_find', new TypeError(`invalid argument`));
 
-        const client = await this.data.driver.client();
+        const
+            client = await this.data.driver.client(),
+            collection = client.db.collection(resource['@type']);
+
+        if (!collection)
+            await _timeoutPromise(new Promise(() => undefined), this.data.requestTimeout);
+
         return await new Promise((resolve, reject) => {
-            client.db
-                .collection(subject['@type'])
-                .find(subject)
-                .toArray((err, docs) => {
-                    if (err) {
-                        this.throw('_find', err, true); // silent
-                        resolve(undefined);
-                    } else if (docs.length === 1) {
-                        if (typeof docs[0]['uid'] === 'string') {
-                            delete docs[0]['_id'];
-                            resolve(docs[0]);
-                        } else {
-                            this.throw('_find', `missing uid (${docs[0]['@id']})`, true); // silent
-                            resolve(undefined);
-                        }
+            collection.find(subject).toArray((err, docs) => {
+                if (err) {
+                    this.throw('_find', err, true); // silent
+                    resolve(undefined);
+                } else if (docs.length === 1) {
+                    if (typeof docs[0]['uid'] === 'string') {
+                        delete docs[0]['_id'];
+                        resolve(docs[0]);
                     } else {
+                        this.throw('_find', `missing uid (${docs[0]['@id']})`, true); // silent
                         resolve(undefined);
                     }
-                })
+                } else {
+                    resolve(undefined);
+                }
+            })
         });
     } // SP#_find
 
@@ -153,11 +156,15 @@ class SP extends PolicyPoint {
         if (!subject || typeof subject['@type'] !== 'string' || typeof subject['@id'] !== 'string' || typeof subject['uid'] !== 'string')
             this.throw('_create', new TypeError(`invalid argument`));
 
-        const client = await this.data.driver.client();
+        const
+            client = await this.data.driver.client(),
+            collection = client.db.collection(resource['@type']);
+
+        if (!collection)
+            await _timeoutPromise(new Promise(() => undefined), this.data.requestTimeout);
+
         return await new Promise((resolve, reject) => {
-            client.db
-                .collection(subject['@type'])
-                .insertOne(subject)
+            collection.insertOne(subject)
                 .then((result) => {
                     resolve(result['result']['ok'] === 1);
                 })
@@ -184,11 +191,15 @@ class SP extends PolicyPoint {
         if (!subject || typeof subject['@type'] !== 'string' || typeof subject['uid'] !== 'string')
             this.throw('_update', new TypeError(`invalid argument`));
 
-        const client = await this.data.driver.client();
+        const
+            client = await this.data.driver.client(),
+            collection = client.db.collection(resource['@type']);
+
+        if (!collection)
+            await _timeoutPromise(new Promise(() => undefined), this.data.requestTimeout);
+
         return new Promise((resolve, reject) => {
-            client.db
-                .collection(subject['@type'])
-                .updateOne({ 'uid': subject['uid'] }, subject)
+            collection.updateOne({ 'uid': subject['uid'] }, subject)
                 .then((result) => {
                     resolve(result['result']['ok'] === 1);
                 })
@@ -215,11 +226,15 @@ class SP extends PolicyPoint {
         if (!subject || typeof subject['@type'] !== 'string' || typeof subject['uid'] !== 'string')
             this.throw('_delete', new TypeError(`invalid argument`));
 
-        const client = await this.data.driver.client();
+        const
+            client = await this.data.driver.client(),
+            collection = client.db.collection(resource['@type']);
+
+        if (!collection)
+            await _timeoutPromise(new Promise(() => undefined), this.data.requestTimeout);
+
         return new Promise((resolve, reject) => {
-            client.db
-                .collection(subject['@type'])
-                .deleteOne({ 'uid': subject['uid'] })
+            collection.deleteOne({ 'uid': subject['uid'] })
                 .then((result) => {
                     resolve(result['result']['ok'] === 1);
                 })

@@ -10,11 +10,15 @@ const
     RP = require('./RP.js'),
     _private = new WeakMap();
 
+/**
+ * @name Subject
+ * @class
+ */
 class Subject {
     /**
      * @constructs Subject
      * @param {JSON} param 
-     * @param {PIP} source 
+     * @param {PIP} source
      */
     constructor(param, source) {
         if (!param || typeof param['uid'] !== 'string' || typeof param['@id'] !== 'string' || typeof param['@type'] !== 'string')
@@ -22,29 +26,41 @@ class Subject {
         if (!(source instanceof PIP))
             throw new TypeError(`invalid argument`);
 
-        Object.entries(param).forEach(([key, value]) => Object.defineProperty(this, key, {
-            writable: key !== 'uid' && !key.startsWith('@'),
-            value: value
-        }));
+        Object.entries(param).forEach(([key, value]) => {
+            if (key.startsWith('_')) return;
+            const editable = !(key === 'uid' || key === '@id' || key === '@type');
+            Object.defineProperty(this, key, {
+                writable: editable,
+                enumerable: editable,
+                value: value
+            });
+        });
 
         _private.set(this, { source });
+
     } // Subject.constructor
 
-    _update() {
-        // TODO
-    } // Subject#update
+    async _update() {
+        let result = await _private.get(this).source._subjectRequest({ update: [this] });
+        if (result) return result.delete[0];
+    } // Resource#_update
 
-    _delete() {
-        // TODO
-    } // Subject#delete
+    async _delete() {
+        let result = await _private.get(this).source._subjectRequest({ delete: [this] });
+        if (result) return result.delete[0];
+    } // Resource#_delete
 
 } // Subject
 
+/**
+ * @name Resource
+ * @class
+ */
 class Resource {
     /**
      * @constructs Resource
      * @param {JSON} param 
-     * @param {PIP} source 
+     * @param {PIP} source
      */
     constructor(param, source) {
         if (!param || typeof param['uid'] !== 'string' || typeof param['@id'] !== 'string' || typeof param['@type'] !== 'string')
@@ -52,30 +68,38 @@ class Resource {
         if (!(source instanceof PIP))
             throw new TypeError(`invalid argument`);
 
-        Object.entries(param).forEach(([key, value]) => Object.defineProperty(this, key, {
-            writable: key !== 'uid' && !key.startsWith('@'),
-            value: value
-        }));
+        Object.entries(param).forEach(([key, value]) => {
+            if (key.startsWith('_')) return;
+            const editable = !(key === 'uid' || key === '@id' || key === '@type');
+            Object.defineProperty(this, key, {
+                writable: editable,
+                enumerable: editable,
+                value: value
+            });
+        });
 
         _private.set(this, { source, value: undefined });
+
     } // Resource.constructor
 
-    _get() {
+    async get '@value'() {
         const _attr = _private.get(this);
-
-        if (!_attr.value)
-            _attr.value = await _attr.source._environmentRequest(this);
-
+        if (!_attr.value) {
+            let result = await _attr.source._environmentRequest({ resource: [this] });
+            if (result) _attr.value = result.resource[0];
+        }
         return _attr.value;
-    }// Resource#getResource
+    } // Resource#@value<getter>
 
-    _update() {
-        // TODO
-    } // Resource#update
+    async _update() {
+        let result = await _private.get(this).source._resourceRequest({ update: [this] });
+        if (result) return result.delete[0];
+    } // Resource#_update
 
-    _delete() {
-        // TODO
-    } // Resource#delete
+    async _delete() {
+        let result = await _private.get(this).source._resourceRequest({ delete: [this] });
+        if (result) return result.delete[0];
+    } // Resource#_delete
 
 } // Resource
 
