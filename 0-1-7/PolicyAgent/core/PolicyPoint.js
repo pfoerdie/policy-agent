@@ -126,7 +126,7 @@ class PolicyPoint extends Auditor {
                     && typeof value['responses'] === 'object';
 
             default:
-                throw Auditor.prototype.throw(this, 'validate', new Error(`unknown type`));
+                this.throw('validate', new Error(`unknown type`));
 
         } // switch
     } // PolicyPoint#validate

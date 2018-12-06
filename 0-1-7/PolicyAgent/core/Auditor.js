@@ -34,15 +34,26 @@ class Auditor {
      * @package
      */
     log(funcName, ...messages) {
+        return Auditor.log.call(this, funcName, ...messages);
+    } // Auditor#log
+
+    /**
+     * This function is used to log events.
+     * @name Auditor.log
+     * @param {string} funcName The name of the function for this log entry.
+     * @param {...(string|*)} messages If no string is submitted, the arguments will be used with the toString method.
+     * @package
+     */
+    static log(funcName, ...messages) {
         let logMsg = this.toString(funcName, true);
         for (let msg of messages) {
             logMsg += "\n" + Color.grey("-> ") + msg.toString().trim();
         }
         console.log(logMsg);
-    } // Auditor#log
+    } // Auditor.log
 
     /**
-     * This function is used to log errors on this Auditor. It will also throw an error.
+     * This function is used to log errors on this component. It will also throw an error.
      * @name Auditor#throw
      * @param {string} funcName The name of the function for this error entry.
      * @param {(Error|*)} error If no error is submitted, the arguments will be used to create an error.
@@ -51,6 +62,19 @@ class Auditor {
      * @package
      */
     throw(funcName, error, silent = false) {
+        return Auditor.throw.call(this, funcName, error, silent);
+    } // Auditor#throw
+
+    /**
+     * This function is used to log errors. It will also throw an error.
+     * @name Auditor.throw
+     * @param {string} funcName The name of the function for this error entry.
+     * @param {(Error|*)} error If no error is submitted, the arguments will be used to create an error.
+     * @param {boolean} [silent=false] In silent-mode the error will be returned instead of thrown.
+     * @throws {Error} Throws an error if not in silent-mode.
+     * @package
+     */
+    static throw(funcName, error, silent = false) {
         error = (error instanceof Error) ? error : new Error(error.toString().trim());
 
         let errMsg = this.toString(funcName, true);
@@ -59,7 +83,7 @@ class Auditor {
 
         if (silent) return error;
         else throw error;
-    } // Auditor#throw
+    } // Auditor.throw
 
     /**
      * @name Auditor#toString
@@ -71,7 +95,7 @@ class Auditor {
     toString(funcName, colored = false) {
         const _attr = _private.get(this);
 
-        let // TODO mal beobachten & informieren, wie das mit __proto__ im produktiv ist
+        let
             className = _attr ? _attr.name : this.__proto__.constructor.name,
             instanceID = _attr ? _attr.id : this.id || this['@id'] || "";
 
@@ -94,14 +118,11 @@ class Auditor {
      * @returns {string}
      * @override
      */
-    toString(funcName, colored = false) {
-        let // TODO mal beobachten & informieren, wie das mit __proto__ im produktiv ist
-            className = this.__proto__.constructor.name,
-            instanceID = this.id || this['@id'] || "";
+    static toString(funcName, colored = false) {
+        let
+            className = this.constructor.name;
 
-        let str = colored
-            ? Color.blue(className) + Color.grey("<") + Color.magenta(instanceID) + Color.grey(">")
-            : `${className}<${instanceID}>`;
+        let str = colored ? Color.blue(className) : `${className}`;
 
         if (funcName && typeof funcName === 'string')
             str += colored
