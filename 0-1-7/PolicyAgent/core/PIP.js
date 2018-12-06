@@ -245,8 +245,10 @@ class PIP extends PolicyPoint {
         await Promise.all(Object.entries(query).map(([topic, requestArr]) =>
             (async (/* async promise */) => {
                 try {
-                    // TODO
-                    result[topic] = null;
+                    result[topic] = await Promise.race(this.data.EPs
+                        .filter(eP => eP.data.topics.includes(topic))
+                        .map(eP => eP._retrieve(topic, requestArr))
+                    );
                 } catch (err) {
                     this.throw('_environmentRequest', err, true); // silent
                 }

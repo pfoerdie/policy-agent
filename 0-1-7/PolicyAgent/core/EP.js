@@ -43,6 +43,7 @@ class EP extends PolicyPoint {
     constructor(options = {}) {
         super(options);
 
+        this.data.topics = [];
     } // EP.constructor
 
     /**
@@ -51,8 +52,6 @@ class EP extends PolicyPoint {
      */
     async ping() {
         try {
-            // TODO
-
             this.log('ping', "success");
             return undefined;
         } catch (err) {
@@ -60,7 +59,12 @@ class EP extends PolicyPoint {
         }
     } // EP#ping
 
-
+    _retrieve(topic, ...args) {
+        if (typeof topic !== 'string')
+            this.throw('_retrieve', new TypeError(`invalid argument`));
+        if (!this.data.topics.includes(topic))
+            this.throw('_retrieve', new Error(`topic not supported`));
+    } // EP#_retrieve
 
 } // EP
 
