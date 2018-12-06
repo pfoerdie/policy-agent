@@ -230,38 +230,6 @@ class SP extends PolicyPoint {
         });
     } // SP#_delete
 
-    /**
-     * @name SP#request
-     * @param {object} query 
-     * @param {Array<object>} [query.find]
-     * @param {Array<object>} [query.create]
-     * @param {Array<object>} [query.update]
-     * @param {Array<object>} [query.delete]
-     * @return {{find: object[], create: boolean[], update: boolean[], delete: boolean[]}}
-     * @async
-     */
-    async request({
-        find: findArr = [],
-        create: createArr = [],
-        update: updateArr = [],
-        delete: deleteArr = []
-    } = {}) {
-        if (![findArr, createArr, updateArr, deleteArr].every(Array.isArray))
-            this.throw('request', new TypeError(`invalid argument`));
-
-        const
-            client = await this.data.driver.client(),
-            result = await Promise.all([
-                Promise.all(findArr.map(this._find)),
-                Promise.all(createArr.map(this._create)),
-                Promise.all(updateArr.map(this._update)),
-                Promise.all(deleteArr.map(this._delete))
-            ]);
-
-        return { find: result[0], create: result[1], update: result[2], delete: result[3] };
-
-    } // SP#request
-
 } // SP
 
 module.exports = SP;

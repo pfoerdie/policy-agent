@@ -7,12 +7,9 @@
 const
     PolicyPoint = require('./PolicyPoint.js'),
     SP = require('./SP.js'),
-    RP = require('./RP.js');
+    RP = require('./RP.js'),
+    _private = new WeakMap();
 
-/**
- * @name Subject
- * @class
- */
 class Subject {
     /**
      * @constructs Subject
@@ -20,7 +17,9 @@ class Subject {
      * @param {PIP} source 
      */
     constructor(param, source) {
-        if (!(param && typeof param === 'object' && source instanceof PIP))
+        if (!param || typeof param['uid'] !== 'string' || typeof param['@id'] !== 'string' || typeof param['@type'] !== 'string')
+            throw new TypeError(`invalid argument`);
+        if (!(source instanceof PIP))
             throw new TypeError(`invalid argument`);
 
         Object.entries(param).forEach(([key, value]) => Object.defineProperty(this, key, {
@@ -28,41 +27,57 @@ class Subject {
             value: value
         }));
 
-        if (typeof this['uid'] !== 'string' || typeof this['@id'] !== 'string' || typeof this['@type'] !== 'string')
-            throw new Error(`necessary attributes missing`);
-
-        let
-            resource = undefined;
-
-        Object.defineProperties(this, {
-
-            getResource: {
-                value: async () => {
-                    if (resource === undefined)
-                        resource = await source._retrieveResource(this) || undefined;
-                    return resource;
-                }
-            } // Subject#getResource
-            ,
-            submitResource: {
-                value: async (value) => {
-                    if (resource ? typeof value === typeof resource : value) {
-                        await source._submitResource(this, value);
-                        resource = value;
-                    }
-                }
-            } // Subject#submitResource
-            ,
-            updateSubject: {
-                value: async () => {
-                    // TODO
-                }
-            } // Subject#updateSubject
-        });
-
+        _private.set(this, { source });
     } // Subject.constructor
 
+    _update() {
+        // TODO
+    } // Subject#update
+
+    _delete() {
+        // TODO
+    } // Subject#delete
+
 } // Subject
+
+class Resource {
+    /**
+     * @constructs Resource
+     * @param {JSON} param 
+     * @param {PIP} source 
+     */
+    constructor(param, source) {
+        if (!param || typeof param['uid'] !== 'string' || typeof param['@id'] !== 'string' || typeof param['@type'] !== 'string')
+            throw new TypeError(`invalid argument`);
+        if (!(source instanceof PIP))
+            throw new TypeError(`invalid argument`);
+
+        Object.entries(param).forEach(([key, value]) => Object.defineProperty(this, key, {
+            writable: key !== 'uid' && !key.startsWith('@'),
+            value: value
+        }));
+
+        _private.set(this, { source, value: undefined });
+    } // Resource.constructor
+
+    _get() {
+        const _attr = _private.get(this);
+
+        if (!_attr.value)
+            _attr.value = await _attr.source._environmentRequest(this);
+
+        return _attr.value;
+    }// Resource#getResource
+
+    _update() {
+        // TODO
+    } // Resource#update
+
+    _delete() {
+        // TODO
+    } // Resource#delete
+
+} // Resource
 
 /**
  * @name PIP
@@ -99,182 +114,92 @@ class PIP extends PolicyPoint {
     /**
      * @name PIP#_subjectRequest
      * @param {object} query 
-     * @param {Array<object>} [query.find]
-     * @param {Array<object>} [query.create]
-     * @param {Array<object>} [query.update]
-     * @param {Array<object>} [query.delete]
+     * @param {object[]} [query.find]
+     * @param {object[]} [query.create]
+     * @param {object[]} [query.update]
+     * @param {object[]} [query.delete]
      * @return {{find: object[], create: boolean[], update: boolean[], delete: boolean[]}}
      * @async
      */
     async _subjectRequest(query = {}) {
+        if (!query || typeof query !== 'object')
+            this.throw('_subjectRequest', new TypeError(`invalid argument`));
+        if (this.data.SPs.size === 0)
+            this.throw('_subjectRequest', new Error(`no SP connected`));
+
         let result = await Promise.all([
             Array.isArray(query.find) ?
-                Promise.all(findArr.map(elem => Promise.race(
-                    this.data.SPs.map(subjectsPoint => subjectsPoint._find(elem))
-                ))) : [],
+                Promise.all(query.find.map(elem => Promise.race(
+                    this.data.SPs.map(subjectsPoint => {
+                        let subject = subjectsPoint._find(elem);
+                        if (subject) return new Subject(subject, this);
+                    })
+                ))) : undefined,
             Array.isArray(query.create) ?
-                Promise.all(createArr.map(elem => Promise.race(
+                Promise.all(query.create.map(elem => Promise.race(
                     this.data.SPs.map(subjectsPoint => subjectsPoint._create(elem))
-                ))) : [],
+                ))) : undefined,
             Array.isArray(query.update) ?
-                Promise.all(updateArr.map(elem => Promise.race(
+                Promise.all(query.update.map(elem => Promise.race(
                     this.data.SPs.map(subjectsPoint => subjectsPoint._update(elem))
-                ))) : [],
+                ))) : undefined,
             Array.isArray(query.delete) ?
-                Promise.all(deleteArr.map(elem => Promise.race(
+                Promise.all(query.delete.map(elem => Promise.race(
                     this.data.SPs.map(subjectsPoint => subjectsPoint._delete(elem))
-                ))) : []
+                ))) : undefined
         ]); // result
 
         return { find: result[0], create: result[1], update: result[2], delete: result[3] };
     } // PIP#_subjectRequest
 
     /**
-     * @name PIP#_retrieveSubjects
-     * @param {(object|object[])} requestSubjects
+     * @name PIP#_resourceRequest
+     * @param {object} query 
+     * @param {object[]} [query.find]
+     * @param {object[]} [query.create]
+     * @param {object[]} [query.update]
+     * @param {object[]} [query.delete]
+     * @return {{find: object[], create: boolean[], update: boolean[], delete: boolean[]}}
      * @async
-     * @package
      */
-    async _retrieveSubjects(requestSubjects) {
-        const multiReq = Array.isArray(requestSubjects);
+    async _resourceRequest(query = {}) {
+        if (!query || typeof query !== 'object')
+            this.throw('_resourceRequest', new TypeError(`invalid argument`));
+        if (this.data.RPs.size === 0)
+            this.throw('_resourceRequest', new Error(`no RP connected`));
 
-        if (multiReq ? requestSubjects.some(elem => !elem || typeof elem !== 'object') : !requestSubjects || typeof requestSubjects !== 'object')
-            this.throw('_retrieveSubjects', new TypeError(`invalid argument`));
+        let result = await Promise.all([
+            Array.isArray(query.find) ?
+                Promise.all(query.find.map(elem => Promise.race(
+                    this.data.RPs.map(resourcePoint => {
+                        let resource = resourcePoint._find(elem);
+                        if (resource) return new Resource(resource, this);
+                    })
+                ))) : undefined,
+            Array.isArray(query.create) ?
+                Promise.all(query.create.map(elem => Promise.race(
+                    this.data.RPs.map(resourcePoint => resourcePoint._create(elem))
+                ))) : undefined,
+            Array.isArray(query.update) ?
+                Promise.all(query.update.map(elem => Promise.race(
+                    this.data.RPs.map(resourcePoint => resourcePoint._update(elem))
+                ))) : undefined,
+            Array.isArray(query.delete) ?
+                Promise.all(query.delete.map(elem => Promise.race(
+                    this.data.RPs.map(resourcePoint => resourcePoint._delete(elem))
+                ))) : undefined
+        ]); // result
 
-        let
-            responseSubjects = multiReq ? requestSubjects.map(val => undefined) : undefined,
-            promiseArr = [];
+        return { find: result[0], create: result[1], update: result[2], delete: result[3] };
+    } // PIP#_resourceRequest
 
-        this.data.SPs.forEach(subjectsPoint => promiseArr.push(
-            (async () => {
-                try {
-                    let requestResult = await subjectsPoint._find(requestSubjects);
+    async _environmentRequest(query = {}) {
+        if (!query || typeof query !== 'object')
+            this.throw('_environmentRequest', new TypeError(`invalid argument`));
+        if (this.data.EPs.size === 0)
+            this.throw('_environmentRequest', new Error(`no EP connected`));
 
-                    if (multiReq) {
-                        if (Array.isArray(requestResult) && requestResult.length === requestSubjects.length)
-                            requestResult.forEach((result, index) => {
-                                if (result && !responseSubjects[index]) {
-                                    responseSubjects[index] = new Subject(result, this);
-                                }
-                            });
-                    } else {
-                        if (requestResult && !responseSubjects) {
-                            responseSubjects = new Subject(requestResult, this);
-                        }
-                    }
-                } catch (err) {
-                    this.throw('_retrieveSubjects', err, true); // silent
-                }
-            })(/* NOTE async call instead of promise */)
-        ));
-
-        await Promise.all(promiseArr);
-        return responseSubjects;
-
-    } // PIP#_retrieveSubjects
-
-    /**
-     * @name PIP#_retrieveResource
-     * @param {(object|object[])} responseSubjects
-     * @async
-     * @package
-     */
-    async _retrieveResource(responseSubjects) {
-        const multiReq = Array.isArray(responseSubjects);
-
-        if (multiReq ? responseSubjects.some(!(elem instanceof Subject)) : !(responseSubjects instanceof Subject))
-            this.throw('_retrieveResource', new TypeError(`invalid argument`));
-
-        let
-            responseResource = multiReq ? responseSubjects.map(val => undefined) : undefined,
-            promiseArr = [];
-
-        this.data.RPs.forEach(resourcePoint => promiseArr.push(
-            (async () => {
-                try {
-                    let requestResult = await resourcePoint._retrieve(responseSubjects);
-
-                    if (multiReq) {
-                        if (Array.isArray(requestResult) && requestResult.length === requestSubjects.length)
-                            requestResult.forEach((result, index) => {
-                                if (result && !responseResource[index])
-                                    responseResource[index] = result;
-                            });
-                    } else {
-                        if (requestResult && !responseResource)
-                            responseResource = requestResult;
-                    }
-                } catch (err) {
-                    // do nothing
-                    this.throw('_retrieveResource', err, true);
-                }
-            })(/* NOTE async call instead of promise */)
-        ));
-
-        await Promise.all(promiseArr);
-        return responseResource;
-
-    } // PIP#_retrieveResource
-
-    /**
-     * TODO Subjects & Resource
-     * -    submit
-     * -    create
-     * -    delete
-     */
-
-    async _submitSubjects(responseSubjects) {
-        const multiReq = Array.isArray(responseSubjects);
-
-        if (multiReq ? responseSubjects.some(elem => !elem || typeof elem !== 'object') : !responseSubjects || typeof responseSubjects !== 'object')
-            this.throw('_submitSubjects', new TypeError(`invalid argument`));
-
-        if (multiReq) {
-            responseSubjects = responseSubjects.map((elem) => {
-                let submitSubject = Object.assign({}, elem);
-                delete submitSubject['@value'];
-                delete submitSubject['@source'];
-                return submitSubject;
-            });
-        } else {
-            responseSubjects = Object.assign({}, responseSubjects);
-            delete responseSubjects['@value'];
-            delete responseSubjects['@source'];
-        }
-
-        let promiseArr = [];
-        this.data.SPs.forEach(subjectsPoint => promiseArr.push(
-            (async () => {
-                try {
-                    await subjectsPoint._submit(responseSubjects);
-                } catch (err) {
-                    this.throw('_submitSubjects', err, true); // silent
-                }
-            })(/* NOTE async call instead of promise */)
-        ));
-        await Promise.all(promiseArr);
-
-    } // PIP._submitSubjects
-
-    async _submitResource(responseSubjects) {
-        const multiReq = Array.isArray(responseSubjects);
-
-        if (multiReq ? responseSubjects.some(!(elem instanceof Subject)) : !(responseSubjects instanceof Subject))
-            this.throw('_retrieveResource', new TypeError(`invalid argument`));
-
-        let promiseArr = [];
-        this.data.RPs.forEach(resourcePoint => promiseArr.push(
-            (async () => {
-                try {
-                    await resourcePoint._submit(responseSubjects);
-                } catch (err) {
-                    this.throw('_submitResource', err, true); // silent
-                }
-            })(/* NOTE async call instead of promise */)
-        ));
-        await Promise.all(promiseArr);
-
-    } // PIP._submitResource
+    } // PIP#_environmentRequest
 
 } // PIP
 

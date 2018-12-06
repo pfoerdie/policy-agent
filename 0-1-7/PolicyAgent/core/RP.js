@@ -5,14 +5,29 @@
  */
 
 const
-    Path = require('path'),
-    Fs = require('fs'),
-    PolicyPoint = require('./PolicyPoint.js'),
-    _promify = (callback, ...args) => new Promise((resolve, reject) => callback(...args, (err, result) => err ? reject(err) : resolve(result)));
+    MongoDB = require('mongodb').MongoClient,
+    PolicyPoint = require('./PolicyPoint.js');
 
-class Resource {
-    // TODO
-} // Resource
+/**
+ * @name _timeoutPromise
+ * @param {Promise} origPromise 
+ * @param {number} toTime 
+ * @this {RP}
+ * @private
+ * @async
+ */
+async function _timeoutPromise(origPromise, duration) {
+    if (duration === Infinity || duration < 0)
+        return await origPromise;
+
+    let timeout, toPromise = new Promise((resolve, reject) => {
+        timeout = setTimeout(() => reject(new Error(`timed out`)), duration);
+    });
+
+    await Promise.race([origPromise, toPromise]);
+    clearTimeout(timeout);
+    return await origPromise;
+} // _timeoutPromise
 
 /**
  * @name RP
@@ -22,83 +37,198 @@ class RP extends PolicyPoint {
     /**
      * @constructs RP
      * @param {JSON} [options={}]
+     * @param {string} [options.host="localhost"]
+     * @param {number} [options.port=27017]
      * @abstract
      * @public
      */
     constructor(options = {}) {
         super(options);
 
-        if (typeof options['root'] !== 'string')
-            this.throw('constructor', new TypeError(`invalid options`));
+        const connection = {
+            host: (options['host'] || "localhost") + ":" + (options['port'] || 27017),
+            dbName: options['dbName'] || "ResourcePoint"
+        };
 
-        this.data.root = options['root'];
+        this.data.requestTimeout = 10e3; // ms
+        this.data.clientTimeout = 10e3; // ms
+
+        let tmpClient = undefined, tmpTS = 0;
+        this.data.driver = {
+            client: () => new Promise((resolve, reject) => {
+                let nowTS = Date.now();
+                if (tmpClient && (nowTS - tmpTS) < this.data.clientTimeout) {
+                    tmpTS = nowTS;
+                    return resolve(tmpClient);
+                }
+
+                MongoDB.connect(
+                    `mongodb://${connection.host}`,
+                    { useNewUrlParser: true },
+                    (err, client) => {
+                        if (err)
+                            reject(err);
+                        else {
+                            client.db = client.db(connection.dbName);
+                            tmpTS = nowTS;
+                            tmpClient = client;
+                            resolve(client);
+                        }
+                    }
+                ); // MongoDB.connect
+            }) // client:
+        }; // this.data.driver
 
     } // RP.constructor
 
     /**
-     * 
-     * @param {(object|object[])} resourceID 
+     * @name RP#ping
+     * @async
      */
-    async _retrieve(query) {
-        const
-            queryArr = Array.isArray(query) ? query : undefined;
+    async ping() {
+        try {
+            const client = await this.data.driver.client();
+            client.close();
 
-        if (queryArr ? queryArr.some(query => !query || typeof query['@type'] !== 'string') : !query || typeof query['@type'] !== 'string')
-            this.throw('_retrieve', new TypeError(`invalid argument`));
+            this.log('ping', "success");
+            return client['s']['options']['servers'][0];
+        } catch (err) {
+            this.throw('ping', err);
+        }
+    } // RP#ping
 
-        const _retrieve = (query) => new Promise((resolve, reject) => {
-            switch (query['@type']) {
+    /**
+     * @name RP#_find
+     * @param {(object|object[])} resource 
+     * @returns {(object|object[])}
+     * @package
+     * @async
+     * 
+     * {@link http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#find MongoDB Driver API - Collection#find}
+     */
+    async _find(resource) {
+        if (Array.isArray(resource))
+            return await Promise.all(resource.map(this._find));
 
-                case 'File':
-                    let filePath = Path.join(this.data.root, query['path'].replace(/^(?:\.|\/|\\)*/, ""));
-                    Fs.readFile(filePath, (err, data) => err ? resolve(undefined) : resolve(data));
-                    break;
+        if (!resource || typeof resource['@type'] !== 'string')
+            this.throw('_find', new TypeError(`invalid argument`));
 
-                default:
-                    resolve(undefined);
-
-            } // switch
+        const client = await this.data.driver.client();
+        return await new Promise((resolve, reject) => {
+            client.db
+                .collection(resource['@type'])
+                .find(resource)
+                .toArray((err, docs) => {
+                    if (err) {
+                        this.throw('_find', err, true); // silent
+                        resolve(undefined);
+                    } else if (docs.length === 1) {
+                        if (typeof docs[0]['uid'] === 'string') {
+                            delete docs[0]['_id'];
+                            resolve(docs[0]);
+                        } else {
+                            this.throw('_find', `missing uid (${docs[0]['@id']})`, true); // silent
+                            resolve(undefined);
+                        }
+                    } else {
+                        resolve(undefined);
+                    }
+                })
         });
+    } // RP#_find
 
-        let result = queryArr
-            ? await Promise.all(queryArr.map(query => _retrieve(query)))
-            : await _retrieve(query);
+    /**
+     * @name RP#_create
+     * @param {(object|object[])} resource 
+     * @returns {(boolean|boolean[])}
+     * @package
+     * @async
+     * 
+     * {@link http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#insertOne MongoDB Driver API - Collection#insertOne}
+     */
+    async _create(resource) {
+        if (Array.isArray(resource))
+            return await Promise.all(resource.map(this._create));
 
-        return result;
+        if (!resource || typeof resource['@type'] !== 'string' || typeof resource['@id'] !== 'string' || typeof resource['uid'] !== 'string')
+            this.throw('_create', new TypeError(`invalid argument`));
 
-    } // RP#_retrieve
-
-    async _submit(query) {
-        const
-            queryArr = Array.isArray(query) ? query : undefined;
-
-        if (queryArr ? queryArr.some(query => typeof query !== 'object') : typeof query !== 'object')
-            this.throw('_retrieve', new TypeError(`invalid argument`));
-
-        const _retrieve = (query) => new Promise((resolve, reject) => {
-            switch (query['type']) {
-
-                case 'File':
-                    let
-                        filePath = Path.join(this.data.root, query['path'].replace(/^(?:\.|\/|\\)*/, "")),
-                        data = query['@value'];
-                    if (data)
-                        Fs.writeFile(filePath, data, (err) => err ? resolve(false) : resolve(true));
-                    else
-                        resolve(false);
-                    break;
-
-                default:
+        const client = await this.data.driver.client();
+        return await new Promise((resolve, reject) => {
+            client.db
+                .collection(resource['@type'])
+                .insertOne(resource)
+                .then((result) => {
+                    resolve(result['result']['ok'] === 1);
+                })
+                .catch((err) => {
+                    this.throw('_create', err, true); // silent
                     resolve(false);
-
-            } // switch
+                })
         });
+    } // RP#_create
 
-        return queryArr
-            ? await Promise.all(queryArr.map(query => _retrieve(query)))
-            : await _retrieve(query);
+    /**
+     * @name RP#_update
+     * @param {(object|object[])} resource 
+     * @returns {(boolean|boolean[])}
+     * @package
+     * @async
+     * 
+     * {@link http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#updateOne MongoDB Driver API - Collection#updateOne}
+     */
+    async _update(resource) {
+        if (Array.isArray(resource))
+            return await Promise.all(resource.map(this._update));
 
-    } // RP#_submit
+        if (!resource || typeof resource['@type'] !== 'string' || typeof resource['uid'] !== 'string')
+            this.throw('_update', new TypeError(`invalid argument`));
+
+        const client = await this.data.driver.client();
+        return new Promise((resolve, reject) => {
+            client.db
+                .collection(resource['@type'])
+                .updateOne({ 'uid': resource['uid'] }, resource)
+                .then((result) => {
+                    resolve(result['result']['ok'] === 1);
+                })
+                .catch((err) => {
+                    this.throw('_update', err, true); // silent
+                    resolve(false);
+                })
+        });
+    } // RP#_update
+
+    /**
+     * @name RP#_delete
+     * @param {(object|object[])} resource 
+     * @returns {(boolean|boolean[])}
+     * @package
+     * @async
+     * 
+     * {@link http://mongodb.github.io/node-mongodb-native/3.1/api/Collection.html#deleteOne MongoDB Driver API - Collection#deleteOne}
+     */
+    async _delete(resource) {
+        if (Array.isArray(resource))
+            return await Promise.all(resource.map(this._delete));
+
+        if (!resource || typeof resource['@type'] !== 'string' || typeof resource['uid'] !== 'string')
+            this.throw('_delete', new TypeError(`invalid argument`));
+
+        const client = await this.data.driver.client();
+        return new Promise((resolve, reject) => {
+            client.db
+                .collection(resource['@type'])
+                .deleteOne({ 'uid': resource['uid'] })
+                .then((result) => {
+                    resolve(result['result']['ok'] === 1);
+                })
+                .catch((err) => {
+                    this.throw('_delete', err, true); // silent
+                    resolve(false);
+                })
+        });
+    } // RP#_delete
 
 } // RP
 
