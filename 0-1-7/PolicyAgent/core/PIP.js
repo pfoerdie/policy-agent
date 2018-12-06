@@ -112,6 +112,12 @@ class PIP extends PolicyPoint {
     } // PIP#connect
 
     /**
+     * TODO wichtig!
+     * der RP und der SP sollen undefined zurückgeben, wenn die collection nicht existiert
+     * => Promise.race funktioniert nicht. Es muss das erste Object genommen werden, das nicht undefined ist, oder so ähnlich!
+     */
+
+    /**
      * @name PIP#_subjectRequest
      * @param {object} query 
      * @param {object[]} [query.find]
