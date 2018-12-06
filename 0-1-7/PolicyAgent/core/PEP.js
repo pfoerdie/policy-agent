@@ -121,9 +121,9 @@ class PEP extends PolicyPoint {
 
         const entryPoint = addRequest(param['action']);
 
-        /* 2. - send RequestContext to PDP#_requestDecision */
+        /* 2. - send RequestContext to PDP#_decisionRequest */
 
-        let responseContext = await this.data.PDP._requestDecision(requestContext);
+        let responseContext = await this.data.PDP._decisionRequest(requestContext);
 
         /* 3. - execute Actions */
 

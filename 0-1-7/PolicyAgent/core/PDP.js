@@ -43,16 +43,16 @@ class PDP extends PolicyPoint {
     } // PDP.constructor
 
     /**
-     * @name PDP#_requestDecision
+     * @name PDP#_decisionRequest
      * @param {RequestContext} requestContext
      * @async
      * 
      * INFO 7.17 Authorization decision:
      *   -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
      */
-    async _requestDecision(requestContext) {
+    async _decisionRequest(requestContext) {
         if (!PolicyPoint.validate('RequestContext', requestContext))
-            this.throw('_requestDecision', new TypeError(`invalid argument`));
+            this.throw('_decisionRequest', new TypeError(`invalid argument`));
 
         /* 1. - create ResponseContext */
 
@@ -144,7 +144,7 @@ class PDP extends PolicyPoint {
 
         return responseContext;
 
-    } // PDP#_requestDecision
+    } // PDP#_decisionRequest
 
     /**
      * TODO

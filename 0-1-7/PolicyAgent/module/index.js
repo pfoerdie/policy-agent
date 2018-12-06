@@ -4,6 +4,7 @@ const
 
 module.exports = ({ PEP }) => ({
     PEP: {
-        express: load('PEP.express')(PEP)
+        express: load('PEP.express')(PEP),
+        socketIO: load('PEP.socketIO')(PEP)
     }
 }); // module.exports

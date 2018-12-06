@@ -19,3 +19,4 @@ exports['SP'] = core.SP;
 exports['EP'] = core.EP;
 
 exports['PEP']['express'] = modl.PEP.express;
+exports['PEP']['socketIO'] = modl.PEP.socketIO;

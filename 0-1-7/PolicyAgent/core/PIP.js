@@ -8,6 +8,7 @@ const
     PolicyPoint = require('./PolicyPoint.js'),
     SP = require('./SP.js'),
     RP = require('./RP.js'),
+    EP = require('./EP.js'),
     _private = new WeakMap();
 
 /**
@@ -117,28 +118,34 @@ class PIP extends PolicyPoint {
     constructor(options = {}) {
         super(options);
 
-        this.data.SPs = new Set();
-        this.data.RPs = new Set();
-        this.data.EPs = new Set();
+        this.data.SPs = new Set(Array.isArray(options['subject'])
+            ? options['subject']
+                .map(elem => typeof elem === 'string' ? PolicyPoint.get(elem) : elem)
+                .filter(elem => elem instanceof SP)
+            : undefined
+        );
+
+        this.data.RPs = new Set(Array.isArray(options['resource'])
+            ? options['resource']
+                .map(elem => typeof elem === 'string' ? PolicyPoint.get(elem) : elem)
+                .filter(elem => elem instanceof RP)
+            : undefined
+        );
+
+        this.data.EPs = new Set(Array.isArray(options['environment'])
+            ? options['environment']
+                .map(elem => typeof elem === 'string' ? PolicyPoint.get(elem) : elem)
+                .filter(elem => elem instanceof EP)
+            : undefined
+        );
 
     } // PIP.constructor
-
-    connect(sreP) {
-        if (sreP instanceof SP)
-            this.data.SPs.add(sreP);
-        else if (sreP instanceof RP)
-            this.data.RPs.add(sreP);
-        else
-            this.throw('connect', new TypeError(`invalid argument`));
-
-        this.log('connect', `${sreP.toString(undefined, true)} connected`);
-        return this;
-    } // PIP#connect
 
     /**
      * TODO wichtig!
      * der RP und der SP sollen undefined zurückgeben, wenn die collection nicht existiert
      * => Promise.race funktioniert nicht. Es muss das erste Object genommen werden, das nicht undefined ist, oder so ähnlich!
+     * (aktuelle Lösung mit timeoutPromise ist wahrscheinlich nicht die beste)
      */
 
     /**
@@ -151,7 +158,7 @@ class PIP extends PolicyPoint {
      * @return {{find: object[], create: boolean[], update: boolean[], delete: boolean[]}}
      * @async
      */
-    async _subjectRequest(query = {}) {
+    async _subjectRequest(query) {
         if (!query || typeof query !== 'object')
             this.throw('_subjectRequest', new TypeError(`invalid argument`));
         if (this.data.SPs.size === 0)
@@ -192,7 +199,7 @@ class PIP extends PolicyPoint {
      * @return {{find: object[], create: boolean[], update: boolean[], delete: boolean[]}}
      * @async
      */
-    async _resourceRequest(query = {}) {
+    async _resourceRequest(query) {
         if (!query || typeof query !== 'object')
             this.throw('_resourceRequest', new TypeError(`invalid argument`));
         if (this.data.RPs.size === 0)
@@ -223,11 +230,30 @@ class PIP extends PolicyPoint {
         return { find: result[0], create: result[1], update: result[2], delete: result[3] };
     } // PIP#_resourceRequest
 
-    async _environmentRequest(query = {}) {
+    /**
+     * @name PIP#_environmentRequest
+     * @param {object} query 
+     * TODO jsDoc
+     */
+    async _environmentRequest(query) {
         if (!query || typeof query !== 'object')
             this.throw('_environmentRequest', new TypeError(`invalid argument`));
         if (this.data.EPs.size === 0)
             this.throw('_environmentRequest', new Error(`no EP connected`));
+
+        let result = {};
+        await Promise.all(Object.entries(query).map(([topic, requestArr]) =>
+            (async (/* async promise */) => {
+                try {
+                    // TODO
+                    result[topic] = null;
+                } catch (err) {
+                    this.throw('_environmentRequest', err, true); // silent
+                }
+            })(/* async promise */)
+        ));
+
+        return result;
 
     } // PIP#_environmentRequest
 
