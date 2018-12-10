@@ -43,7 +43,7 @@ class Subject {
 
     async _update() {
         let result = await _private.get(this).source._subjectRequest({ update: [this] });
-        if (result) return result.delete[0];
+        if (result) return result.update[0];
     } // Resource#_update
 
     async _delete() {
@@ -93,8 +93,10 @@ class Resource {
     } // Resource#@value<getter>
 
     async _update() {
-        let result = await _private.get(this).source._resourceRequest({ update: [this] });
-        if (result) return result.delete[0];
+        const _attr = _private.get(this);
+        let result = await (_attr.source._resourceRequest({ update: [this] }));
+        // _attr.source._environmentRequest({ update: [this] }); // TODO irgendwie mit einbauen
+        if (result) return result.update[0];
     } // Resource#_update
 
     async _delete() {
@@ -104,16 +106,26 @@ class Resource {
 
 } // Resource
 
+/**
+ * @name _handleQuery
+ * @param {(Array|*)} queryArr 
+ * @param {function[]} queryFnArr 
+ * @param {function} transformFn 
+ * @returns {Array}
+ * @async
+ * @private
+ */
 async function _handleQuery(queryArr, queryFnArr, transformFn = (elem => elem)) {
-    if (!Array.isArray(queryArr)) return;
+    if (!queryArr) return;
+    if (!Array.isArray(queryArr)) queryArr = [queryArr];
 
     let resultArr = [];
     await Promise.all(queryArr.map((elem, index) => Promise.all(
-        queryFnArr.map(async (queryFn) => {
+        elem ? queryFnArr.map(async (queryFn) => {
             let result = await queryFn(elem);
             if (resultArr[index] === undefined)
                 resultArr[index] = transformFn(result);
-        })
+        }) : undefined
     )));
 
     return resultArr;
