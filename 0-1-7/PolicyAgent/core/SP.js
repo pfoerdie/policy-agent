@@ -117,8 +117,7 @@ class SP extends PolicyPoint {
             client = await this.data.driver.client(),
             collection = client.db.collection(resource['@type']);
 
-        if (!collection)
-            await _timeoutPromise(new Promise(() => undefined), this.data.requestTimeout);
+        if (!collection) return;
 
         return await new Promise((resolve, reject) => {
             collection.find(subject).toArray((err, docs) => {
@@ -160,8 +159,7 @@ class SP extends PolicyPoint {
             client = await this.data.driver.client(),
             collection = client.db.collection(resource['@type']);
 
-        if (!collection)
-            await _timeoutPromise(new Promise(() => undefined), this.data.requestTimeout);
+        if (!collection) return;
 
         return await new Promise((resolve, reject) => {
             collection.insertOne(subject)
@@ -195,10 +193,9 @@ class SP extends PolicyPoint {
             client = await this.data.driver.client(),
             collection = client.db.collection(resource['@type']);
 
-        if (!collection)
-            await _timeoutPromise(new Promise(() => undefined), this.data.requestTimeout);
+        if (!collection) return;
 
-        return new Promise((resolve, reject) => {
+        return await new Promise((resolve, reject) => {
             collection.updateOne({ 'uid': subject['uid'] }, subject)
                 .then((result) => {
                     resolve(result['result']['ok'] === 1);
@@ -230,10 +227,9 @@ class SP extends PolicyPoint {
             client = await this.data.driver.client(),
             collection = client.db.collection(resource['@type']);
 
-        if (!collection)
-            await _timeoutPromise(new Promise(() => undefined), this.data.requestTimeout);
+        if (!collection) return;
 
-        return new Promise((resolve, reject) => {
+        return await new Promise((resolve, reject) => {
             collection.deleteOne({ 'uid': subject['uid'] })
                 .then((result) => {
                     resolve(result['result']['ok'] === 1);

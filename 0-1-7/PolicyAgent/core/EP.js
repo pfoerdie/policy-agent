@@ -5,6 +5,7 @@
  */
 
 const
+    Fs = require('fs'),
     PolicyPoint = require('./PolicyPoint.js');
 
 /**
@@ -35,15 +36,11 @@ class EP extends PolicyPoint {
     /**
      * @constructs EP
      * @param {JSON} [options={}]
-     * @param {string} [options.host="localhost"]
-     * @param {number} [options.port=27017]
      * @abstract
      * @public
      */
     constructor(options = {}) {
         super(options);
-
-        this.data.topics = [];
     } // EP.constructor
 
     /**
@@ -59,12 +56,17 @@ class EP extends PolicyPoint {
         }
     } // EP#ping
 
-    _retrieve(topic, ...args) {
-        if (typeof topic !== 'string')
-            this.throw('_retrieve', new TypeError(`invalid argument`));
-        if (!this.data.topics.includes(topic))
-            this.throw('_retrieve', new Error(`topic not supported`));
-    } // EP#_retrieve
+    /**
+     * @name EP#_find
+     * @param {*} target 
+     * @interface
+     */
+    async _find(target) {
+
+        // TODO
+        this.log('_find', "" + target);
+
+    } // EP#_find
 
 } // EP
 

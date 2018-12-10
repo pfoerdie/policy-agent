@@ -86,8 +86,8 @@ class Resource {
     async get '@value'() {
         const _attr = _private.get(this);
         if (!_attr.value) {
-            let result = await _attr.source._environmentRequest({ resource: [this] });
-            if (result) _attr.value = result.resource[0];
+            let result = await _attr.source._environmentRequest({ find: [this] });
+            if (result) _attr.value = result.find[0];
         }
         return _attr.value;
     } // Resource#@value<getter>
@@ -103,6 +103,21 @@ class Resource {
     } // Resource#_delete
 
 } // Resource
+
+async function _handleQuery(queryArr, queryFnArr, transformFn = (elem => elem)) {
+    if (!Array.isArray(queryArr)) return;
+
+    let resultArr = [];
+    await Promise.all(queryArr.map((elem, index) => Promise.all(
+        queryFnArr.map(async (queryFn) => {
+            let result = await queryFn(elem);
+            if (resultArr[index] === undefined)
+                resultArr[index] = transformFn(result);
+        })
+    )));
+
+    return resultArr;
+} // _handleQuery
 
 /**
  * @name PIP
@@ -159,31 +174,16 @@ class PIP extends PolicyPoint {
      * @async
      */
     async _subjectRequest(query) {
-        if (!query || typeof query !== 'object')
-            this.throw('_subjectRequest', new TypeError(`invalid argument`));
         if (this.data.SPs.size === 0)
             this.throw('_subjectRequest', new Error(`no SP connected`));
+        if (!query || typeof query !== 'object')
+            this.throw('_subjectRequest', new TypeError(`invalid argument`));
 
         let result = await Promise.all([
-            Array.isArray(query.find) ?
-                Promise.all(query.find.map(elem => Promise.race(
-                    this.data.SPs.map(subjectsPoint => {
-                        let subject = subjectsPoint._find(elem);
-                        if (subject) return new Subject(subject, this);
-                    })
-                ))) : undefined,
-            Array.isArray(query.create) ?
-                Promise.all(query.create.map(elem => Promise.race(
-                    this.data.SPs.map(subjectsPoint => subjectsPoint._create(elem))
-                ))) : undefined,
-            Array.isArray(query.update) ?
-                Promise.all(query.update.map(elem => Promise.race(
-                    this.data.SPs.map(subjectsPoint => subjectsPoint._update(elem))
-                ))) : undefined,
-            Array.isArray(query.delete) ?
-                Promise.all(query.delete.map(elem => Promise.race(
-                    this.data.SPs.map(subjectsPoint => subjectsPoint._delete(elem))
-                ))) : undefined
+            _handleQuery(query.find, this.data.SPs.map(sP => sP._find), result => result ? new Subject(result) : undefined),
+            _handleQuery(query.create, this.data.SPs.map(sP => sP._create)),
+            _handleQuery(query.update, this.data.SPs.map(sP => sP._update)),
+            _handleQuery(query.delete, this.data.SPs.map(sP => sP._delete))
         ]); // result
 
         return { find: result[0], create: result[1], update: result[2], delete: result[3] };
@@ -200,31 +200,16 @@ class PIP extends PolicyPoint {
      * @async
      */
     async _resourceRequest(query) {
-        if (!query || typeof query !== 'object')
-            this.throw('_resourceRequest', new TypeError(`invalid argument`));
         if (this.data.RPs.size === 0)
             this.throw('_resourceRequest', new Error(`no RP connected`));
+        if (!query || typeof query !== 'object')
+            this.throw('_resourceRequest', new TypeError(`invalid argument`));
 
         let result = await Promise.all([
-            Array.isArray(query.find) ?
-                Promise.all(query.find.map(elem => Promise.race(
-                    this.data.RPs.map(resourcePoint => {
-                        let resource = resourcePoint._find(elem);
-                        if (resource) return new Resource(resource, this);
-                    })
-                ))) : undefined,
-            Array.isArray(query.create) ?
-                Promise.all(query.create.map(elem => Promise.race(
-                    this.data.RPs.map(resourcePoint => resourcePoint._create(elem))
-                ))) : undefined,
-            Array.isArray(query.update) ?
-                Promise.all(query.update.map(elem => Promise.race(
-                    this.data.RPs.map(resourcePoint => resourcePoint._update(elem))
-                ))) : undefined,
-            Array.isArray(query.delete) ?
-                Promise.all(query.delete.map(elem => Promise.race(
-                    this.data.RPs.map(resourcePoint => resourcePoint._delete(elem))
-                ))) : undefined
+            _handleQuery(query.find, this.data.RPs.map(rP => rP._find), result => result ? new Resource(result) : undefined),
+            _handleQuery(query.create, this.data.RPs.map(rP => rP._create)),
+            _handleQuery(query.update, this.data.RPs.map(rP => rP._update)),
+            _handleQuery(query.delete, this.data.RPs.map(rP => rP._delete))
         ]); // result
 
         return { find: result[0], create: result[1], update: result[2], delete: result[3] };
@@ -232,31 +217,20 @@ class PIP extends PolicyPoint {
 
     /**
      * @name PIP#_environmentRequest
-     * @param {object} query 
+     * @param {[object]} query 
      * TODO jsDoc
      */
     async _environmentRequest(query) {
-        if (!query || typeof query !== 'object')
-            this.throw('_environmentRequest', new TypeError(`invalid argument`));
         if (this.data.EPs.size === 0)
             this.throw('_environmentRequest', new Error(`no EP connected`));
+        if (!query || typeof query !== 'object')
+            this.throw('_environmentRequest', new TypeError(`invalid argument`));
 
-        let result = {};
-        await Promise.all(Object.entries(query).map(([topic, requestArr]) =>
-            (async (/* async promise */) => {
-                try {
-                    result[topic] = await Promise.race(this.data.EPs
-                        .filter(eP => eP.data.topics.includes(topic))
-                        .map(eP => eP._retrieve(topic, requestArr))
-                    );
-                } catch (err) {
-                    this.throw('_environmentRequest', err, true); // silent
-                }
-            })(/* async promise */)
-        ));
+        let result = await Promise.all([
+            _handleQuery(query.find, this.data.EPs.map(eP => eP._find))
+        ]); // result
 
-        return result;
-
+        return { find: result[0] };
     } // PIP#_environmentRequest
 
 } // PIP

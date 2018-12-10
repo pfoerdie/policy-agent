@@ -116,8 +116,7 @@ class RP extends PolicyPoint {
             client = await this.data.driver.client(),
             collection = client.db.collection(resource['@type']);
 
-        if (!collection)
-            await _timeoutPromise(new Promise(() => undefined), this.data.requestTimeout);
+        if (!collection) return;
 
         return await new Promise((resolve, reject) => {
             collection.find(resource).toArray((err, docs) => {
@@ -159,8 +158,7 @@ class RP extends PolicyPoint {
             client = await this.data.driver.client(),
             collection = client.db.collection(resource['@type']);
 
-        if (!collection)
-            await _timeoutPromise(new Promise(() => undefined), this.data.requestTimeout);
+        if (!collection) return;
 
         return await new Promise((resolve, reject) => {
             collection.collection(resource['@type']).insertOne(resource)
@@ -194,10 +192,9 @@ class RP extends PolicyPoint {
             client = await this.data.driver.client(),
             collection = client.db.collection(resource['@type']);
 
-        if (!collection)
-            await _timeoutPromise(new Promise(() => undefined), this.data.requestTimeout);
+        if (!collection) return;
 
-        return new Promise((resolve, reject) => {
+        return await new Promise((resolve, reject) => {
             collection.updateOne({ 'uid': resource['uid'] }, resource)
                 .then((result) => {
                     resolve(result['result']['ok'] === 1);
@@ -229,10 +226,9 @@ class RP extends PolicyPoint {
             client = await this.data.driver.client(),
             collection = client.db.collection(resource['@type']);
 
-        if (!collection)
-            await _timeoutPromise(new Promise(() => undefined), this.data.requestTimeout);
+        if (!collection) return;
 
-        return new Promise((resolve, reject) => {
+        return await new Promise((resolve, reject) => {
             collection.deleteOne({ 'uid': resource['uid'] })
                 .then((result) => {
                     resolve(result['result']['ok'] === 1);
