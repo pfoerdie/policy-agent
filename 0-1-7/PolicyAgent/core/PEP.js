@@ -75,13 +75,12 @@ class PEP extends PolicyPoint {
 
         /* 1. - create RequestContext */
 
-        const
-            /** @type {RequestContext} */
-            requestContext = Object.create({}, {
-                '@type': { enumerable: true, value: "RequestContext" },
-                '@id': { enumerable: true, value: UUID() },
-                'requests': { enumerable: true, value: {} }
-            });
+        /** @type {RequestContext} */
+        const requestContext = {};
+
+        _enumerate(requestContext, '@type', "RequestContext");
+        _enumerate(requestContext, '@id', UUID());
+        _enumerate(requestContext, 'request', {});
 
         /* 1.1. - add default subjects */
 
@@ -109,7 +108,7 @@ class PEP extends PolicyPoint {
             // if (actionDef.assignee && param[actionDef.assignee] && typeof param[actionDef.assignee]['@type'] === 'string')
             //     _enumerate(request, 'assignee', param[actionDef.assignee]);
 
-            _enumerate(requestContext['requests'], requestID, request);
+            _enumerate(requestContext['request'], requestID, request);
 
             if (actionDef.includedIn)
                 _enumerate(request, 'includedIn', addRequest(actionDef.includedIn));
@@ -129,11 +128,11 @@ class PEP extends PolicyPoint {
 
         const executeAction = async (requestID, args) => {
             let
-                tmpRequest = requestContext['requests'][requestID],
+                tmpRequest = requestContext['request'][requestID],
                 requestStack = [tmpRequest];
 
             while (tmpRequest.includedIn) {
-                tmpRequest = requestContext['requests'][tmpRequest.includedIn];
+                tmpRequest = requestContext['request'][tmpRequest.includedIn];
                 requestStack.push(tmpRequest);
             }
 

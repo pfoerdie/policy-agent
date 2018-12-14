@@ -9,7 +9,121 @@ const
     PolicyPoint = require('./PolicyPoint.js'),
     PIP = require('./PIP.js'),
     PAP = require('./PAP.js'),
-    _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
+    _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value }),
+    _relationTypes = ['target'],
+    _functionTypes = ['assigner', 'assignee'];
+
+/**
+ * Gathers all resources necessary for the request and adds them to the responseContext.
+ * @name _gatherResources
+ * @param {RequestContext} requestContext 
+ * @param {ResponseContext} responseContext 
+ * @async
+ * @private
+ */
+async function _gatherResources(requestContext, responseContext) {
+    let
+        /** @type {Array<PEP~Resource>} This array is used to require the resources from the PIP. */
+        find = [],
+        found = undefined,
+        matching = {},
+        defaults = {},
+        $default = Symbol();
+
+    for (let type of _relationTypes) {
+        matching[type] = {};
+        if (requestContext[type]) {
+            matching[type][$default] = find.length;
+            find.push(requestContext[type]);
+        }
+    } // for
+
+    for (let requestID in requestContext['request']) {
+        let request = requestContext['request'][requestID];
+        for (let type of _relationTypes) {
+            if (request[type]) {
+                matching[type][requestID] = find.length;
+                find.push(request[type]);
+            }
+        } // for
+    } // for
+
+    found = (await this.data.PIP._resourceRequest({ find })).find;
+
+    for (let type of _relationTypes) {
+        let defaultResource = found[matching[type][$default]];
+        for (let requestID in responseContext['request']) {
+            let currentResource = matching[type][requestID] !== undefined
+                ? found[matching[type][requestID]]
+                : undefined;
+
+            responseContext['response'][requestID][type] = currentResource
+                ? currentResource['uid']
+                : defaultResource ? defaultResource['uid'] : undefined;
+        } // for
+    } // for
+
+    for (let resource of found) {
+        _enumerate(responseContext['resource'], resource['uid'], resource);
+    } // for
+
+} // _gatherResources
+
+/**
+ * Gathers all subjects necessary for the request and adds them to the responseContext.
+ * @name _gatherSubjects
+ * @param {RequestContext} requestContext 
+ * @param {ResponseContext} responseContext 
+ * @async
+ * @private
+ */
+async function _gatherSubjects(requestContext, responseContext) {
+    let
+        /** @type {Array<PEP~Subject>} This array is used to require the subjects from the PIP. */
+        find = [],
+        found = undefined,
+        matching = {},
+        defaults = {},
+        $default = Symbol();
+
+    for (let type of _functionTypes) {
+        matching[type] = {};
+        if (requestContext[type]) {
+            matching[type][$default] = find.length;
+            find.push(requestContext[type]);
+        }
+    } // for
+
+    for (let requestID in requestContext['request']) {
+        let request = requestContext['request'][requestID];
+        for (let type of _functionTypes) {
+            if (request[type]) {
+                matching[type][requestID] = find.length;
+                find.push(request[type]);
+            }
+        } // for
+    } // for
+
+    found = (await this.data.PIP._subjectRequest({ find })).find;
+
+    for (let type of _functionTypes) {
+        let defaultSubject = found[matching[type][$default]];
+        for (let requestID in responseContext['request']) {
+            let currentSubject = matching[type][requestID] !== undefined
+                ? found[matching[type][requestID]]
+                : undefined;
+
+            responseContext['response'][requestID][type] = currentSubject
+                ? currentSubject['uid']
+                : defaultSubject ? defaultSubject['uid'] : undefined;
+        } // for
+    } // for
+
+    for (let subject of found) {
+        _enumerate(responseContext['subject'], subject['uid'], subject);
+    } // for
+
+} // _gatherSubjects
 
 /**
  * @name PDP
@@ -56,88 +170,39 @@ class PDP extends PolicyPoint {
 
         /* 1. - create ResponseContext */
 
-        let
-            environment = {},
-            /** @type {ResponseContext} */
-            responseContext = Object.create({}, {
-                '@type': { enumerable: true, value: "ResponseContext" },
-                '@id': { enumerable: true, value: UUID() },
-                'responses': { enumerable: true, value: {} },
-                'subjects': { enumerable: true, value: {} }
-            }),
-            defaultSubjects = {},
-            /** @type {Array<PEP~Subject>} This array is used to require the subjects from the PIP. */
-            requestSubjects = [],
-            /** @type {Array<Array<[PEP~Request#id, string]>>} Required to coordinate the subjects for each request. */
-            indexMatching = [],
-            /** @type {Array<PIP~Subject>} This array contains all subjects found that were included in the requests. */
-            responseSubjects,
-            /** @type {Array<PAP~Record>} */
-            applicablePolicies;
+        /** @type {ResponseContext} */
+        const responseContext = {};
 
-        /* 2. - retrieve requested subjects */
+        _enumerate(responseContext, '@type', "ResponseContext");
+        _enumerate(responseContext, 'id@', UUID());
+        _enumerate(responseContext, 'response', {});
+        _enumerate(responseContext, 'subject', {});
+        _enumerate(responseContext, 'resource', {});
+        _enumerate(responseContext, 'environment', {});
 
-        for (let subjType of ['target', 'assigner', 'assignee']) {
-            if (requestContext[subjType]) {
-                requestSubjects.push(requestContext[subjType]);
-                indexMatching.push([undefined, subjType]);
-            }
-        } // for
-
-        for (let requestID in requestContext['requests']) {
+        for (let requestID in requestContext['request']) {
             /* create response from each request */
             let
-                request = requestContext['requests'][requestID],
+                request = requestContext['request'][requestID],
                 response = {};
 
             _enumerate(response, 'id', requestID);
             _enumerate(response, 'action', request['action']);
 
-            /* add custom subjects if necessary */
-
-            for (let subjType of ['target', 'assigner', 'assignee']) {
-                if (request[subjType]) {
-                    requestSubjects.push(request[subjType]);
-                    indexMatching.push([requestID, subjType]);
-                }
-            } // for
-
-            _enumerate(responseContext['responses'], requestID, response);
+            _enumerate(responseContext['response'], requestID, response);
         } // for
 
-        // responseSubjects = await this.data.PIP._retrieveSubjects(requestSubjects);
-        responseSubjects = (await this.data.PIP._subjectRequest({ find: requestSubjects })).find;
+        /* 2. - gather necessary resources and subjects */
 
-        /* write subjects to the ResponseContext ... */
-        indexMatching.forEach(([requestID, subjType], index) => {
-            /** @type {PIP~Subject} */
-            let subject = responseSubjects[index];
-
-            if (!subject || !subject['uid'])
-                return;
-
-            if (!responseContext['subjects'][subject['uid']])
-                _enumerate(responseContext['subjects'], subject['uid'], subject);
-
-            _enumerate(requestID ? requestContext['requests'][requestID] : defaultSubjects, subjType, subject['uid']);
-        });
-
-        /* ... and all missing entries with the defaults */
-        for (let requestID in responseContext['responses']) {
-            let
-                request = requestContext['requests'][requestID],
-                response = responseContext['responses'][requestID];
-
-            for (let subjType of ['target', 'assigner', 'assignee']) {
-                if (!request[subjType] && defaultSubjects[subjType])
-                    _enumerate(response, subjType, defaultSubjects[subjType]);
-            } // for
-        } // for
+        await Promise.all([
+            _gatherResources.call(this, requestContext, responseContext),
+            _gatherSubjects.call(this, requestContext, responseContext)
+        ]);
 
         /* 3. - retrieve Policies for the collected data in the responses */
 
         applicablePolicies = await this.data.PAP._retrievePolicies(
-            Object.entries(responseContext['responses']).map(entry => entry[1])
+            Object.entries(responseContext['response']).map(entry => entry[1])
         );
 
         // TODO
