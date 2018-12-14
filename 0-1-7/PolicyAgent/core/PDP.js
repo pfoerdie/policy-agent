@@ -27,7 +27,6 @@ async function _gatherResources(requestContext, responseContext) {
         find = [],
         found = undefined,
         matching = {},
-        defaults = {},
         $default = Symbol();
 
     for (let type of _relationTypes) {
@@ -51,20 +50,24 @@ async function _gatherResources(requestContext, responseContext) {
     found = (await this.data.PIP._resourceRequest({ find })).find;
 
     for (let type of _relationTypes) {
-        let defaultResource = found[matching[type][$default]];
-        for (let requestID in responseContext['request']) {
-            let currentResource = matching[type][requestID] !== undefined
-                ? found[matching[type][requestID]]
-                : undefined;
+        let defaultIndex = matching[type][$default];
 
-            responseContext['response'][requestID][type] = currentResource
-                ? currentResource['uid']
-                : defaultResource ? defaultResource['uid'] : undefined;
+        for (let requestID in responseContext['response']) {
+            let resource, currentIndex = matching[type][requestID];
+
+            if (currentIndex !== undefined)
+                resource = found[currentIndex];
+            if (!resource && defaultIndex !== undefined)
+                resource = found[defaultIndex];
+
+            if (resource)
+                _enumerate(responseContext['response'][requestID], type, resource['uid']);
         } // for
     } // for
 
     for (let resource of found) {
-        _enumerate(responseContext['resource'], resource['uid'], resource);
+        if (resource)
+            _enumerate(responseContext['resource'], resource['uid'], resource);
     } // for
 
 } // _gatherResources
@@ -83,7 +86,6 @@ async function _gatherSubjects(requestContext, responseContext) {
         find = [],
         found = undefined,
         matching = {},
-        defaults = {},
         $default = Symbol();
 
     for (let type of _functionTypes) {
@@ -107,15 +109,18 @@ async function _gatherSubjects(requestContext, responseContext) {
     found = (await this.data.PIP._subjectRequest({ find })).find;
 
     for (let type of _functionTypes) {
-        let defaultSubject = found[matching[type][$default]];
-        for (let requestID in responseContext['request']) {
-            let currentSubject = matching[type][requestID] !== undefined
-                ? found[matching[type][requestID]]
-                : undefined;
+        let defaultIndex = matching[type][$default];
 
-            responseContext['response'][requestID][type] = currentSubject
-                ? currentSubject['uid']
-                : defaultSubject ? defaultSubject['uid'] : undefined;
+        for (let requestID in responseContext['response']) {
+            let subject, currentIndex = matching[type][requestID];
+
+            if (currentIndex !== undefined)
+                subject = found[currentIndex];
+            if (!subject && defaultIndex !== undefined)
+                subject = found[defaultIndex];
+
+            if (subject)
+                _enumerate(responseContext['response'][requestID], type, subject['uid']);
         } // for
     } // for
 

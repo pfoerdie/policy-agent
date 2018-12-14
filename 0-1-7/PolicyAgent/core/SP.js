@@ -6,7 +6,8 @@
 
 const
     MongoDB = require('mongodb').MongoClient,
-    PolicyPoint = require('./PolicyPoint.js');
+    PolicyPoint = require('./PolicyPoint.js'),
+    _private = new WeakMap();
 
 /**
  * @name _timeoutPromise
@@ -28,6 +29,46 @@ async function _timeoutPromise(origPromise, duration) {
     clearTimeout(timeout);
     return await origPromise;
 } // _timeoutPromise
+
+/**
+ * @name Subject
+ * @class
+ */
+class Subject {
+    /**
+     * @constructs Subject
+     * @param {JSON} param 
+     * @param {SP} source
+     */
+    constructor(param, source) {
+        if (!param || typeof param['uid'] !== 'string' || typeof param['@id'] !== 'string' || typeof param['@type'] !== 'string')
+            throw new TypeError(`invalid subject`);
+        if (!(source instanceof SP))
+            throw new TypeError(`invalid argument`);
+
+        Object.entries(param).forEach(([key, value]) => {
+            if (key.startsWith('_')) return;
+            const editable = !(key === 'uid' || key === '@id' || key === '@type');
+            Object.defineProperty(this, key, {
+                writable: editable,
+                enumerable: editable,
+                value: value
+            });
+        });
+
+        _private.set(this, { source });
+
+    } // Subject.constructor
+
+    _update() {
+        return _private.get(this).source._update(this);
+    } // Resource#_update
+
+    _delete() {
+        return _private.get(this).source._delete(this);
+    } // Resource#_delete
+
+} // Subject
 
 /**
  * @name SP
@@ -125,11 +166,11 @@ class SP extends PolicyPoint {
                     this.throw('_find', err, true); // silent
                     resolve(undefined);
                 } else if (docs.length === 1) {
-                    if (typeof docs[0]['uid'] === 'string') {
-                        delete docs[0]['_id'];
-                        resolve(docs[0]);
-                    } else {
-                        this.throw('_find', `missing uid (${docs[0]['@id']})`, true); // silent
+                    try {
+                        let subject = new Subject(docs[0], this);
+                        resolve(subject);
+                    } catch (err) {
+                        this.throw('_find', err, true); // silent
                         resolve(undefined);
                     }
                 } else {
@@ -240,6 +281,14 @@ class SP extends PolicyPoint {
                 })
         });
     } // SP#_delete
+
+    /**
+     * @name SP._Subject
+     * @type {class} Subject
+     */
+    static get _Subject() {
+        return Subject;
+    } // SP._Subject<getter>
 
 } // SP
 

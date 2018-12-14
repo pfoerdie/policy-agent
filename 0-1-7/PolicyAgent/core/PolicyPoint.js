@@ -118,12 +118,15 @@ class PolicyPoint extends Auditor {
             case 'RequestContext':
                 return value
                     && value['@type'] === type
-                    && typeof value['requests'] === 'object';
+                    && typeof value['request'] === 'object';
 
             case 'ResponseContext':
                 return value
                     && value['@type'] === type
-                    && typeof value['responses'] === 'object';
+                    && typeof value['response'] === 'object'
+                    && typeof value['subject'] === 'object'
+                    && typeof value['resource'] === 'object'
+                    && typeof value['environment'] === 'object';
 
             default:
                 this.throw('validate', new Error(`unknown type`));

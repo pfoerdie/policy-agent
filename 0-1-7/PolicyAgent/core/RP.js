@@ -6,7 +6,8 @@
 
 const
     MongoDB = require('mongodb').MongoClient,
-    PolicyPoint = require('./PolicyPoint.js');
+    PolicyPoint = require('./PolicyPoint.js'),
+    _private = new WeakMap();
 
 /**
  * @name _timeoutPromise
@@ -27,6 +28,59 @@ async function _timeoutPromise(origPromise, duration) {
     clearTimeout(timeout);
     return await origPromise;
 } // _timeoutPromise
+
+/**
+ * @name Resource
+ * @class
+ */
+class Resource {
+    /**
+     * @constructs Resource
+     * @param {JSON} param 
+     * @param {RP} source
+     */
+    constructor(param, source) {
+        if (!param || typeof param['uid'] !== 'string' || typeof param['@id'] !== 'string' || typeof param['@type'] !== 'string')
+            throw new TypeError(`invalid resource`);
+        if (!(source instanceof RP))
+            throw new TypeError(`invalid argument`);
+
+        Object.entries(param).forEach(([key, value]) => {
+            if (key.startsWith('_')) return;
+            const editable = !(key === 'uid' || key === '@id' || key === '@type');
+            Object.defineProperty(this, key, {
+                writable: editable,
+                enumerable: editable,
+                value: value
+            });
+        });
+
+        _private.set(this, { source, value: undefined });
+
+    } // Resource.constructor
+
+    /* TODO ***
+    async get '@value'() {
+        const _attr = _private.get(this);
+        if (!_attr.value) {
+            let result = await _attr.source._environmentRequest({ find: [this] });
+            if (result) _attr.value = result.find[0];
+        }
+        return _attr.value;
+    } // Resource#@value<getter>
+    */
+
+    _update() {
+        // TODO value
+        return _private.get(this).source._update(this);
+    } // Resource#_update
+
+    _delete() {
+        // TODO value
+        return _private.get(this).source._delete(this);
+    } // Resource#_delete
+
+} // Resource
 
 /**
  * @name RP
@@ -124,11 +178,11 @@ class RP extends PolicyPoint {
                     this.throw('_find', err, true); // silent
                     resolve(undefined);
                 } else if (docs.length === 1) {
-                    if (typeof docs[0]['uid'] === 'string') {
-                        delete docs[0]['_id'];
-                        resolve(docs[0]);
-                    } else {
-                        this.throw('_find', `missing uid (${docs[0]['@id']})`, true); // silent
+                    try {
+                        let resource = new Resource(docs[0], this);
+                        resolve(resource);
+                    } catch (err) {
+                        this.throw('_find', err, true); // silent
                         resolve(undefined);
                     }
                 } else {
@@ -239,6 +293,14 @@ class RP extends PolicyPoint {
                 })
         });
     } // RP#_delete
+
+    /**
+     * @name SP._Resource
+     * @type {class} Resource
+     */
+    static get _Resource() {
+        return Resource;
+    } // SP._Resource<getter>
 
 } // RP
 

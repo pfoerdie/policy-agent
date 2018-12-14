@@ -18,7 +18,15 @@
 
     let
         myPIP = new PolicyAgent.PIP({
-            '@id': "/PIP/the-worlds-attributes"
+            '@id': "/PIP/the-worlds-attributes",
+            'subject': [
+                new PolicyAgent.SP({})
+            ],
+            'resource': [
+                new PolicyAgent.RP({
+                    'root': Path.join(__dirname, "webapp")
+                })
+            ]
         }),
         myPAP = new PolicyAgent.PAP({
             '@id': "/PIP/the-worlds-policies",
@@ -40,12 +48,6 @@
     //     // TODO die Session wird hier benötigt
     //     return false;
     // });
-
-    myPIP
-        .connect(new PolicyAgent.SP({}))
-        .connect(new PolicyAgent.RP({
-            'root': Path.join(__dirname, "webapp")
-        }));
 
     //#endregion PolicyAgent
 
