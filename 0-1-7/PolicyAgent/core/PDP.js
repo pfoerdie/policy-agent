@@ -131,6 +131,20 @@ async function _gatherSubjects(requestContext, responseContext) {
 } // _gatherSubjects
 
 /**
+ * Gathers all promises regarding the request.
+ * @name _gatherPromises
+ * @param {RequestContext} requestContext 
+ * @param {ResponseContext} responseContext 
+ * @async
+ * @private
+ */
+async function _gatherPromises(requestContext, responseContext) {
+
+    // TODO
+
+} // _gatherPromises
+
+/**
  * @name PDP
  * @extends PolicyAgent.PolicyPoint
  * @class
@@ -205,6 +219,9 @@ class PDP extends PolicyPoint {
         ]);
 
         /* 3. - retrieve Policies for the collected data in the responses */
+
+        let whatever = _gatherPromises.call(this, requestContext, responseContext);
+        // TODO
 
         applicablePolicies = await this.data.PAP._retrievePolicies(
             Object.entries(responseContext['response']).map(entry => entry[1])
