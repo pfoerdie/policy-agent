@@ -5,6 +5,7 @@
  */
 
 const
+    MongoDB = require('mongodb').MongoClient,
     PolicyPoint = require('./PolicyPoint.js'),
     _private = new WeakMap();
 
@@ -104,10 +105,29 @@ class PIP extends PolicyPoint {
 
         /** @type {class} Data or subclass of Data */
         this.data.infoClass = Data;
-        this.data.collections = [];
+
+        /** @type {Array<string>} All available types in the database. */
+        this.data.available = [];
+        /** @type {(boolean|Array<string>)} All supported types by this PIP. True means that all available types are supported. */
+        this.data.supported = true;
+
         this.ping(true);
 
     } // PIP.constructor
+
+    /**
+     * Tells weather a specific type is supported.
+     * @name PIP#supports
+     * @param {string} type 
+     */
+    supports(type) {
+        if (!this.data.available.includes(type))
+            return false;
+        else if (Array.isArray(this.data.supported))
+            return this.data.supported.includes(type);
+        else
+            return !!this.data.supported;
+    } // PIP#supports
 
     /**
      * @name SP#ping
@@ -116,9 +136,12 @@ class PIP extends PolicyPoint {
      */
     async ping(silent = false) {
         try {
-            const client = await this.data.driver.client();
-            this.data.collections = await client.db.collections();
+            const
+                client = await this.data.driver.client(),
+                collections = await client.db.collections();
+
             client.close();
+            this.data.available = collections.map(entry => entry['collectionName']);
 
             this.log('ping', "success");
             return client['s']['options']['servers'][0];
@@ -138,14 +161,14 @@ class PIP extends PolicyPoint {
      */
     async _find(query) {
         if (Array.isArray(query))
-            return await Promise.all(query.map(this._find));
+            return await Promise.all(query.map(this._find.bind(this)));
 
         if (!query || typeof query['@type'] !== 'string')
             this.throw('_find', new TypeError(`invalid argument`));
 
         const
             client = await this.data.driver.client(),
-            collection = client.db.collection(resource['@type']);
+            collection = client.db.collection(query['@type']);
 
         if (!collection) return;
 
@@ -180,14 +203,14 @@ class PIP extends PolicyPoint {
      */
     async _create(query) {
         if (Array.isArray(query))
-            return await Promise.all(query.map(this._create));
+            return await Promise.all(query.map(this._create.bind(this)));
 
         if (!query || typeof query['@type'] !== 'string' || typeof query['@id'] !== 'string' || typeof query['uid'] !== 'string')
             this.throw('_create', new TypeError(`invalid argument`));
 
         const
             client = await this.data.driver.client(),
-            collection = client.db.collection(resource['@type']);
+            collection = client.db.collection(query['@type']);
 
         if (!collection) return;
 
@@ -211,14 +234,14 @@ class PIP extends PolicyPoint {
      */
     async _update(query) {
         if (Array.isArray(query))
-            return await Promise.all(query.map(this._update));
+            return await Promise.all(query.map(this._update.bind(this)));
 
         if (!query || typeof query['@type'] !== 'string' || typeof query['uid'] !== 'string')
             this.throw('_update', new TypeError(`invalid argument`));
 
         const
             client = await this.data.driver.client(),
-            collection = client.db.collection(resource['@type']);
+            collection = client.db.collection(query['@type']);
 
         if (!collection) return;
 
@@ -241,14 +264,14 @@ class PIP extends PolicyPoint {
      */
     async _delete(query) {
         if (Array.isArray(query))
-            return await Promise.all(query.map(this._delete));
+            return await Promise.all(query.map(this._delete.bind(this)));
 
         if (!query || typeof query['@type'] !== 'string' || typeof query['uid'] !== 'string')
             this.throw('_delete', new TypeError(`invalid argument`));
 
         const
             client = await this.data.driver.client(),
-            collection = client.db.collection(resource['@type']);
+            collection = client.db.collection(query['@type']);
 
         if (!collection) return;
 

@@ -47,6 +47,7 @@ async function _gatherResources(requestContext, responseContext) {
         } // for
     } // for
 
+    // NOTE multiple PIPs can be handled here
     found = (await this.data.rPIP._find(find));
 
     for (let type of _relationTypes) {
@@ -106,6 +107,7 @@ async function _gatherSubjects(requestContext, responseContext) {
         } // for
     } // for
 
+    // NOTE multiple PIPs can be handled here
     found = (await this.data.sPIP._find(find));
 
     for (let type of _functionTypes) {

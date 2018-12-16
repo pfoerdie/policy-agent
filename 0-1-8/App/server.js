@@ -17,16 +17,8 @@
      */
 
     let
-        my_rPIP = new PolicyAgent.PIP({
-            '@id': "/PIP/the-worlds-resources",
-            'dbName': "SubjectsPoint"
-        }),
-        my_sPIP = new PolicyAgent.PIP({
-            '@id': "/PIP/the-worlds-subjects",
-            'dbName': "SubjectsPoint"
-        }),
-        my_ePIP = new PolicyAgent.PIP({
-            '@id': "/PIP/the-worlds-etc",
+        my_PIP = new PolicyAgent.PIP({
+            '@id': "/PIP/the-worlds-attributes",
             'dbName': "SubjectsPoint"
         }),
         myPAP = new PolicyAgent.PAP({
@@ -36,9 +28,9 @@
         accessPDP = new PolicyAgent.PDP({
             '@id': "/PDP/access-to-the-world",
             'PAP': myPAP,
-            'sPIP': my_sPIP,
-            'rPIP': my_rPIP,
-            'ePIP': my_ePIP
+            'sPIP': my_PIP,
+            'rPIP': my_PIP,
+            'ePIP': my_PIP
         }),
         expressPEP = new PolicyAgent.PEP.express({
             '@id': "/PEP/hello-world",
