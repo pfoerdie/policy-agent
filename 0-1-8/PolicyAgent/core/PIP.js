@@ -9,24 +9,26 @@ const
     _private = new WeakMap();
 
 /**
- * @name Information
+ * @name Data
  * @class
  */
-class Information {
+class Data {
     /**
-     * @constructs Information
+     * @constructs Data
      * @param {JSON} param 
+     * @param {string} param.@type
+     * @param {string} param.uid
      * @param {RP} source
      */
     constructor(param, source) {
         if (!(source instanceof PIP))
             throw new TypeError(`invalid argument`);
-        if (!param || typeof param['uid'] !== 'string' || typeof param['@id'] !== 'string' || typeof param['@type'] !== 'string')
+        if (!param || typeof param['uid'] !== 'string' || typeof param['@type'] !== 'string')
             throw new Error(`invalid information`);
 
         Object.entries(param).forEach(([key, value]) => {
             if (key.startsWith('_')) return;
-            const editable = !(key === 'uid' || key === '@id' || key === '@type');
+            const editable = !(key === 'uid' || key === '@type');
             Object.defineProperty(this, key, {
                 writable: editable,
                 enumerable: editable,
@@ -36,21 +38,21 @@ class Information {
 
         _private.set(this, { source });
 
-    } // Information.constructor
+    } // Data.constructor
 
     get _attr() {
         return _private.get(this);
-    } // Information#_attr<getter>
+    } // Data#_attr<getter>
 
     _update() {
-        return this._attr.source._update(this);
-    } // Information#_update
+        return _private.get(this).source._update(this);
+    } // Data#_update
 
     _delete() {
-        return this._attr.source._delete(this);
-    } // Information#_delete
+        return _private.get(this).source._delete(this);
+    } // Data#_delete
 
-} // Information
+} // Data
 
 /**
  * @name PIP
@@ -100,23 +102,28 @@ class PIP extends PolicyPoint {
             }) // client:
         }; // this.data.driver
 
+        /** @type {class} Data or subclass of Data */
+        this.data.infoClass = Data;
         this.data.collections = [];
+        this.ping(true);
 
     } // PIP.constructor
 
     /**
      * @name SP#ping
+     * @param {boolean} [silent=false]
      * @async
      */
-    async ping() {
+    async ping(silent = false) {
         try {
             const client = await this.data.driver.client();
+            this.data.collections = await client.db.collections();
             client.close();
 
             this.log('ping', "success");
             return client['s']['options']['servers'][0];
         } catch (err) {
-            this.throw('ping', err);
+            this.throw('ping', err, silent);
         }
     } // SP#ping
 
@@ -149,7 +156,7 @@ class PIP extends PolicyPoint {
                     resolve(undefined);
                 } else if (docs.length === 1) {
                     try {
-                        let result = new Information(docs[0], this);
+                        let result = new this.data.infoClass(docs[0], this);
                         resolve(result);
                     } catch (err) {
                         this.throw('_find', err, true); // silent
@@ -187,7 +194,7 @@ class PIP extends PolicyPoint {
         try {
             let result = await collection.insertOne(query);
             if (result['result']['ok'] === 1)
-                return new Information(query);
+                return new this.data.infoClass(query);
         } catch (err) {
             this.throw('_create', err, true); // silent
         }
@@ -252,6 +259,14 @@ class PIP extends PolicyPoint {
             this.throw('_delete', err, true); // silent
         }
     } // PIP#_delete
+
+    /**
+     * @name PIP._Data
+     * @returns {class} Data
+     */
+    static get _Data() {
+        return Data;
+    } // PIP._Data<getter>
 
 } // PIP
 

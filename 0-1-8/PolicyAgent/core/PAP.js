@@ -463,13 +463,16 @@ class PAP extends PolicyPoint {
             `bolt://${connection.host}`,
             Neo4j.auth.basic(connection.user, connection.password)
         );
+
+        this.ping(true);
     } // PAP.constructor
 
     /**
      * @name PAP#ping
+     * @param {boolean} [silent=false]
      * @async
      */
-    async ping() {
+    async ping(silent = false) {
         try {
             let
                 session = this.data.driver.session(),
@@ -479,7 +482,7 @@ class PAP extends PolicyPoint {
             this.log('ping', "success");
             return result['summary']['server'];
         } catch (err) {
-            this.throw('ping', err);
+            this.throw('ping', err, silent);
         }
     } // PAP#ping
 
