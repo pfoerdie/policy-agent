@@ -108,8 +108,8 @@ class PIP extends PolicyPoint {
 
         /** @type {Array<string>} All available types in the database. */
         this.data.available = [];
-        /** @type {(boolean|Array<string>)} All supported types by this PIP. True means that all available types are supported. */
-        this.data.supported = true;
+        /** @type {(undefined|Array<string>)} All supported types by this PIP. If undefined, all available types are supported. */
+        this.data.supported = undefined;
 
         this.ping(true);
 
@@ -121,12 +121,11 @@ class PIP extends PolicyPoint {
      * @param {string} type 
      */
     supports(type) {
-        if (!this.data.available.includes(type))
-            return false;
-        else if (Array.isArray(this.data.supported))
-            return this.data.supported.includes(type);
-        else
-            return !!this.data.supported;
+        return this.data.available.includes(type)
+            ? Array.isArray(this.data.supported)
+                ? this.data.supported.includes(type)
+                : true
+            : false;
     } // PIP#supports
 
     /**
