@@ -92,6 +92,7 @@ module.exports = (PEP) => {
             this.data.cookieMaxAge = 60 * 60 * 24 * 7;
 
             this.data.requestAction = 'use';
+            this.data.root = options['root'] || ""; // TODO
 
             initializeExpressRouter.call(this);
 

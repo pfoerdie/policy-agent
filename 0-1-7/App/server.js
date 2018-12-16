@@ -23,9 +23,7 @@
                 new PolicyAgent.SP({})
             ],
             'resource': [
-                new PolicyAgent.RP({
-                    'root': Path.join(__dirname, "webapp")
-                })
+                new PolicyAgent.RP({})
             ]
         }),
         myPAP = new PolicyAgent.PAP({
@@ -39,7 +37,8 @@
         }),
         expressPEP = new PolicyAgent.PEP.express({
             '@id': "/PEP/hello-world",
-            'PDP': accessPDP
+            'PDP': accessPDP,
+            'root': Path.join(__dirname, "webapp")
         });
 
     // expressPEP.defineAction('read', 'use', undefined, target => target['@value'].toString());
