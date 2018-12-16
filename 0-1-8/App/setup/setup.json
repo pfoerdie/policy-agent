@@ -1,0 +1,136 @@
+{
+    "@context": "http://www.w3.org/ns/odrl/2/",
+    "@graph": [
+        {
+            "@type": "Action",
+            "id": "use"
+        },
+        {
+            "@type": "Action",
+            "id": "transfer"
+        },
+        {
+            "@type": "Action",
+            "id": "read",
+            "includedIn": "use"
+        },
+        {
+            "@type": "Action",
+            "id": "login",
+            "includedIn": "use"
+        },
+        {
+            "@type": "Action",
+            "id": "logout",
+            "includedIn": "transfer"
+        },
+        {
+            "@type": "Action",
+            "id": "changePW",
+            "includedIn": "transfer",
+            "implies": "use"
+        },
+        {
+            "@type": "Asset",
+            "uid": "/index.html",
+            "partOf": "/collection/intern"
+        },
+        {
+            "@type": "Asset",
+            "uid": "/login.html",
+            "partOf": "/collection/public"
+        },
+        {
+            "@type": "Asset",
+            "uid": "/favicon.ico",
+            "partOf": "/collection/public"
+        },
+        {
+            "@type": "AssetCollection",
+            "uid": "/collection/public"
+        },
+        {
+            "@type": "AssetCollection",
+            "uid": "/collection/intern"
+        },
+        {
+            "@type": "AssetCollection",
+            "uid": "/collection/admin"
+        },
+        {
+            "@type": "Party",
+            "uid": "/user/pfoerdie",
+            "partOf": "/group/admin"
+        },
+        {
+            "@type": "Party",
+            "uid": "/user/test",
+            "partOf": "/group/user"
+        },
+        {
+            "@type": "PartyCollection",
+            "uid": "/group/employee"
+        },
+        {
+            "@type": "PartyCollection",
+            "uid": "/group/user"
+        },
+        {
+            "@type": "PartyCollection",
+            "uid": "/group/admin",
+            "partOf": "/group/user"
+        },
+        {
+            "@type": "Policy",
+            "uid": "/policy/public_access",
+            "permission": [
+                {
+                    "@type": "Permission",
+                    "action": "use",
+                    "target": "/collection/public"
+                },
+                {
+                    "@type": "Permission",
+                    "action": "read",
+                    "target": "/collection/public"
+                },
+                {
+                    "@type": "Permission",
+                    "action": "login",
+                    "target": "/index.html"
+                }
+            ]
+        },
+        {
+            "@type": "Policy",
+            "uid": "/policy/user_access",
+            "permission": [
+                {
+                    "@type": "Permission",
+                    "action": "use",
+                    "target": "/collection/intern",
+                    "assignee": "/group/user"
+                },
+                {
+                    "@type": "Permission",
+                    "action": "read",
+                    "target": "/collection/intern",
+                    "assignee": "/group/user"
+                },
+                {
+                    "@type": "Permission",
+                    "action": "logout",
+                    "target": "/collection/intern"
+                }
+            ]
+        },
+        {
+            "@type": "Policy",
+            "uid": "/policy/employee_access"
+        },
+        {
+            "@type": "Policy",
+            "uid": "/policy/admin_access"
+        }
+    ]
+}
