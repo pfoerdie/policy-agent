@@ -40,7 +40,6 @@ const
 /**
  * This is the base class for every PolicyPoint.
  * @name PolicyPoint
- * @extends PolicyAgent.Auditor
  */
 class PolicyPoint {
     /**
