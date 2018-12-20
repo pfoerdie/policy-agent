@@ -4,17 +4,24 @@
  * @author Simon Petrac
  */
 
-const
-    Path = require('path'),
-    core = require(Path.join(__dirname, 'core')),
-    mod = require(Path.join(__dirname, 'module'))(core);
+const // core
+    PEP = require('./PEP.js'),
+    PDP = require('./PDP.js'),
+    PIP = require('./PIP.js'),
+    PAP = require('./PAP.js');
 
-exports['PEP'] = core.PEP;
-exports['PDP'] = core.PDP;
-exports['PAP'] = core.PAP;
-exports['PIP'] = core.PIP;
+const // modules
+    expressPEP = require('./PEP.express.js'),
+    socketIOPEP = require('./PEP.socketIO.js'),
+    FilePIP = require('./PIP.File.js');
 
-exports['PEP']['express'] = mod.PEP.express;
-exports['PEP']['socketIO'] = mod.PEP.socketIO;
+// NOTE use publicClassBuilder here
 
-exports['PIP']['FS'] = mod.PIP.FS;
+exports['PEP'] = PEP;
+exports['PDP'] = PDP;
+exports['PAP'] = PAP;
+exports['PIP'] = PIP;
+
+exports['PEP']['express'] = expressPEP;
+exports['PEP']['socketIO'] = socketIOPEP;
+exports['PIP']['File'] = FilePIP;

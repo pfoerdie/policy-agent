@@ -111,6 +111,10 @@ class PIP extends PolicyPoint {
         /** @type {(undefined|Array<string>)} All supported types by this PIP. If undefined, all available types are supported. */
         this.data.supported = undefined;
 
+        this.data.disabled = Array.isArray(options['disable'])
+            ? options['disable'].filter(val => val && typeof val === 'string')
+            : [];
+
         this.ping(true);
 
     } // PIP.constructor
@@ -121,7 +125,7 @@ class PIP extends PolicyPoint {
      * @param {string} type 
      */
     supports(type) {
-        return this.data.available.includes(type)
+        return this.data.available.includes(type) && !this.data.disabled.includes(type)
             ? Array.isArray(this.data.supported)
                 ? this.data.supported.includes(type)
                 : true
@@ -139,8 +143,9 @@ class PIP extends PolicyPoint {
                 client = await this.data.driver.client(),
                 collections = await client.db.collections();
 
-            client.close();
             this.data.available = collections.map(entry => entry['collectionName']);
+
+            client.close();
 
             this.log('ping', "success");
             return client['s']['options']['servers'][0];

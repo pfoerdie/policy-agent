@@ -42,7 +42,7 @@ const
  * @name PolicyPoint
  * @extends PolicyAgent.Auditor
  */
-class PolicyPoint extends Auditor {
+class PolicyPoint {
     /**
      * @constructs PolicyPoint
      * @param {object} options
@@ -55,7 +55,6 @@ class PolicyPoint extends Auditor {
             throw new Error(`PolicyPoint is an abstract class`);
 
         let instanceID = (options && typeof options['@id'] === 'string') ? options['@id'] : UUID();
-        super(instanceID);
 
         if (!options || typeof options !== 'object')
             this.throw('constructor', new TypeError(`invalid argument`));
@@ -71,6 +70,7 @@ class PolicyPoint extends Auditor {
             instanceName: Crypto.createHash('sha256').update(instanceID).digest('base64')
         });
 
+        let audit = Auditor.register(this, new.target.name, instanceID);
         Object.defineProperties(this, {
             /**
              * An object that holds all data of the instance.
@@ -80,6 +80,15 @@ class PolicyPoint extends Auditor {
              */
             data: {
                 value: {}
+            },
+            log: {
+                value: audit.log
+            },
+            throw: {
+                value: audit.throw
+            },
+            toString: {
+                value: audit.toString
             }
         });
 

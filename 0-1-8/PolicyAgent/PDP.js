@@ -238,7 +238,7 @@ class PDP extends PolicyPoint {
         let whatever = _gatherPromises.call(this, requestContext, responseContext);
         // TODO
 
-        applicablePolicies = await this.data.PAP._retrievePolicies(
+        let applicablePolicies = await this.data.PAP._retrievePolicies(
             Object.entries(responseContext['response']).map(entry => entry[1])
         );
 
