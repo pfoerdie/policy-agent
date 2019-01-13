@@ -147,6 +147,39 @@ async function _gatherPromises(requestContext, responseContext) {
 } // _gatherPromises
 
 /**
+ * @name ResponseContext
+ * @class
+ */
+class ResponseContext {
+    /**
+     * @constructs ResponseContext
+     * @param {PDP} source
+     * @param {RequestContext} requestContext
+     */
+    constructor(source, requestContext) {
+        _enumerate(this, '@type', "ResponseContext");
+        _enumerate(this, 'id@', UUID());
+        _enumerate(this, 'response', {});
+        _enumerate(this, 'subject', {});
+        _enumerate(this, 'resource', {});
+        _enumerate(this, 'environment', {});
+
+        for (let requestID in requestContext['request']) {
+            /* create response from each request */
+            let
+                request = requestContext['request'][requestID],
+                response = {};
+
+            _enumerate(response, 'id', requestID);
+            _enumerate(response, 'action', request['action']);
+
+            _enumerate(this['response'], requestID, response);
+        } // for
+    } // ResponseContext.constructor
+
+} // ResponseContext
+
+/**
  * @name PDP
  * @extends PolicyAgent.PolicyPoint
  * @class
@@ -204,27 +237,7 @@ class PDP extends PolicyPoint {
 
         /* 1. - create ResponseContext */
 
-        /** @type {ResponseContext} */
-        const responseContext = {};
-
-        _enumerate(responseContext, '@type', "ResponseContext");
-        _enumerate(responseContext, 'id@', UUID());
-        _enumerate(responseContext, 'response', {});
-        _enumerate(responseContext, 'subject', {});
-        _enumerate(responseContext, 'resource', {});
-        _enumerate(responseContext, 'environment', {});
-
-        for (let requestID in requestContext['request']) {
-            /* create response from each request */
-            let
-                request = requestContext['request'][requestID],
-                response = {};
-
-            _enumerate(response, 'id', requestID);
-            _enumerate(response, 'action', request['action']);
-
-            _enumerate(responseContext['response'], requestID, response);
-        } // for
+        const responseContext = new ResponseContext(this, requestContext);
 
         /* 2. - gather necessary resources and subjects */
 

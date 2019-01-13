@@ -13,66 +13,6 @@ const
     _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
 
 /**
- * @name _createRequestContext
- * @param {Session} session
- * @param {JSON} param
- * @returns {RequestContext} requestContext
- * @this {PEP}
- * @private
- */
-function _createRequestContext(session, param) {
-
-    // TODO alles durchgehen und überarbeiten!
-
-    const requestContext = {};
-
-    _enumerate(requestContext, '@type', "RequestContext");
-    _enumerate(requestContext, '@id', UUID());
-    _enumerate(requestContext, 'request', {});
-
-    /* 1. - add default subjects */
-
-    _enumerate(requestContext, 'target', param['target']);
-    if (param['assigner'] && typeof param['assigner']['@type'] === 'string')
-        _enumerate(requestContext, 'assigner', param['assigner']);
-    if (param['assignee'] && typeof param['assignee']['@type'] === 'string')
-        _enumerate(requestContext, 'assignee', param['assignee']);
-
-    /* 2. - add action requests */
-
-    const addRequest = (action) => {
-        const
-            requestID = `${action}-${UUID()}`,
-            actionDef = this.data.actionDefinition.get(action),
-            request = {};
-
-        _enumerate(request, 'id', requestID);
-        _enumerate(request, 'action', actionDef.action);
-
-        // if (actionDef.target && param[actionDef.target] && typeof param[actionDef.target]['@type'] === 'string')
-        //     _enumerate(request, 'target', param[actionDef.target]);
-        // if (actionDef.assigner && param[actionDef.assigner] && typeof param[actionDef.assigner]['@type'] === 'string')
-        //     _enumerate(request, 'assigner', param[actionDef.assigner]);
-        // if (actionDef.assignee && param[actionDef.assignee] && typeof param[actionDef.assignee]['@type'] === 'string')
-        //     _enumerate(request, 'assignee', param[actionDef.assignee]);
-
-        _enumerate(requestContext['request'], requestID, request);
-
-        if (actionDef.includedIn)
-            _enumerate(request, 'includedIn', addRequest(actionDef.includedIn));
-
-        _enumerate(request, 'implies', actionDef.implies.map(impl => addRequest(impl)));
-
-        return requestID;
-    }; // addRequest
-
-    let entryPoint = addRequest(param['action']);
-    _enumerate(requestContext, 'entryPoint', entryPoint);
-    return requestContext;
-
-} // _createRequestContext
-
-/**
  * @name _validateAction
  * @param {ResponseContext} responseContext
  * @param {string} requestID
@@ -81,7 +21,9 @@ function _createRequestContext(session, param) {
  * @private
  */
 function _validateAction(responseContext, requestID) {
+
     // TODO
+
 } // _validateAction
 
 /**
@@ -95,7 +37,12 @@ function _validateAction(responseContext, requestID) {
  * @private
  */
 async function _executeAction(responseContext, requestID, ...args) {
+
+    const
+        response = responseContext['responses'][requestID];
+
     // TODO
+
 } // _executeAction
 
 async function _actionUse(target, impl, session) {
@@ -105,6 +52,67 @@ async function _actionUse(target, impl, session) {
 async function _actionTransfer(args, impl, session) {
     return "TRANSFER";
 } // _actionTransfer
+
+/**
+ * @name RequestContext
+ * @class
+ */
+class RequestContext {
+    /**
+     * @constructs RequestContext
+     * @param {PEP} source
+     * @param {Session} session
+     * @param {JSON} param
+     * @private
+     */
+    constructor(source, session, param) {
+        // TODO alles durchgehen und überarbeiten!
+
+        _enumerate(this, '@type', "RequestContext");
+        _enumerate(this, '@id', UUID());
+        _enumerate(this, 'request', {});
+
+        /* 1. - add default subjects */
+
+        _enumerate(this, 'target', param['target']);
+        if (param['assigner'] && typeof param['assigner']['@type'] === 'string')
+            _enumerate(this, 'assigner', param['assigner']);
+        if (param['assignee'] && typeof param['assignee']['@type'] === 'string')
+            _enumerate(this, 'assignee', param['assignee']);
+
+        /* 2. - add action requests */
+
+        const addRequest = (action) => {
+            const
+                requestID = `${action}-${UUID()}`,
+                actionDef = source.data.actionDefinition.get(action),
+                request = {};
+
+            _enumerate(request, 'id', requestID);
+            _enumerate(request, 'action', actionDef.action);
+
+            // if (actionDef.target && param[actionDef.target] && typeof param[actionDef.target]['@type'] === 'string')
+            //     _enumerate(request, 'target', param[actionDef.target]);
+            // if (actionDef.assigner && param[actionDef.assigner] && typeof param[actionDef.assigner]['@type'] === 'string')
+            //     _enumerate(request, 'assigner', param[actionDef.assigner]);
+            // if (actionDef.assignee && param[actionDef.assignee] && typeof param[actionDef.assignee]['@type'] === 'string')
+            //     _enumerate(request, 'assignee', param[actionDef.assignee]);
+
+            _enumerate(this['request'], requestID, request);
+
+            if (actionDef.includedIn)
+                _enumerate(request, 'includedIn', addRequest(actionDef.includedIn));
+
+            _enumerate(request, 'implies', actionDef.implies.map(impl => addRequest(impl)));
+
+            return requestID;
+        }; // addRequest
+
+        let entryPoint = addRequest(param['action']);
+        _enumerate(this, 'entryPoint', entryPoint);
+    } // RequestContext.constructor
+
+} // RequestContext
 
 /**
  * @name PEP
@@ -203,7 +211,7 @@ class PEP extends PolicyPoint {
 
         /* 1. - create RequestContext */
 
-        let requestContext = _createRequestContext.call(this, session, param);
+        let requestContext = new RequestContext(this, session, param);
 
         /* 2. - send RequestContext to PDP#_decisionRequest */
 
