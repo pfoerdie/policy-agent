@@ -13,21 +13,21 @@ const
     _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
 
 /**
- * @name _validateAction
+ * @name _validateActionRequest
  * @param {ResponseContext} responseContext
  * @param {string} requestID
  * @returns {boolean} validity
  * @this {PEP}
  * @private
  */
-function _validateAction(responseContext, requestID) {
+function _validateActionRequest(responseContext, requestID) {
 
     // TODO
 
-} // _validateAction
+} // _validateActionRequest
 
 /**
- * @name _executeAction
+ * @name _executeActionRequest
  * @param {ResponseContext} responseContext
  * @param {string} requestID
  * @param {...*} args
@@ -36,14 +36,31 @@ function _validateAction(responseContext, requestID) {
  * @async
  * @private
  */
-async function _executeAction(responseContext, requestID, ...args) {
+async function _executeActionRequest(responseContext, requestID, ...args) {
 
-    const
-        response = responseContext['responses'][requestID];
+    let
+        response = responseContext['response'][requestID],
+        actionCB = this.data.actionCallbacks[response['action']],
+        includedInResult = responseContext['resource'][response['target']],
+        implies = {};
+
+    // TODO obligations
+    // IDEA validate und execute in einem?
+
+    if (response['includedIn'])
+        includedInResult = await _executeActionRequest.call(this, responseContext, response['includedIn'], ...args);
+
+    for (let tmp of response['implies']) {
+        _enumerate(implies, action, (...impliesArgs) => _executeActionRequest.call(this, responseContext, response['implies'], ...impliesArgs));
+    }
+
+    // TODO die argumente für actionCB sind entscheidend
+    let result = await actionCB(includedInResult, implies, ...args);
+    return result;
 
     // TODO
 
-} // _executeAction
+} // _executeActionRequest
 
 async function _actionUse(target, impl, session) {
     return "USE";
@@ -220,10 +237,10 @@ class PEP extends PolicyPoint {
 
         /* 3. - execute Actions */
 
-        if (!_validateAction.call(this, responseContext, entryPoint))
+        if (!_validateActionRequest.call(this, responseContext, entryPoint))
             this.throw('request', new Error("request denied"));
 
-        let result = await _executeAction.call(this, responseContext, entryPoint, ...args);
+        let result = await _executeActionRequest.call(this, responseContext, entryPoint, ...args);
         return result;
 
     } // PEP#request
