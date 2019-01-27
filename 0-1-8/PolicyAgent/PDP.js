@@ -5,13 +5,9 @@
  */
 
 const
-    UUID = require('uuid/v4'),
     PolicyPoint = require('./PolicyPoint.js'),
-    PIP = require('./PIP.js'),
-    PAP = require('./PAP.js'),
-    _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value }),
-    _relationTypes = ['target'],
-    _functionTypes = ['assigner', 'assignee'];
+    _namespace = require('.'),
+    _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
 
 /**
  * Gathers all resources necessary for the request and adds them to the responseContext.
@@ -23,6 +19,7 @@ const
  */
 async function _gatherResources(requestContext, responseContext) {
     let
+        _relationTypes = ['target'],
         /** @type {Array<PEP~Resource>} This array is used to require the resources from the PIP. */
         find = [],
         found = undefined,
@@ -48,7 +45,7 @@ async function _gatherResources(requestContext, responseContext) {
     } // for
 
     // NOTE multiple PIPs can be handled here
-    found = (await this.data.rPIP._find(find));
+    found = (await this.data.PIP._find(find));
 
     for (let type of _relationTypes) {
         let defaultIndex = matching[type][$default];
@@ -83,6 +80,7 @@ async function _gatherResources(requestContext, responseContext) {
  */
 async function _gatherSubjects(requestContext, responseContext) {
     let
+        _functionTypes = ['assigner', 'assignee'],
         /** @type {Array<PEP~Subject>} This array is used to require the subjects from the PIP. */
         find = [],
         found = undefined,
@@ -108,7 +106,7 @@ async function _gatherSubjects(requestContext, responseContext) {
     } // for
 
     // NOTE multiple PIPs can be handled here
-    found = (await this.data.sPIP._find(find));
+    found = (await this.data.PIP._find(find));
 
     for (let type of _functionTypes) {
         let defaultIndex = matching[type][$default];
@@ -147,39 +145,6 @@ async function _gatherPromises(requestContext, responseContext) {
 } // _gatherPromises
 
 /**
- * @name ResponseContext
- * @class
- */
-class ResponseContext {
-    /**
-     * @constructs ResponseContext
-     * @param {PDP} source
-     * @param {RequestContext} requestContext
-     */
-    constructor(source, requestContext) {
-        _enumerate(this, '@type', "ResponseContext");
-        _enumerate(this, 'id@', UUID());
-        _enumerate(this, 'response', {});
-        _enumerate(this, 'subject', {});
-        _enumerate(this, 'resource', {});
-        _enumerate(this, 'environment', {});
-
-        for (let requestID in requestContext['request']) {
-            /* create response from each request */
-            let
-                request = requestContext['request'][requestID],
-                response = {};
-
-            _enumerate(response, 'id', requestID);
-            _enumerate(response, 'action', request['action']);
-
-            _enumerate(this['response'], requestID, response);
-        } // for
-    } // ResponseContext.constructor
-
-} // ResponseContext
-
-/**
  * @name PDP
  * @extends PolicyAgent.PolicyPoint
  * @class
@@ -199,27 +164,14 @@ class PDP extends PolicyPoint {
         this.data.PAP = typeof options['PAP'] === 'string'
             ? PolicyPoint.get(options['PAP'])
             : options['PAP'];
-        if (!(this.data.PAP instanceof PAP))
+        if (!(this.data.PAP instanceof _namespace.PAP))
             this.throw(undefined, new Error(`PAP invalid`));
 
-        this.data.rPIP = typeof options['rPIP'] === 'string'
-            ? PolicyPoint.get(options['rPIP'])
-            : options['rPIP'];
-        if (!(this.data.rPIP instanceof PIP))
-            this.throw(undefined, new Error(`resource-PIP invalid`));
-
-        this.data.sPIP = typeof options['sPIP'] === 'string'
-            ? PolicyPoint.get(options['sPIP'])
-            : options['sPIP'];
-        if (!(this.data.sPIP instanceof PIP))
-            this.throw(undefined, new Error(`subject-PIP invalid`));
-
-        this.data.ePIP = typeof options['ePIP'] === 'string'
-            ? PolicyPoint.get(options['ePIP'])
-            : options['ePIP'];
-        if (!(this.data.ePIP instanceof PIP))
-            this.throw(undefined, new Error(`environment-PIP invalid`));
-
+        this.data.PIP = typeof options['PIP'] === 'string'
+            ? PolicyPoint.get(options['PIP'])
+            : options['PIP'];
+        if (!(this.data.PIP instanceof _namespace.PIP))
+            this.throw(undefined, new Error(`PIP invalid`));
 
     } // PDP.constructor
 
@@ -232,12 +184,12 @@ class PDP extends PolicyPoint {
      *   -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
      */
     async _decisionRequest(requestContext) {
-        if (!PolicyPoint.validate('RequestContext', requestContext))
+        if (!(requestContext instanceof _namespace.RequestContext))
             this.throw('_decisionRequest', new TypeError(`invalid argument`));
 
         /* 1. - create ResponseContext */
 
-        const responseContext = new ResponseContext(this, requestContext);
+        const responseContext = new _namespace.ResponseContext(this, requestContext);
 
         /* 2. - gather necessary resources and subjects */
 

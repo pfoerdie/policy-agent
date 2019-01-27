@@ -9,7 +9,7 @@ const
     ExpressSession = require('express-session'),
     SessionMemoryStore = require('session-memory-store')(ExpressSession),
     PolicyPoint = require('./PolicyPoint.js'),
-    PDP = require('./PDP.js'),
+    _namespace = require('./namespace.js'),
     _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
 
 /**
@@ -71,67 +71,6 @@ async function _actionTransfer(args, impl, session) {
 } // _actionTransfer
 
 /**
- * @name RequestContext
- * @class
- */
-class RequestContext {
-    /**
-     * @constructs RequestContext
-     * @param {PEP} source
-     * @param {Session} session
-     * @param {JSON} param
-     * @private
-     */
-    constructor(source, session, param) {
-        // TODO alles durchgehen und überarbeiten!
-
-        _enumerate(this, '@type', "RequestContext");
-        _enumerate(this, '@id', UUID());
-        _enumerate(this, 'request', {});
-
-        /* 1. - add default subjects */
-
-        _enumerate(this, 'target', param['target']);
-        if (param['assigner'] && typeof param['assigner']['@type'] === 'string')
-            _enumerate(this, 'assigner', param['assigner']);
-        if (param['assignee'] && typeof param['assignee']['@type'] === 'string')
-            _enumerate(this, 'assignee', param['assignee']);
-
-        /* 2. - add action requests */
-
-        const addRequest = (action) => {
-            const
-                requestID = `${action}-${UUID()}`,
-                actionDef = source.data.actionDefinition.get(action),
-                request = {};
-
-            _enumerate(request, 'id', requestID);
-            _enumerate(request, 'action', actionDef.action);
-
-            // if (actionDef.target && param[actionDef.target] && typeof param[actionDef.target]['@type'] === 'string')
-            //     _enumerate(request, 'target', param[actionDef.target]);
-            // if (actionDef.assigner && param[actionDef.assigner] && typeof param[actionDef.assigner]['@type'] === 'string')
-            //     _enumerate(request, 'assigner', param[actionDef.assigner]);
-            // if (actionDef.assignee && param[actionDef.assignee] && typeof param[actionDef.assignee]['@type'] === 'string')
-            //     _enumerate(request, 'assignee', param[actionDef.assignee]);
-
-            _enumerate(this['request'], requestID, request);
-
-            if (actionDef.includedIn)
-                _enumerate(request, 'includedIn', addRequest(actionDef.includedIn));
-
-            _enumerate(request, 'implies', actionDef.implies.map(impl => addRequest(impl)));
-
-            return requestID;
-        }; // addRequest
-
-        let entryPoint = addRequest(param['action']);
-        _enumerate(this, 'entryPoint', entryPoint);
-    } // RequestContext.constructor
-
-} // RequestContext
-
-/**
  * @name PEP
  * @extends PolicyAgent.PolicyPoint
  * @class
@@ -148,7 +87,7 @@ class PEP extends PolicyPoint {
         this.data.PDP = typeof options['PDP'] === 'string'
             ? PolicyPoint.get(options['PDP'])
             : options['PDP'];
-        if (!(this.data.PDP instanceof PDP))
+        if (!(this.data.PDP instanceof _namespace.PDP))
             this.throw(undefined, new Error(`PDP invalid`));
 
         this.data.sessionMaxAge = 60 * 60 * 24 * 14; // default: 14 days
@@ -228,7 +167,7 @@ class PEP extends PolicyPoint {
 
         /* 1. - create RequestContext */
 
-        let requestContext = new RequestContext(this, session, param);
+        let requestContext = new _namespace.RequestContext(this, session, param);
 
         /* 2. - send RequestContext to PDP#_decisionRequest */
 

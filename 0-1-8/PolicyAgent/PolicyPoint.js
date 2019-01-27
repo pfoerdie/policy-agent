@@ -116,33 +116,6 @@ class PolicyPoint {
     } // PolicyPoint#name<getter>
 
     /**
-     * 
-     * @param {string} type 
-     * @param {*} value 
-     */
-    static validate(type, value) {
-        switch (type) {
-
-            case 'RequestContext':
-                return value
-                    && value['@type'] === type
-                    && typeof value['request'] === 'object';
-
-            case 'ResponseContext':
-                return value
-                    && value['@type'] === type
-                    && typeof value['response'] === 'object'
-                    && typeof value['subject'] === 'object'
-                    && typeof value['resource'] === 'object'
-                    && typeof value['environment'] === 'object';
-
-            default:
-                this.throw('validate', new Error(`unknown type`));
-
-        } // switch
-    } // PolicyPoint#validate
-
-    /**
      * @name PolicyPoint.get
      * @param {string} instanceID
      * @returns {PolicyPoint}
