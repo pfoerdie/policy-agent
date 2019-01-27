@@ -41,21 +41,22 @@ async function _executeActionRequest(responseContext, requestID, ...args) {
     let
         response = responseContext['response'][requestID],
         actionCB = this.data.actionCallbacks[response['action']],
-        includedInResult = responseContext['resource'][response['target']],
-        implies = {};
+        actionContext = {};
 
     // TODO obligations
     // IDEA validate und execute in einem?
 
-    if (response['includedIn'])
-        includedInResult = await _executeActionRequest.call(this, responseContext, response['includedIn'], ...args);
+    _enumerate(actionContext, 'includedIn', response['includedIn']
+        ? (...includedInArgs) => _executeActionRequest.call(this, responseContext, response['includedIn'], ...includedInArgs)
+        : () => responseContext['resource'][response['target']]);
 
+    _enumerate(actionContext, 'implies', {});
     for (let tmp of response['implies']) {
-        _enumerate(implies, action, (...impliesArgs) => _executeActionRequest.call(this, responseContext, response['implies'], ...impliesArgs));
+        _enumerate(actionContext['implies'], action, (...impliesArgs) => _executeActionRequest.call(this, responseContext, response['implies'], ...impliesArgs));
     }
 
     // TODO die argumente für actionCB sind entscheidend
-    let result = await actionCB(includedInResult, implies, ...args);
+    let result = await actionCB.call(actionContext, /*session,*/ ...args);
     return result;
 
     // TODO
