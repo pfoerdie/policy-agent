@@ -53,6 +53,7 @@ class RequestContext extends Context {
             _enumerate(request, 'id', requestID);
             _enumerate(request, 'action', actionDef.action);
 
+            /* TODO anders, mithilfe der imlies
             if (actionDef.subjectCallbacks.has('target')) {
                 let target = actionDef.subjectCallbacks.get('target')(session, param);
                 if (target && typeof target['@type'] === 'string')
@@ -70,6 +71,7 @@ class RequestContext extends Context {
                 if (assignee && typeof assignee['@type'] === 'string')
                     _enumerate(request, 'assignee', assignee);
             }
+            */
 
             _enumerate(this['request'], requestID, request);
 

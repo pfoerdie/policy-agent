@@ -191,7 +191,11 @@ class PEP extends PolicyPoint {
      * @param {string} includedIn 
      * @param {string[]} [implies=[]] 
      */
-    defineAction(actionName, callback, includedIn, implies = [], subjectCallbacks) {
+    defineAction(actionName, callback, includedIn, implies = []) {
+
+        // TODO durch implies soll auch die Möglichkeit gegeben werden, ein festes target
+        //      anzugeben, statt das aktuelle target weiterzureichen
+        //      => evtl etwas andere Strukturierung und Aufruf der implies
 
         if (!actionName || typeof actionName !== 'string')
             this.throw('defineAction', new TypeError(`invalid argument`));
@@ -210,19 +214,12 @@ class PEP extends PolicyPoint {
             this.throw('defineAction', new Error(`includedIn unknown`));
         if (!implies.every(elem => this.data.actionDefinition.has(elem)))
             this.throw('defineAction', new Error(`implies unknown`));
-        if (typeof subjectCallbacks !== 'object')
-            this.throw('defineAction', new TypeError(`invalid argument`));
-        subjectCallbacks = Object.entries(subjectCallbacks);
-        if (subjectCallbacks.some(([key, value]) => typeof value !== 'function'))
-            this.throw('defineAction', new Error(`invalid callback`));
-        subjectCallbacks = new Map(subjectCallbacks);
 
         this.data.actionCallbacks.set(actionName, callback);
         this.data.actionDefinition.set(actionName, {
             // type: topLvlAction,
             action: actionName,
-            includedIn, implies,
-            subjectCallbacks
+            includedIn, implies
         });
 
     } // PEP#defineAction
