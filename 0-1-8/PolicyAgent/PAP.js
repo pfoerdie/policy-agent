@@ -9,6 +9,7 @@ const
     Neo4j = require('neo4j-driver').v1,
     PolicyPoint = require('./PolicyPoint.js'),
     _toArray = (val) => Array.isArray(val) ? val : val !== undefined ? [val] : [],
+    _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value }),
     _retrievePoliciesQuery = [
         `UNWIND $entries AS entry`,
         `MATCH (action:ODRL:Action {id: entry.action})`,
@@ -36,10 +37,9 @@ class Record {
      * @param {Neo4j~Record} record 
      */
     constructor(record) {
-        record['keys'].forEach(key => Object.defineProperty(this, key, {
-            enumerable: true,
-            value: record['_fields'][record['_fieldLookup'][key]]
-        }));
+        record['keys'].forEach(key =>
+            _enumerate(this, key, record['_fields'][record['_fieldLookup'][key]])
+        );
     } // Record.constructor
 
 } // Record

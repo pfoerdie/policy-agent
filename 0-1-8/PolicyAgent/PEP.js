@@ -13,21 +13,8 @@ const
     _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
 
 /**
- * @name _validateActionRequest
- * @param {ResponseContext} responseContext
- * @param {string} requestID
- * @returns {boolean} validity
- * @this {PEP}
- * @private
- */
-function _validateActionRequest(responseContext, requestID) {
-
-    // TODO
-
-} // _validateActionRequest
-
-/**
  * @name _executeActionRequest
+ * @param {Session} session
  * @param {ResponseContext} responseContext
  * @param {string} requestID
  * @param {...*} args
@@ -36,39 +23,54 @@ function _validateActionRequest(responseContext, requestID) {
  * @async
  * @private
  */
-async function _executeActionRequest(responseContext, requestID, ...args) {
+async function _executeActionRequest(session, responseContext, requestID, ...args) {
 
     let
         response = responseContext['response'][requestID],
         actionCB = this.data.actionCallbacks[response['action']],
         actionContext = {};
 
-    // TODO obligations
-    // IDEA validate und execute in einem?
+    if (response['decision'] !== 'permission')
+        throw new Error("Permission denied!");
 
-    _enumerate(actionContext, 'includedIn', response['includedIn']
-        ? (...includedInArgs) => _executeActionRequest.call(this, responseContext, response['includedIn'], ...includedInArgs)
-        : () => responseContext['resource'][response['target']]);
+    // TODO permission | obligation | prohibition
+
+    _enumerate(actionContext, 'action', response['action']);
+    _enumerate(actionContext, 'target', response['includedIn']
+        ? (...includedInArgs) => _executeActionRequest.call(this, session, responseContext, response['includedIn'], ...includedInArgs)
+        : responseContext['resource'][response['target']]);
+
+    _enumerate(actionContext, 'assigner', response['assigner'] ? responseContext['resource'][response['assigner']]['@id'] : undefined);
+    _enumerate(actionContext, 'assignee', response['assignee'] ? responseContext['resource'][response['assignee']]['@id'] : undefined);
 
     _enumerate(actionContext, 'implies', {});
     for (let tmp of response['implies']) {
-        _enumerate(actionContext['implies'], action, (...impliesArgs) => _executeActionRequest.call(this, responseContext, response['implies'], ...impliesArgs));
+        _enumerate(actionContext['implies'], action, (...impliesArgs) => _executeActionRequest.call(this, session, responseContext, response['implies'], ...impliesArgs));
     }
 
-    // TODO die argumente für actionCB sind entscheidend
-    let result = await actionCB.call(actionContext, /*session,*/ ...args);
-    return result;
+    _enumerate(actionContext, 'request', (param, ...requestArgs) => this.request(session, param, ...requestArgs));
 
-    // TODO
+    return await actionCB.call(actionContext, session, ...args);
 
 } // _executeActionRequest
 
-async function _actionUse(target, impl, session) {
-    return "USE";
+async function _actionUse(session, ...args) {
+    let target = {};
+    for (let key in this['target']) {
+        if (key.startsWith('@'))
+            _enumerate(target, key, this['target'][key]);
+        else if (key !== 'uid')
+            target[key] = this['target'][key];
+    }
+    return target;
 } // _actionUse
 
-async function _actionTransfer(args, impl, session) {
-    return "TRANSFER";
+async function _actionTransfer(session, ...args) {
+    console.log(this['target']);
+    return null;
+    // TODO return transfer Methoden stattdessen
+    // IDEA dafür müssen die transfer Methoden vom PDP an den RequestContext gekoppelt werden
+    //      => die übergebene target-resource muss die Methoden enthalten! (aber nicht aufzählbar)
 } // _actionTransfer
 
 /**
@@ -99,8 +101,8 @@ class PEP extends PolicyPoint {
         this.data.actionDefinition = new Map();
         this.data.actionCallbacks = new Map();
 
-        this.defineAction('use', _actionUse.bind(this));
-        this.defineAction('transfer', _actionTransfer.bind(this));
+        this.defineAction('use', _actionUse);
+        this.defineAction('transfer', _actionTransfer);
     } // PEP.constructor
 
     async generateSession() {
@@ -168,7 +170,7 @@ class PEP extends PolicyPoint {
 
         /* 1. - create RequestContext */
 
-        let requestContext = new _namespace.RequestContext(this, session, param);
+        let requestContext = new _namespace.RequestContext(this, param, session);
 
         /* 2. - send RequestContext to PDP#_decisionRequest */
 
@@ -177,10 +179,7 @@ class PEP extends PolicyPoint {
 
         /* 3. - execute Actions */
 
-        if (!_validateActionRequest.call(this, responseContext, entryPoint))
-            this.throw('request', new Error("request denied"));
-
-        let result = await _executeActionRequest.call(this, responseContext, entryPoint, ...args);
+        let result = await _executeActionRequest.call(this, session, responseContext, entryPoint, ...args);
         return result;
 
     } // PEP#request
@@ -192,11 +191,7 @@ class PEP extends PolicyPoint {
      * @param {string} includedIn 
      * @param {string[]} [implies=[]] 
      */
-    defineAction(actionName, callback, includedIn, implies = []
-        // , target = undefined, assigner = undefined, assignee = undefined
-    ) {
-
-        // TODO überarbeiten!
+    defineAction(actionName, callback, includedIn, implies = [], subjectCallbacks) {
 
         if (!actionName || typeof actionName !== 'string')
             this.throw('defineAction', new TypeError(`invalid argument`));
@@ -215,24 +210,19 @@ class PEP extends PolicyPoint {
             this.throw('defineAction', new Error(`includedIn unknown`));
         if (!implies.every(elem => this.data.actionDefinition.has(elem)))
             this.throw('defineAction', new Error(`implies unknown`));
-        // if (target && typeof target['@type'] !== 'string')
-        //     this.throw('defineAction', new Error(`invalid target`));
-        // if (assigner && typeof assigner['@type'] !== 'string')
-        //     this.throw('defineAction', new Error(`invalid assigner`));
-        // if (assignee && typeof assignee['@type'] !== 'string')
-        //     this.throw('defineAction', new Error(`invalid assignee`));
-
-        // let topLvlAction = includedIn;
-        // while (topLvlAction !== 'use' && topLvlAction !== 'transfer') {
-        //     topLvlAction = this.data.actionDefinition.get(topLvlAction).includedIn;
-        // } // while
+        if (typeof subjectCallbacks !== 'object')
+            this.throw('defineAction', new TypeError(`invalid argument`));
+        subjectCallbacks = Object.entries(subjectCallbacks);
+        if (subjectCallbacks.some(([key, value]) => typeof value !== 'function'))
+            this.throw('defineAction', new Error(`invalid callback`));
+        subjectCallbacks = new Map(subjectCallbacks);
 
         this.data.actionCallbacks.set(actionName, callback);
         this.data.actionDefinition.set(actionName, {
             // type: topLvlAction,
             action: actionName,
             includedIn, implies,
-            // target, assigner, assignee
+            subjectCallbacks
         });
 
     } // PEP#defineAction

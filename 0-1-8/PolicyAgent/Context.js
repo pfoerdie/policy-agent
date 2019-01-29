@@ -17,27 +17,30 @@ class RequestContext extends Context {
     /**
      * @constructs RequestContext
      * @param {PEP} source
-     * @param {Session} session
      * @param {JSON} param
+     * @param {Session} session
      * @private
      */
-    constructor(source, session, param) {
+    constructor(source, param, session) {
         if (!(source instanceof _namespace.PEP))
             throw new TypeError(`invalid argument`);
-
-        // TODO alles durchgehen und überarbeiten!
 
         _enumerate(this, '@type', "RequestContext");
         _enumerate(this, '@id', UUID());
         _enumerate(this, 'request', {});
+        // _enumerate(this, 'session', session.id);
 
         /* 1. - add default subjects */
 
         _enumerate(this, 'target', param['target']);
         if (param['assigner'] && typeof param['assigner']['@type'] === 'string')
             _enumerate(this, 'assigner', param['assigner']);
+        else if (session['assigner'] && typeof session['assigner']['@type'] === 'string')
+            _enumerate(this, 'assigner', session['assigner']);
         if (param['assignee'] && typeof param['assignee']['@type'] === 'string')
             _enumerate(this, 'assignee', param['assignee']);
+        else if (session['assignee'] && typeof session['assignee']['@type'] === 'string')
+            _enumerate(this, 'assignee', session['assignee']);
 
         /* 2. - add action requests */
 
@@ -50,12 +53,23 @@ class RequestContext extends Context {
             _enumerate(request, 'id', requestID);
             _enumerate(request, 'action', actionDef.action);
 
-            // if (actionDef.target && param[actionDef.target] && typeof param[actionDef.target]['@type'] === 'string')
-            //     _enumerate(request, 'target', param[actionDef.target]);
-            // if (actionDef.assigner && param[actionDef.assigner] && typeof param[actionDef.assigner]['@type'] === 'string')
-            //     _enumerate(request, 'assigner', param[actionDef.assigner]);
-            // if (actionDef.assignee && param[actionDef.assignee] && typeof param[actionDef.assignee]['@type'] === 'string')
-            //     _enumerate(request, 'assignee', param[actionDef.assignee]);
+            if (actionDef.subjectCallbacks.has('target')) {
+                let target = actionDef.subjectCallbacks.get('target')(session, param);
+                if (target && typeof target['@type'] === 'string')
+                    _enumerate(request, 'target', target);
+            }
+
+            if (actionDef.subjectCallbacks.has('assigner')) {
+                let assigner = actionDef.subjectCallbacks.get('assigner')(session, param);
+                if (assigner && typeof target['@type'] === 'string')
+                    _enumerate(request, 'assigner', assigner);
+            }
+
+            if (actionDef.subjectCallbacks.has('assignee')) {
+                let assignee = actionDef.subjectCallbacks.get('assignee')(session, param);
+                if (assignee && typeof assignee['@type'] === 'string')
+                    _enumerate(request, 'assignee', assignee);
+            }
 
             _enumerate(this['request'], requestID, request);
 
@@ -92,6 +106,7 @@ class ResponseContext extends Context {
         _enumerate(this, '@type', "ResponseContext");
         _enumerate(this, 'id@', UUID());
         _enumerate(this, 'response', {});
+        // _enumerate(this, 'session', requestContext['session']);
         _enumerate(this, 'subject', {});
         _enumerate(this, 'resource', {});
         _enumerate(this, 'environment', {});
