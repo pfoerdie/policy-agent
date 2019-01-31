@@ -497,7 +497,22 @@ class PAP extends PolicyPoint {
         if (!Array.isArray(responseArr) || responseArr.some(elem => !elem || typeof elem !== 'object'))
             this.throw('_retrievePolicies', new TypeError(`invalid argument`));
 
-        return await _requestNeo4j.call(this, _retrievePoliciesQuery, { 'entries': responseArr });
+        let flatResult = await _requestNeo4j.call(this, _retrievePoliciesQuery, { 'entries': responseArr });
+        let groupedResult = flatResult.reduce((result, policy) => {
+            if (!result[policy.id])
+                _enumerate(result, policy.id, []);
+            let tmpPolicy = result[policy.id].find(elem => elem.uid === policy.uid);
+            if (tmpPolicy) {
+                // TODO join policies
+                Object.assign(tmpPolicy, policy);
+                // TODO verschachtelte Objecte gehen hierbei verloren ... aber wie kriege ich die Objecte überhaupt vernünftig aus Neo4j raus???
+            } else {
+                result[policy.id].push(policy);
+            }
+            return result;
+        }, {});
+
+        return groupedResult;
     } // PAP#_retrievePolicies
 
     /**

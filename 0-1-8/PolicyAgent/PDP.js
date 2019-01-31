@@ -201,7 +201,9 @@ class PDP extends PolicyPoint {
      * TODO
      */
     async _finalizeRequest(responseContext) {
-        // TODO
+
+        // TODO vllt überflüssig
+
     } // PDP#_finalizeRequest
 
 } // PDP
