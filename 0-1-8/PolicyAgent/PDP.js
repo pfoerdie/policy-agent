@@ -213,6 +213,9 @@ class PDP extends PolicyPoint {
         } // for
 
         _enumerate(responseContext, 'decision', responseContext['response'][responseContext['entryPoint']]['decision']);
+
+        // TODO zusätzliche Methoden für transfer den Responses anhängen
+
         return responseContext;
 
     } // PDP#_decisionRequest

@@ -61,22 +61,45 @@ async function _executeActionRequest(session, responseContext, requestID, ...arg
 } // _executeActionRequest
 
 async function _actionUse(session, ...args) {
-    let target = {};
-    for (let key in this['target']) {
+    let
+        target = this['target'],
+        result = {};
+
+    for (let key in target) {
         if (key.startsWith('@'))
-            _enumerate(target, key, this['target'][key]);
+            _enumerate(result, key, target[key]);
         else if (key !== 'uid')
-            target[key] = this['target'][key];
-    }
-    return target;
+            result[key] = target[key];
+    } // for
+
+    return result;
 } // _actionUse
 
 async function _actionTransfer(session, ...args) {
-    console.log(this['target']);
-    return null;
+    let
+        target = this['target'],
+        result = {};
+
+    if (target._update) _enumerate(result, 'update', (elem) => {
+        if (elem['@type'] !== target['@type'] || elem['@id'] !== target['@id'])
+            throw new Error(`invalid target`);
+
+        Object.assign(target, elem);
+        target._update();
+    });
+
+    if (target._delete) _enumerate(result, 'delete', (elem) => {
+        if (elem['@type'] !== target['@type'] || elem['@id'] !== target['@id'])
+            throw new Error(`invalid target`);
+
+        target._delete();
+    });
+
     // TODO return transfer Methoden stattdessen
     // IDEA dafür müssen die transfer Methoden vom PDP an den RequestContext gekoppelt werden
     //      => die übergebene target-resource muss die Methoden enthalten! (aber nicht aufzählbar)
+
+    return result;
 } // _actionTransfer
 
 /**
