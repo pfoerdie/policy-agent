@@ -18,7 +18,7 @@ class RequestContext {
      * @constructs RequestContext
      * @param {PEP} source
      * @param {JSON} param
-     * @param {Session} session
+     * @param {Session} [session]
      * @private
      */
     constructor(source, param, session) {
@@ -35,11 +35,11 @@ class RequestContext {
         _enumerate(this, 'target', param['target']);
         if (param['assigner'] && typeof param['assigner']['@type'] === 'string')
             _enumerate(this, 'assigner', param['assigner']);
-        else if (session['assigner'] && typeof session['assigner']['@type'] === 'string')
+        else if (session && session['assigner'] && typeof session['assigner']['@type'] === 'string')
             _enumerate(this, 'assigner', session['assigner']);
         if (param['assignee'] && typeof param['assignee']['@type'] === 'string')
             _enumerate(this, 'assignee', param['assignee']);
-        else if (session['assignee'] && typeof session['assignee']['@type'] === 'string')
+        else if (session && session['assignee'] && typeof session['assignee']['@type'] === 'string')
             _enumerate(this, 'assignee', session['assignee']);
 
         /* 2. - add action requests */

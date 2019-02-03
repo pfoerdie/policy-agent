@@ -38,8 +38,6 @@
         });
 
     myPEP.defineAction('read', async function (session, ...args) {
-        console.log(session);
-
         let target = await this.target();
         if (target['@type'] !== 'File')
             throw new Error("can only read files");
@@ -65,7 +63,7 @@
 
     //#endregion PolicyAgent
 
-    await (new Promise(resolve => setImmediate(resolve)));
+    await new Promise(resolve => setImmediate(resolve));
 
     //#region Test
 
@@ -84,9 +82,9 @@
                 'sha256PW': "Cn4n8u3dN7ta/LrXzRy39OD5g48fV29kjbePSB/Ea5s="
             }
         },
-        result = await myPEP.request(session, param /*, ...args*/);
+        result = await myPEP.request(param, session /*, ...args*/);
 
-    console.log(result.value);
+    console.log(result);
 
     //#endregion Test
 

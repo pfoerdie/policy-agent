@@ -51,7 +51,7 @@ async function _executeActionRequest(session, responseContext, requestID, ...arg
         _enumerate(actionContext['implies'], action, (...impliesArgs) => _executeActionRequest.call(this, session, responseContext, response['implies'], ...impliesArgs));
     }
 
-    _enumerate(actionContext, 'request', (param, ...requestArgs) => this.request(session, param, ...requestArgs));
+    _enumerate(actionContext, 'request', (param, ...requestArgs) => this.request(param, session, ...requestArgs));
 
     return await actionCB.call(actionContext, session, ...args);
 
@@ -128,15 +128,13 @@ class PEP extends PolicyPoint {
 
     /**
      * @name PEP#request
-     * @param {Object} session
      * @param {JSON} param
-     * @param {...*} args
+     * @param {Object} [session=null]
+     * @param {...*} [args]
      * @returns {*}
      * @async
      */
-    async request(session, param, ...args) {
-        if (!session || typeof session !== 'object')
-            this.throw('request', new TypeError(`invalid argument`));
+    async request(param, session = null, ...args) {
         if (!param || typeof param !== 'object')
             this.throw('request', new TypeError(`invalid argument`));
         if (!param['target'] || typeof param['target']['@type'] !== 'string')
@@ -145,6 +143,9 @@ class PEP extends PolicyPoint {
             param['action'] = param['action']['@id'];
         else if (typeof param['action'] !== 'string')
             this.throw('request', new Error(`invalid action`));
+
+        if (session && typeof session !== 'object')
+            this.throw('request', new TypeError(`invalid argument`));
 
         if (!this.data.actionDefinition.has(param['action']))
             this.throw('request', new Error(`action unknown`));

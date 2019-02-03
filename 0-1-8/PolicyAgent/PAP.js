@@ -26,8 +26,8 @@ const
         `AND ( NOT (rule)-[:assignee]->(:ODRL) OR (rule)-[:assignee]->(assignee) OR (rule)-[:assignee]->(:ODRL:PartyCollection)<-[:partOf*]-(assignee) )`,
         `AND ( NOT (rule)-[:assigner]->(:ODRL) OR (rule)-[:assigner]->(assigner) OR (rule)-[:assigner]->(:ODRL:PartyCollection)<-[:partOf*]-(assigner) )`,
 
-        `WITH entryID, result + {policy: policy.uid, rule: rule.uid, ruleType: type(ruleRel)} AS result`,
-        `RETURN entryID AS id, result`
+        `RETURN entryID AS id,`,
+        `result + {policy: policy.uid, rule: rule.uid, ruleType: type(ruleRel)} AS result`
     ].join("\n");
 
 /**
