@@ -27,21 +27,27 @@ async function _executeActionRequest(session, responseContext, requestID, ...arg
 
     let
         response = responseContext['response'][requestID],
-        actionCB = this.data.actionCallbacks[response['action']],
+        actionCB = this.data.actionCallbacks.get(response['action']),
         actionContext = {};
 
-    if (response['decision'] !== 'permission')
+    /**
+     * INFO 7.17 Authorization decision:
+     *   -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
+     *   => "Condition" muss zusätzlich aufgenommen werden, um Obligations einzuschließen
+     * TODO permission | obligation | prohibition
+     */
+    if (response['decision'] === 'Deny')
         throw new Error("Permission denied!");
-
-    // TODO permission | obligation | prohibition
+    if (response['decision'] !== 'Permit')
+        throw new Error("Permission not granted!");
 
     _enumerate(actionContext, 'action', response['action']);
     _enumerate(actionContext, 'target', response['includedIn']
         ? (...includedInArgs) => _executeActionRequest.call(this, session, responseContext, response['includedIn'], ...includedInArgs)
         : responseContext['resource'][response['target']]);
 
-    _enumerate(actionContext, 'assigner', response['assigner'] ? responseContext['resource'][response['assigner']]['@id'] : undefined);
-    _enumerate(actionContext, 'assignee', response['assignee'] ? responseContext['resource'][response['assignee']]['@id'] : undefined);
+    _enumerate(actionContext, 'assigner', response['assigner'] ? responseContext['subject'][response['assigner']]['@id'] : undefined);
+    _enumerate(actionContext, 'assignee', response['assignee'] ? responseContext['subject'][response['assignee']]['@id'] : undefined);
 
     _enumerate(actionContext, 'implies', {});
     for (let tmp of response['implies']) {
@@ -118,8 +124,9 @@ class PEP extends PolicyPoint {
      * @async
      */
     async request(sessionID, param, ...args) {
-        sessionID.save();
-        sessionID = sessionID.id; // TODO
+        // sessionID.save();
+        if (!sessionID) sessionID = UUID();
+        // sessionID = sessionID.id; // TODO
 
         if (!sessionID || typeof sessionID !== 'string')
             this.throw('request', new TypeError(`invalid argument`));
@@ -175,11 +182,17 @@ class PEP extends PolicyPoint {
         /* 2. - send RequestContext to PDP#_decisionRequest */
 
         let responseContext = await this.data.PDP._decisionRequest(requestContext);
-        let entryPoint = requestContext['entryPoint'];
+
+        if (responseContext['decision'] === 'Deny')
+            throw new Error("Permission denied!");
+        if (responseContext['decision'] !== 'Permit')
+            throw new Error("Permission not granted!");
+
+        // TODO validate entryPoint -> schon vor der execution ablehnen, wenn der entryPoint denied ist
 
         /* 3. - execute Actions */
 
-        let result = await _executeActionRequest.call(this, session, responseContext, entryPoint, ...args);
+        let result = await _executeActionRequest.call(this, session, responseContext, requestContext['entryPoint'], ...args);
         return result;
 
     } // PEP#request
@@ -208,7 +221,7 @@ class PEP extends PolicyPoint {
             implies = [];
         } else if (!includedIn || typeof includedIn !== 'string')
             this.throw('defineAction', new TypeError(`invalid argument`));
-        if (!Array.isArray(implies) || implies.some(elem => typeof elem !== 'string'))
+        if (!Array.isArray(implies) || !implies.every(elem => typeof elem === 'string'))
             this.throw('defineAction', new TypeError(`invalid argument`));
         if (includedIn && !this.data.actionDefinition.has(includedIn))
             this.throw('defineAction', new Error(`includedIn unknown`));
@@ -217,7 +230,6 @@ class PEP extends PolicyPoint {
 
         this.data.actionCallbacks.set(actionName, callback);
         this.data.actionDefinition.set(actionName, {
-            // type: topLvlAction,
             action: actionName,
             includedIn, implies
         });

@@ -6,14 +6,14 @@
 
 const
     UUID = require('uuid/v4'),
-    _namespace = require('.'),
+    _namespace = require('./namespace.js'),
     _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
 
 /**
  * @name RequestContext
  * @class
  */
-class RequestContext extends Context {
+class RequestContext {
     /**
      * @constructs RequestContext
      * @param {PEP} source
@@ -93,14 +93,14 @@ class RequestContext extends Context {
  * @name ResponseContext
  * @class
  */
-class ResponseContext extends Context {
+class ResponseContext {
     /**
      * @constructs ResponseContext
      * @param {PDP} source
      * @param {RequestContext} requestContext
      */
     constructor(source, requestContext) {
-        if (!(source instanceof _namespace.PEP))
+        if (!(source instanceof _namespace.PDP))
             throw new TypeError(`invalid argument`);
         if (!(requestContext instanceof RequestContext))
             throw new TypeError(`invalid argument`);
@@ -122,8 +122,14 @@ class ResponseContext extends Context {
             _enumerate(response, 'id', requestID);
             _enumerate(response, 'action', request['action']);
 
+            _enumerate(response, 'includedIn', request['includedIn']);
+            _enumerate(response, 'implies', request['implies'].map(val => val));
+
             _enumerate(this['response'], requestID, response);
         } // for
+
+        _enumerate(this, 'entryPoint', requestContext['entryPoint']);
+
     } // ResponseContext.constructor
 
 } // ResponseContext

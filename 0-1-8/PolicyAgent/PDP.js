@@ -6,7 +6,7 @@
 
 const
     PolicyPoint = require('./PolicyPoint.js'),
-    _namespace = require('.'),
+    _namespace = require('./namespace.js'),
     _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value }),
     _define = (obj, key, value) => Object.defineProperty(obj, key, { value: value });
 
@@ -169,6 +169,7 @@ class PDP extends PolicyPoint {
      * 
      * INFO 7.17 Authorization decision:
      *   -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
+     *   => "Condition" muss zusätzlich aufgenommen werden, um Obligations einzuschließen
      */
     async _decisionRequest(requestContext) {
         if (!(requestContext instanceof _namespace.RequestContext))
@@ -191,8 +192,27 @@ class PDP extends PolicyPoint {
             Object.entries(responseContext['response']).map(entry => entry[1])
         );
 
-        // TODO Policies auswerten
+        for (let { 'id': requestID, 'result': policies } of applicablePolicies) {
+            let
+                response = responseContext['response'][requestID],
+                decision = "Indeterminate";
 
+            if (Array.isArray(policies)) {
+                for (let { 'policy': policy, 'rule': rule, 'ruleType': ruleType } of policies) {
+                    decision = (ruleType === "permission")
+                        ? "Permit"
+                        : "Deny";
+
+                    // TODO Policies besser auswerten
+
+                    break;
+                } // for
+            } // if
+
+            _enumerate(response, 'decision', decision); // "Permit" | "Deny" | "Condition" | "Indeterminate" | "NotApplicable"
+        } // for
+
+        _enumerate(responseContext, 'decision', responseContext['response'][responseContext['entryPoint']]['decision']);
         return responseContext;
 
     } // PDP#_decisionRequest

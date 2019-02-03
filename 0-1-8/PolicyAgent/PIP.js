@@ -29,10 +29,9 @@ class Data {
 
         Object.entries(param).forEach(([key, value]) => {
             if (key.startsWith('_')) return;
-            const editable = !(key === 'uid' || key === '@type');
             Object.defineProperty(this, key, {
-                writable: editable,
-                enumerable: editable,
+                writable: !key.startsWith('@') && key !== 'uid',
+                enumerable: key !== 'uid',
                 value: value
             });
         });

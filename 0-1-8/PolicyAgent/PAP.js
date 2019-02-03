@@ -12,19 +12,22 @@ const
     _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value }),
     _retrievePoliciesQuery = [
         `UNWIND $entries AS entry`,
+        `WITH entry, [] AS result`,
+
         `MATCH (action:ODRL:Action {id: entry.action})`,
         `MATCH (target:ODRL:Asset {uid: entry.target})`,
         `OPTIONAL MATCH (assignee:ODRL:Party {uid: entry.assignee})`,
         `OPTIONAL MATCH (assigner:ODRL:Party {uid: entry.assigner})`,
 
-        `WITH entry.id AS entryID, action, target, assignee, assigner`,
+        `WITH entry.id AS entryID, result, action, target, assignee, assigner`,
         `MATCH path = (policy:ODRL:Policy)-[ruleRel:permission|:obligation|:prohibition]->(rule:ODRL:Rule)`,
         `WHERE ( (rule)-[:target]->(target) OR (rule)-[:target]->(:ODRL:AssetCollection)<-[:partOf*]-(target) )`,
         `AND ( (rule)-[:action]->(action) OR (rule)-[:action]->(:ODRL:Action)-[:value]->(action) )`,
         `AND ( NOT (rule)-[:assignee]->(:ODRL) OR (rule)-[:assignee]->(assignee) OR (rule)-[:assignee]->(:ODRL:PartyCollection)<-[:partOf*]-(assignee) )`,
         `AND ( NOT (rule)-[:assigner]->(:ODRL) OR (rule)-[:assigner]->(assigner) OR (rule)-[:assigner]->(:ODRL:PartyCollection)<-[:partOf*]-(assigner) )`,
 
-        `RETURN entryID AS id, policy.uid AS policy, rule.uid AS rule, type(ruleRel) AS ruleType`
+        `WITH entryID, result + {policy: policy.uid, rule: rule.uid, ruleType: type(ruleRel)} AS result`,
+        `RETURN entryID AS id, result`
     ].join("\n");
 
 /**
@@ -497,22 +500,9 @@ class PAP extends PolicyPoint {
         if (!Array.isArray(responseArr) || responseArr.some(elem => !elem || typeof elem !== 'object'))
             this.throw('_retrievePolicies', new TypeError(`invalid argument`));
 
-        let flatResult = await _requestNeo4j.call(this, _retrievePoliciesQuery, { 'entries': responseArr });
-        let groupedResult = flatResult.reduce((result, policy) => {
-            if (!result[policy.id])
-                _enumerate(result, policy.id, []);
-            let tmpPolicy = result[policy.id].find(elem => elem.uid === policy.uid);
-            if (tmpPolicy) {
-                // TODO join policies
-                Object.assign(tmpPolicy, policy);
-                // TODO verschachtelte Objecte gehen hierbei verloren ... aber wie kriege ich die Objecte überhaupt vernünftig aus Neo4j raus???
-            } else {
-                result[policy.id].push(policy);
-            }
-            return result;
-        }, {});
-
-        return groupedResult;
+        let resultArr = await _requestNeo4j.call(this, _retrievePoliciesQuery, { 'entries': responseArr });
+        // NOTE order of the entries might change
+        return resultArr;
     } // PAP#_retrievePolicies
 
     /**

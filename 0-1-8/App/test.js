@@ -4,6 +4,7 @@
 
     const
         Path = require('path'),
+        Fs = require('fs'),
         PolicyAgent = require('../PolicyAgent');
 
     /**
@@ -19,7 +20,7 @@
     let
         myPIP = new PolicyAgent.PIP({
             '@id': "/PIP/the-worlds-attributes",
-            'dbName': "SubjectsPoint"
+            'dbName': "InformationPoint"
         }),
         myPAP = new PolicyAgent.PAP({
             '@id': "/PIP/the-worlds-policies",
@@ -36,7 +37,24 @@
             'root': Path.join(__dirname, "webapp")
         });
 
-    // myPEP.defineAction('read', 'use', undefined, target => target['@value'].toString());
+    myPEP.defineAction('read', async function (session, ...args) {
+        let target = await this.target();
+        if (target['@type'] !== 'File')
+            throw new Error("can only read files");
+
+        return await new Promise((resolve, reject) => {
+            let filepath = Path.join(__dirname, 'webapp', target['path']);
+            let filetype = target['mimeType'];
+            Fs.readFile(filepath, (err, buffer) => {
+                if (err)
+                    return reject(err);
+
+                let result = { 'type': filetype, 'value': buffer.toString() };
+                resolve(result);
+            });
+        });
+    }, 'use', undefined);
+
     // myPEP.defineAction('login', 'use', undefined, target => {
     //     console.log(target);
     //     // TODO die Session wird hier benötigt
@@ -45,22 +63,28 @@
 
     //#endregion PolicyAgent
 
+    await (new Promise(resolve => setImmediate(resolve)));
+
     //#region Test
 
     let
         sessionID = undefined,
         param = {
-            'action': "use",
+            'action': "read",
             'target': {
                 '@type': "File",
-                '@id': "/login"
+                '@id': "/"
             },
             'assigner': undefined,
-            'assignee': undefined
+            'assignee': {
+                '@type': "User",
+                'username': "pfoerdie",
+                'sha256PW': "Cn4n8u3dN7ta/LrXzRy39OD5g48fV29kjbePSB/Ea5s="
+            }
         },
         result = await myPEP.request(sessionID, param /*, ...args*/);
 
-    console.log(result);
+    console.log(result.value);
 
     //#endregion Test
 
