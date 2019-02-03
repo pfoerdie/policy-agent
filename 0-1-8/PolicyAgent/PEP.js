@@ -5,9 +5,6 @@
  */
 
 const
-    UUID = require('uuid/v4'),
-    ExpressSession = require('express-session'),
-    SessionMemoryStore = require('session-memory-store')(ExpressSession),
     PolicyPoint = require('./PolicyPoint.js'),
     _namespace = require('./namespace.js'),
     _enumerate = (obj, key, value) => Object.defineProperty(obj, key, { enumerable: true, value: value });
@@ -122,11 +119,6 @@ class PEP extends PolicyPoint {
         if (!(this.data.PDP instanceof _namespace.PDP))
             this.throw(undefined, new Error(`PDP invalid`));
 
-        this.data.sessionMaxAge = 60 * 60 * 24 * 14; // default: 14 days
-        this.data.sessionStore = new SessionMemoryStore({
-            expires: this.data.sessionMaxAge
-        });
-
         this.data.actionDefinition = new Map();
         this.data.actionCallbacks = new Map();
 
@@ -134,24 +126,16 @@ class PEP extends PolicyPoint {
         this.defineAction('transfer', _actionTransfer);
     } // PEP.constructor
 
-    async generateSession() {
-
-    } // generateSession
-
     /**
      * @name PEP#request
-     * @param {string} sessionID
+     * @param {Object} session
      * @param {JSON} param
      * @param {...*} args
      * @returns {*}
      * @async
      */
-    async request(sessionID, param, ...args) {
-        // sessionID.save();
-        if (!sessionID) sessionID = UUID();
-        // sessionID = sessionID.id; // TODO
-
-        if (!sessionID || typeof sessionID !== 'string')
+    async request(session, param, ...args) {
+        if (!session || typeof session !== 'object')
             this.throw('request', new TypeError(`invalid argument`));
         if (!param || typeof param !== 'object')
             this.throw('request', new TypeError(`invalid argument`));
@@ -161,42 +145,9 @@ class PEP extends PolicyPoint {
             param['action'] = param['action']['@id'];
         else if (typeof param['action'] !== 'string')
             this.throw('request', new Error(`invalid action`));
+
         if (!this.data.actionDefinition.has(param['action']))
             this.throw('request', new Error(`action unknown`));
-
-        // gr0ßes TODO: wie mache ich das mit den Sessions?
-
-        // await new Promise((resolve, reject) => {
-        //     this.data.sessionStore.set(session.id, session, (err) => {
-        //         if (err) reject(err);
-        //         else resolve();
-        //     });
-        // });
-
-        const session = await new Promise((resolve, reject) => {
-            this.data.sessionStore.get(sessionID, (err, result) => {
-                if (err)
-                    return reject(err);
-
-                if (result)
-                    resolve(result);
-                else
-                    this.data.sessionStore.set(sessionID, {}, (err) => {
-                        if (err)
-                            return reject(err);
-
-                        this.data.sessionStore.get(sessionID, (err, result) => {
-                            if (err)
-                                return reject(err);
-
-                            if (result)
-                                resolve(result);
-                            else
-                                resolve();
-                        });
-                    });
-            });
-        });
 
         /* 1. - create RequestContext */
 
@@ -229,9 +180,14 @@ class PEP extends PolicyPoint {
      */
     defineAction(actionName, callback, includedIn, implies = []) {
 
-        // TODO durch implies soll auch die Möglichkeit gegeben werden, ein festes target
-        //      anzugeben, statt das aktuelle target weiterzureichen
-        //      => evtl etwas andere Strukturierung und Aufruf der implies
+        /**
+         * NOTE
+         * Es kann durchaus vorkommen, dass eine implied-Action ein anderes Target hat.
+         * Das kann momentan durch einen weiteren Request abgehandelt werden,
+         * aber es wäre praktisch, wenn für ein implies auch ein festes Target
+         * definiert werden kann. Dazu müsste die Definierung der Aktion etwas
+         * abgeändert werden.
+         */
 
         if (!actionName || typeof actionName !== 'string')
             this.throw('defineAction', new TypeError(`invalid argument`));

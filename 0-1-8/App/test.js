@@ -38,6 +38,8 @@
         });
 
     myPEP.defineAction('read', async function (session, ...args) {
+        console.log(session);
+
         let target = await this.target();
         if (target['@type'] !== 'File')
             throw new Error("can only read files");
@@ -68,7 +70,7 @@
     //#region Test
 
     let
-        sessionID = undefined,
+        session = { 'id': "test-session" },
         param = {
             'action': "read",
             'target': {
@@ -82,11 +84,13 @@
                 'sha256PW': "Cn4n8u3dN7ta/LrXzRy39OD5g48fV29kjbePSB/Ea5s="
             }
         },
-        result = await myPEP.request(sessionID, param /*, ...args*/);
+        result = await myPEP.request(session, param /*, ...args*/);
 
     console.log(result.value);
 
     //#endregion Test
+
+    return null;
 
 })(/* closure */)
     .catch(err =>

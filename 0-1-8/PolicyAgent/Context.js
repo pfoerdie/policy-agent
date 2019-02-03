@@ -53,25 +53,13 @@ class RequestContext {
             _enumerate(request, 'id', requestID);
             _enumerate(request, 'action', actionDef.action);
 
-            /* TODO anders, mithilfe der implies
-            if (actionDef.subjectCallbacks.has('target')) {
-                let target = actionDef.subjectCallbacks.get('target')(session, param);
-                if (target && typeof target['@type'] === 'string')
-                    _enumerate(request, 'target', target);
-            }
-
-            if (actionDef.subjectCallbacks.has('assigner')) {
-                let assigner = actionDef.subjectCallbacks.get('assigner')(session, param);
-                if (assigner && typeof target['@type'] === 'string')
-                    _enumerate(request, 'assigner', assigner);
-            }
-
-            if (actionDef.subjectCallbacks.has('assignee')) {
-                let assignee = actionDef.subjectCallbacks.get('assignee')(session, param);
-                if (assignee && typeof assignee['@type'] === 'string')
-                    _enumerate(request, 'assignee', assignee);
-            }
-            */
+            /**
+             * NOTE
+             * Wie schon unter PEP.defineAction beschrieben, sollte mit Hilfe der implies
+             * ein festes Target definiert werden können. Dieses wird dann mithilfe von
+             * | _enumerate(request, 'target', target)
+             * angefügt.
+             */
 
             _enumerate(this['request'], requestID, request);
 
