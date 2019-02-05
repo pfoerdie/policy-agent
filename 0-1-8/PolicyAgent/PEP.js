@@ -30,8 +30,7 @@ async function _executeActionRequest(session, responseContext, requestID, ...arg
     /**
      * INFO 7.17 Authorization decision:
      *   -> The PDP MUST return a response context, with one <Decision> element of value "Permit", "Deny", "Indeterminate" or "NotApplicable".
-     *   => "Condition" muss zusätzlich aufgenommen werden, um Obligations einzuschließen
-     * TODO permission | obligation | prohibition
+     * NOTE "Condition" muss zusätzlich aufgenommen werden, um Obligations einzuschließen
      */
     if (response['decision'] === 'Deny')
         throw new Error("Permission denied!");
@@ -159,11 +158,9 @@ class PEP extends PolicyPoint {
         let responseContext = await this.data.PDP._decisionRequest(requestContext);
 
         if (responseContext['decision'] === 'Deny')
-            throw new Error("Permission denied!");
-        if (responseContext['decision'] !== 'Permit')
-            throw new Error("Permission not granted!");
-
-        // TODO validate entryPoint -> schon vor der execution ablehnen, wenn der entryPoint denied ist
+            throw new Error("Permission denied");
+        if (responseContext['decision'] === 'NotApplicable')
+            throw new Error("Decision not possible");
 
         /* 3. - execute Actions */
 

@@ -55,12 +55,6 @@
         });
     }, 'use', undefined);
 
-    // myPEP.defineAction('login', 'use', undefined, target => {
-    //     console.log(target);
-    //     // TODO die Session wird hier benötigt
-    //     return false;
-    // });
-
     //#endregion PolicyAgent
 
     await new Promise(resolve => setImmediate(resolve));

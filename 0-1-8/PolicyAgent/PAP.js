@@ -517,7 +517,6 @@ class PAP extends PolicyPoint {
         if (typeof odrl !== 'object' || odrl['@context'] !== "http://www.w3.org/ns/odrl/2/" || !Array.isArray(odrl['@graph']))
             this.throw('_submitODRL', new TypeError(`invalid argument`));
 
-        // let cypherQueries = odrl['@graph'].map((elem, index) => _makeSubmitQuery("n" + index, elem));
         let cypherQueries = odrl['@graph'].map((elem, index) => _makeSubmitQuery("n" + index, elem));
 
         console.log(cypherQueries.join("\n;\n\n"));

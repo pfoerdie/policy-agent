@@ -192,42 +192,32 @@ class PDP extends PolicyPoint {
             Object.entries(responseContext['response']).map(entry => entry[1])
         );
 
-        for (let { 'id': requestID, 'result': policies } of applicablePolicies) {
+        for (let { 'id': requestID, 'result': policyArr } of applicablePolicies) {
             let
                 response = responseContext['response'][requestID],
-                decision = "Indeterminate";
+                // INFO "Permit" | "Deny" | "Condition" | "Indeterminate" | "NotApplicable"
+                decision = policyArr.reduce((decision, policy) => {
+                    if (decision === "Inderterminate" && policy['ruleType'] === 'permission')
+                        return "Permit";
+                    if (policy['ruleType'] === 'prohibition')
+                        return "Deny";
+                    /**
+                     * NOTE Auf diese Weise gewinnt immer die Prohibition,
+                     * was später durch ConflictTerm entschieden werden muss.
+                     */
+                    return decision;
+                }, "Indeterminate");
 
-            if (Array.isArray(policies)) {
-                for (let { 'policy': policy, 'rule': rule, 'ruleType': ruleType } of policies) {
-                    decision = (ruleType === "permission")
-                        ? "Permit"
-                        : "Deny";
-
-                    // TODO Policies besser auswerten
-
-                    break;
-                } // for
-            } // if
-
-            _enumerate(response, 'decision', decision); // "Permit" | "Deny" | "Condition" | "Indeterminate" | "NotApplicable"
+            _enumerate(response, 'decision', decision);
         } // for
 
         _enumerate(responseContext, 'decision', responseContext['response'][responseContext['entryPoint']]['decision']);
 
-        // TODO zusätzliche Methoden für transfer den Responses anhängen
+        // TODO zusätzliche Methoden für transfer dem Responses anhängen
 
         return responseContext;
 
     } // PDP#_decisionRequest
-
-    /**
-     * TODO
-     */
-    async _finalizeRequest(responseContext) {
-
-        // TODO vllt überflüssig
-
-    } // PDP#_finalizeRequest
 
 } // PDP
 
