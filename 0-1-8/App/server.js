@@ -16,34 +16,7 @@
      * /d/Programme/MongoDB/mongodb-community-4.0.0/bin/mongod --dbpath=D:/Programme/MongoDB/databases/examplePIPdataBase
      */
 
-    let
-        my_PIP = new PolicyAgent.PIP({
-            '@id': "/PIP/the-worlds-attributes",
-            'dbName': "SubjectsPoint"
-        }),
-        myPAP = new PolicyAgent.PAP({
-            '@id': "/PIP/the-worlds-policies",
-            'password': "odrl"
-        }),
-        accessPDP = new PolicyAgent.PDP({
-            '@id': "/PDP/access-to-the-world",
-            'PAP': myPAP,
-            'sPIP': my_PIP,
-            'rPIP': my_PIP,
-            'ePIP': my_PIP
-        }),
-        expressPEP = new PolicyAgent.PEP.express({
-            '@id': "/PEP/hello-world",
-            'PDP': accessPDP,
-            'root': Path.join(__dirname, "webapp")
-        });
 
-    // expressPEP.defineAction('read', 'use', undefined, target => target['@value'].toString());
-    // expressPEP.defineAction('login', 'use', undefined, target => {
-    //     console.log(target);
-    //     // TODO die Session wird hier benötigt
-    //     return false;
-    // });
 
     //#endregion PolicyAgent
 
@@ -57,9 +30,8 @@
         app = Express(),
         server = Http.createServer(app);
 
-    app.use(expressPEP.router);
-
     app.use((request, response, next) => {
+        // TODO PEP.request anfragen
         response.send('request failed');
     });
 

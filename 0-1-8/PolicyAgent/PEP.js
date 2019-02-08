@@ -91,8 +91,11 @@ async function _actionTransfer(session, ...args) {
         target._delete();
     });
 
-    // TODO return transfer Methoden stattdessen
-    // IDEA dafür müssen die transfer Methoden vom PDP an den RequestContext gekoppelt werden
+    console.log(target);
+
+    // IDEA Um alle transfer-Methoden abzubilden, müssen diese dafür
+    //      vom PDP an den RequestContext gekoppelt werden, da es Unterschiede gibt,
+    //      je nachdem welchen Typ das Target hat (Asset|Party|-Collection)
     //      => die übergebene target-resource muss die Methoden enthalten! (aber nicht aufzählbar)
 
     return result;

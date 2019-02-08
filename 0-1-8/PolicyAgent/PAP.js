@@ -51,7 +51,7 @@ class Record {
  * @name _requestNeo4j
  * @param {(string|string[])} query 
  * @param {object} [param] 
- * @returns {(Record|Record[])} TODO verify
+ * @returns {(Record|Record[])}
  * @this {PAP}
  * @async
  * @private
@@ -520,7 +520,7 @@ class PAP extends PolicyPoint {
         let cypherQueries = odrl['@graph'].map((elem, index) => _makeSubmitQuery("n" + index, elem));
 
         console.log(cypherQueries.join("\n;\n\n"));
-        // TODO überprüfen und code freischalten
+        // TODO überprüfen
 
         await _requestNeo4j.call(this, cypherQueries);
         await _requestNeo4j.call(this, `MATCH (n:ODRL {blank: true}) DETACH DELETE n`);

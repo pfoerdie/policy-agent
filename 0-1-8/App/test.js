@@ -64,7 +64,7 @@
     let
         session = { 'id': "test-session" },
         param = {
-            'action': "read",
+            'action': "transfer",
             'target': {
                 '@type': "File",
                 '@id': "/"
@@ -78,7 +78,7 @@
         },
         result = await myPEP.request(param, session /*, ...args*/);
 
-    console.log(result);
+    // console.log(result);
 
     //#endregion Test
 

@@ -197,7 +197,7 @@ class PDP extends PolicyPoint {
                 response = responseContext['response'][requestID],
                 // INFO "Permit" | "Deny" | "Condition" | "Indeterminate" | "NotApplicable"
                 decision = policyArr.reduce((decision, policy) => {
-                    if (decision === "Inderterminate" && policy['ruleType'] === 'permission')
+                    if (decision === "Indeterminate" && policy['ruleType'] === 'permission')
                         return "Permit";
                     if (policy['ruleType'] === 'prohibition')
                         return "Deny";
@@ -213,7 +213,8 @@ class PDP extends PolicyPoint {
 
         _enumerate(responseContext, 'decision', responseContext['response'][responseContext['entryPoint']]['decision']);
 
-        // TODO zusätzliche Methoden für transfer dem Responses anhängen
+        // TODO für die transfer-Action müssen hier zusätzliche Methoden
+        //      angehängt werden, je nachdem von welchem Typ das target ist.
 
         return responseContext;
 
