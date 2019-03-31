@@ -22,6 +22,8 @@ Aus diesem Grund soll das Ziel der Arbeit die Untersuchung der beiden Modelle in
 - [ODRL 2.2 - Information Model](https://www.w3.org/TR/odrl-model/)
 - [ODRL 2.2 - Vocabulary & Expression](https://www.w3.org/TR/2018/REC-odrl-vocab-20180215/)
 
+#### Digital Rights
+
 ### eXtensible Access Control Markup Language (XACML)
 - [XACML 3.0 - Specification](http://docs.oasis-open.org/xacml/3.0/xacml-3.0-core-spec-os-en.html)
 - [Axiomatics - XACML Reference Architecture](https://www.axiomatics.com/blog/xacml-reference-architecture/)
@@ -37,16 +39,24 @@ Aus diesem Grund soll das Ziel der Arbeit die Untersuchung der beiden Modelle in
 - [Express - Home](https://expressjs.com/de/)
 - [Socket.io - Home](https://socket.io/)
 
+#### NPM
+#### Async/Await
+#### Event-Loop
+
 ### Neo4j
 - [Neo4j - Home](https://neo4j.com/)
 - [Neo4j - Top Ten Reasons](https://neo4j.com/top-ten-reasons/)
 - [Neo4j - Identity & Access Management](https://neo4j.com/use-cases/identity-and-access-management/)
 - [Neo4j - Cypher Refcard](https://neo4j.com/docs/cypher-refcard/current/)
 
+#### Graphen- vs. Relationale Datenbanken
+
 ### MongoDB
 - [MongoDB - Home](https://www.mongodb.com/)
 - [MongoDB - Data as a Service](https://www.mongodb.com/initiatives/data-as-a-service)
 - [MongoDB - Content Management](https://www.mongodb.com/use-cases/content-management)
+
+#### JSON-Format
 
 ## Umsetzung
 

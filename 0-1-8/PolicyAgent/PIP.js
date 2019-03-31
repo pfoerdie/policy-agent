@@ -198,7 +198,7 @@ class PIP extends PolicyPoint {
     /**
      * @name PIP#_create
      * @param {(object|object[])} query 
-     * @returns {(boolean|boolean[])}
+     * @returns {(object|object[])}
      * @package
      * @async
      * 
