@@ -93,6 +93,8 @@ Aus diesem Grund soll das Ziel der Arbeit die Untersuchung der beiden Modelle in
 ### Verbesserungen für die Zukunft
 - XACML Architektur-Modell verändern für bessere Verarbeitung von Anfragen
 - Informationen von Resources und Subjects auch in Neo4j, statt in extra PIP
+- Das Action-Modell der ODRL für Server-Policies erweitern, statt es leer zu lassen.
+    - Ableitung der Actions dann von eigenem erweiterten Modell
 - GraphQL als Schnittstelle zu Neo4j in Betracht ziehen
     - [Neo4j - GraphQL](https://neo4j.com/developer/graphql/)
     - [GraphQL - Introduction](https://graphql.github.io/learn/)
