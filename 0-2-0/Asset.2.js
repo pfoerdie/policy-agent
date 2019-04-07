@@ -39,10 +39,15 @@ class Asset {
 
         for (let key of Reflect.ownKeys(subClass.prototype)) {
             if (key !== 'constructor') {
-                let actionDef = subClass.prototype[key];
-                // TODO
-                if (actionDef.callback)
-                    _define(subClass.prototype, key, (...args) => actionDef.callback(...args));
+                let value = subClass.prototype[key];
+                let action = (typeof value === 'function') ? value() : value;
+
+                // TODO validate action
+                // TODO create scope for action
+                // TODO encapsulate action
+
+                if (action.callback)
+                    _enumerate(subClass.prototype, key, (...args) => action.callback(...args));
                 else
                     delete subClass.prototype[key];
             }

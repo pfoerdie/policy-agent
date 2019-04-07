@@ -9,7 +9,7 @@ class Test extends Asset {
             callback: function () { return "use"; }
         }
     }
-    get transfer() {
+    transfer() {
         return {
             includedIn: null,
             implies: [],
@@ -24,7 +24,8 @@ class Test extends Asset {
 Asset
     .register("Test", Test);
 
-console.log(new Test());
+console.log(Test.prototype);
+console.log(new Test().transfer());
 
 // let testAsset = Asset
 //     .create('Test', { 'uid': "Hello World", 'test': "Lorem Ipsum" });
