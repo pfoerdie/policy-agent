@@ -33,10 +33,11 @@ class AssetSetup {
 
         _types.set(type, subClass);
         _subClasses.set(subClass, this);
-        _private.set(this, {
+        const _config = {
             actions: new Map(),
             callbacks: new WeakSet()
-        });
+        };
+        _private.set(this, _config);
 
         this.defineAction('use', _actionUse);
         this.defineAction('transfer', _actionTransfer);
@@ -85,28 +86,18 @@ class AssetSetup {
 class Asset {
 
     /**
-     * @typedef {Object} PrivateAttr
-     * @property {Map} actions
-     */
-
-    /**
      * @param {*} [data=null]
      */
-    constructor(uid, data = null) {
+    constructor(data = null) { // argumente abschmecken -> die daten kommen direkt aus neo4j
         if (new.target === Asset)
             throw new Error("Asset is an abstract class.");
         if (!_subClasses.has(new.target))
             throw new Error("SubClasses have to be registered.");
-        if (!uid || typeof uid !== 'string')
+        if (!data || !data['uid'] || typeof data['uid'] !== 'string')
             throw new TypeError("The uid has to be a string.");
 
         const _config = _private.get(_subClasses.get(new.target));
-
-        /** @type {PrivateAttr} */
-        const _attr = {
-            data,
-            ..._config
-        };
+        const _attr = { data, ..._config };
 
         _private.set(this, _attr);
     } // Asset#constructor
@@ -143,14 +134,14 @@ class Asset {
         return new AssetSetup(type, subClass);
     } // Asset.register
 
-    static create(type, uid, data) {
+    static create(type, data) {
         if (!type || typeof type !== 'string')
             throw new TypeError("The type has to be a string.");
         if (!_types.has(type))
             throw new Error("Unknown type.");
 
         const subClass = _types.get(type);
-        return new subClass(uid, data);
+        return new subClass(data);
     } // Asset.create
 
 } // Asset
