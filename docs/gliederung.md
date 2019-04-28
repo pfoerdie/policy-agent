@@ -64,6 +64,7 @@ Aus diesem Grund soll das Ziel der Arbeit die Untersuchung der beiden Modelle in
 - Matching der Begrifflichkeiten
 - Was aus welchem Modell genommen
 - Unterschiede der Modelle
+- Aktionen am PEP definieren statt im PAP
 
 ### Abweichungen vom Modell
 - ContextHandler (XACML)
@@ -71,12 +72,12 @@ Aus diesem Grund soll das Ziel der Arbeit die Untersuchung der beiden Modelle in
 - ODRL für Server-Policies statt Digital Rights
 
 ### Besondere Anforderungen
-- Ausführung von definierten Aktionen auf einem Asset, statt Preisgabe des gesamten Assets
-- Suche der zutreffenden Policies im Graphen
 - Implementation als Node-Package
 - Erweiterung der Funktionalität durch Vererbung der Klassen (z.B. PEP direkt als Socket.io Schnittstelle)
-- Auditieren für Fehler-Analysen
 - Unmissverständliches (mindestens leicht verständliches) Interface
+- Auditieren für Fehler-Analysen
+- Ausführung von definierten Aktionen auf einem Asset, statt Preisgabe des gesamten Assets
+- Suche der zutreffenden Policies im Graphen
 
 ### Implementation
 - Klassen-Diagramm der Module
