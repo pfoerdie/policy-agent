@@ -22,13 +22,13 @@
         {
             "@type": "Action",
             "id": "logout",
-            "includedIn": "transfer"
+            "includedIn": "use"
         },
         {
             "@type": "Action",
             "id": "changePW",
-            "includedIn": "transfer",
-            "implies": "use"
+            "includedIn": "use",
+            "implies": "transfer"
         },
         {
             "@type": "Asset",
