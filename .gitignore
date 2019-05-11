@@ -1,2 +1,4 @@
-**/mongodb-*
-**/neo4j-*
+**/mongodb-*/*
+**/neo4j-*/*
+!**/mongodb-*/data
+!**/neo4j-*/data
