@@ -11,7 +11,7 @@
         },
         {
             "@type": "Action",
-            "id": "read",
+            "id": "readFile",
             "includedIn": "use"
         },
         {
@@ -26,14 +26,21 @@
         },
         {
             "@type": "Action",
-            "id": "changePW",
+            "id": "listMembers",
+            "includedIn": "use"
+        },
+        {
+            "@type": "Action",
+            "id": "Kunde:auflisten",
             "includedIn": "use",
-            "implies": "transfer"
+            "implies": [
+                "listMembers"
+            ]
         },
         {
             "@type": "Asset",
             "uid": "/index.html",
-            "partOf": "/collection/intern"
+            "partOf": "/collection/public"
         },
         {
             "@type": "Asset",
@@ -51,11 +58,11 @@
         },
         {
             "@type": "AssetCollection",
-            "uid": "/collection/intern"
+            "uid": "/collection/waren"
         },
         {
             "@type": "AssetCollection",
-            "uid": "/collection/admin"
+            "uid": "/collection/mitarbeiter"
         },
         {
             "@type": "Party",
@@ -64,16 +71,22 @@
         },
         {
             "@type": "Party",
-            "uid": "/user/test",
+            "uid": "/user/test123",
             "partOf": "/group/user"
         },
         {
             "@type": "PartyCollection",
-            "uid": "/group/employee"
+            "uid": "/group/user"
         },
         {
             "@type": "PartyCollection",
-            "uid": "/group/user"
+            "uid": "/group/customer",
+            "partOf": "/group/user"
+        },
+        {
+            "@type": "PartyCollection",
+            "uid": "/group/employee",
+            "partOf": "/group/user"
         },
         {
             "@type": "PartyCollection",
@@ -86,41 +99,32 @@
             "permission": [
                 {
                     "@type": "Permission",
-                    "action": "use",
-                    "target": "/collection/public"
-                },
-                {
-                    "@type": "Permission",
-                    "action": "read",
+                    "action": "readFile",
                     "target": "/collection/public"
                 },
                 {
                     "@type": "Permission",
                     "action": "login",
-                    "target": "/index.html"
-                }
-            ]
-        },
-        {
-            "@type": "Policy",
-            "uid": "/policy/user_access",
-            "permission": [
-                {
-                    "@type": "Permission",
-                    "action": "use",
-                    "target": "/collection/intern",
-                    "assignee": "/group/user"
-                },
-                {
-                    "@type": "Permission",
-                    "action": "read",
-                    "target": "/collection/intern",
+                    "target": "/collection/public",
                     "assignee": "/group/user"
                 },
                 {
                     "@type": "Permission",
                     "action": "logout",
-                    "target": "/collection/intern"
+                    "target": "/collection/public",
+                    "assignee": "/group/user"
+                }
+            ]
+        },
+        {
+            "@type": "Policy",
+            "uid": "/policy/kundenzugriff",
+            "permission": [
+                {
+                    "@type": "Permission",
+                    "action": "Kunde:auflisten",
+                    "target": "/collection/waren",
+                    "assignee": "/group/customer"
                 }
             ]
         },

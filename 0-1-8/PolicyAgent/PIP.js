@@ -74,7 +74,7 @@ class PIP extends PolicyPoint {
         };
 
         this.data.requestTimeout = 10e3; // ms
-        this.data.clientTimeout = 10e3; // ms
+        this.data.clientTimeout = 2e3; // ms
 
         let tmpClient = undefined, tmpTS = 0;
         this.data.driver = {

@@ -1,16 +1,19 @@
 const
     Path = require('path'),
     Fs = require('fs'),
-    { PAP } = require('../PolicyAgent');
+    { PAP } = require('../../PolicyAgent');
 
 (async (/* #region MAIN */) => {
 
     let
-        configPath = Path.join(__dirname, "setup/setup.json"),
+        configPath = Path.join(__dirname, "pap-definition.json"),
         configBuffer = Fs.readFileSync(configPath),
         configJSON = JSON.parse(configBuffer.toString()),
         myPAP = new PAP({
-            password: "odrl"
+            'host': "localhost",
+            'port': "7687",
+            'user': "neo4j",
+            'password': "neo4j"
         });
 
     await myPAP._request("MATCH (n) DETACH DELETE n");

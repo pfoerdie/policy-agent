@@ -160,6 +160,9 @@ class PEP extends PolicyPoint {
 
         let responseContext = await this.data.PDP._decisionRequest(requestContext);
 
+        // console.log(JSON.stringify(requestContext, null, 2));
+        // console.log(JSON.stringify(responseContext, null, 2));
+
         if (responseContext['decision'] === 'Deny')
             throw new Error("Permission denied");
         if (responseContext['decision'] === 'NotApplicable')

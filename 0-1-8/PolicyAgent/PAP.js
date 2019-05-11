@@ -489,6 +489,10 @@ class PAP extends PolicyPoint {
         }
     } // PAP#ping
 
+    _request(query) {
+        return _requestNeo4j.call(this, query);
+    } // PAP#_request
+
     /**
      * @name PAP#_retrievePolicies
      * @param {Array<PDP~Response>} responseArr 

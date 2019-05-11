@@ -1,0 +1,41 @@
+{
+    "@context": "http://www.w3.org/ns/odrl/2/",
+    "@graph": [
+        {
+            "@type": "Action",
+            "id": "use"
+        },
+        {
+            "@type": "Action",
+            "id": "transfer"
+        },
+        {
+            "@type": "Action",
+            "id": "readFile",
+            "includedIn": "use"
+        },
+        {
+            "@type": "Action",
+            "id": "login",
+            "includedIn": "use"
+        },
+        {
+            "@type": "Action",
+            "id": "logout",
+            "includedIn": "use"
+        },
+        {
+            "@type": "Action",
+            "id": "listMembers",
+            "includedIn": "use"
+        },
+        {
+            "@type": "Action",
+            "id": "Kunde:auflisten",
+            "includedIn": "use",
+            "implies": [
+                "listMembers"
+            ]
+        }
+    ]
+}
