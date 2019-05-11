@@ -271,6 +271,13 @@
                     "assignee": "/group/zeiterfassung"
                 }
             ]
+        },
+        {
+            "@type": "Party",
+            "uid": "/user/darth.vader",
+            "partOf": [
+                "/group/kunde"
+            ]
         }
     ]
 }
