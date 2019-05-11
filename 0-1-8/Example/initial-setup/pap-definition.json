@@ -175,10 +175,7 @@
                     "@type": "Permission",
                     "action": "kunde:erstellen",
                     "target": "/collection/kaufauftrag",
-                    "assignee": "/group/kunde",
-                    "duty": [
-                        "/rule/versand_benachrichtigen"
-                    ]
+                    "assignee": "/group/kunde"
                 }
             ],
             "obligation": [

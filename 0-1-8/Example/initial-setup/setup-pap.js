@@ -13,7 +13,7 @@ const
             'host': "localhost",
             'port': "7687",
             'user': "neo4j",
-            'password': "neo4j"
+            'password': "odrl"
         });
 
     await myPAP._request("MATCH (n) DETACH DELETE n");

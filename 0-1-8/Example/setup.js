@@ -19,12 +19,22 @@ async function _startNeo4jMongoDB() {
         path_mongoDB = Path.join(__dirname, "mongodb-win32-x86_64-2008plus-ssl-4.0.9"),
         path_mongoDB_data = Path.join(__dirname, "mongodb-win32-x86_64-2008plus-ssl-4.0.9", "data/database"),
         cmd_startNeo4j = `cd "${path_neo4j}" && cd bin && start neo4j.bat console`,
-        cmd_startMongoDB = `cd "${path_mongoDB}" && start bin/mongod --dbpath="${path_mongoDB_data}"`;
+        cmd_startMongoDB = `cd "${path_mongoDB}" && start bin/mongod --dbpath="${path_mongoDB_data}"`,
+        error_neo4j = null,
+        error_mongodb = null,
+        promise_neo4j = _exec(cmd_startNeo4j),
+        promise_mongodb = _exec(cmd_startMongoDB);
 
-    _exec(cmd_startNeo4j).finally(() => console.warn('Neo4j closed'));
-    _exec(cmd_startMongoDB).finally(() => console.warn('MongoDB closed'));
+    promise_neo4j.catch(err => { error_neo4j = err });
+    promise_mongodb.catch(err => { error_mongodb = err });
+    promise_neo4j.finally(() => console.warn('MongoDB closed'));
+    promise_mongodb.finally(() => console.warn('Neo4j closed'));
 
-    await new Promise((resolve, reject) => setTimeout(resolve, _delayAfterStartingNeo4j));
+    await new Promise((resolve, reject) => setTimeout(() => {
+        if (error_neo4j) reject(error_neo4j);
+        else if (error_mongodb) reject(error_mongodb);
+        else resolve();
+    }, _delayAfterStartingNeo4j));
 } // _startNeo4jMongoDB
 
 async function _buildPolicyAgent() {
@@ -38,7 +48,7 @@ async function _buildPolicyAgent() {
         'host': "localhost",
         'port': "7687",
         'user': "neo4j",
-        'password': "neo4j"
+        'password': "odrl"
     }); // _policyAgent.pap
 
     _policyAgent.pdp = new PolicyAgent.PDP({
