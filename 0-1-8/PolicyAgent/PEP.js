@@ -46,8 +46,8 @@ async function _executeActionRequest(session, responseContext, requestID, ...arg
     _enumerate(actionContext, 'assignee', response['assignee'] ? responseContext['subject'][response['assignee']]['@id'] : undefined);
 
     _enumerate(actionContext, 'implies', {});
-    for (let tmp of response['implies']) {
-        _enumerate(actionContext['implies'], action, (...impliesArgs) => _executeActionRequest.call(this, session, responseContext, response['implies'], ...impliesArgs));
+    for (let implName of response['implies']) {
+        _enumerate(actionContext['implies'], implName, (...impliesArgs) => _executeActionRequest.call(this, session, responseContext, response['implies'], ...impliesArgs));
     }
 
     _enumerate(actionContext, 'request', (param, ...requestArgs) => this.request(param, session, ...requestArgs));

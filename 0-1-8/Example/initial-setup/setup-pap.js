@@ -22,5 +22,6 @@ const
     // INFO configJSON might get changed, if the PAP fills any missing (and probably unnecessary) uids with generated uuids.
     // Fs.writeFileSync(Path.join(__dirname, "setup.inclUIDs.json"), JSON.stringify(configJSON, undefined, "\t"));
 
+    process.exit();
 })(/* #endregion MAIN */)
     .catch(console.error);

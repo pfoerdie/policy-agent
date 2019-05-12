@@ -32,10 +32,7 @@
         {
             "@type": "Action",
             "id": "kunde:auflisten",
-            "includedIn": "use",
-            "implies": [
-                "listMembers"
-            ]
+            "includedIn": "listMembers"
         },
         {
             "@type": "Action",
@@ -122,6 +119,10 @@
         },
         {
             "@type": "AssetCollection",
+            "uid": "/collection/webapp"
+        },
+        {
+            "@type": "AssetCollection",
             "uid": "/collection/ware"
         },
         {
@@ -146,18 +147,28 @@
             "permission": [
                 {
                     "@type": "Permission",
+                    "action": "use",
+                    "target": "/collection/webapp"
+                },
+                {
+                    "@type": "Permission",
+                    "action": "transfer",
+                    "target": "/collection/webapp"
+                },
+                {
+                    "@type": "Permission",
                     "action": "login",
-                    "target": "/asset/index.html"
+                    "target": "/collection/webapp"
                 },
                 {
                     "@type": "Permission",
                     "action": "logout",
-                    "target": "/asset/index.html"
+                    "target": "/collection/webapp"
                 },
                 {
                     "@type": "Permission",
                     "action": "readFile",
-                    "target": "/asset/index.html"
+                    "target": "/collection/webapp"
                 }
             ]
         },
@@ -167,8 +178,26 @@
             "permission": [
                 {
                     "@type": "Permission",
+                    "action": "use",
+                    "target": "/collection/ware",
+                    "assignee": "/group/kunde"
+                },
+                {
+                    "@type": "Permission",
+                    "action": "listMembers",
+                    "target": "/collection/ware",
+                    "assignee": "/group/kunde"
+                },
+                {
+                    "@type": "Permission",
                     "action": "kunde:auflisten",
                     "target": "/collection/ware",
+                    "assignee": "/group/kunde"
+                },
+                {
+                    "@type": "Permission",
+                    "action": "transfer",
+                    "target": "/collection/kaufauftrag",
                     "assignee": "/group/kunde"
                 },
                 {
@@ -280,8 +309,39 @@
             ]
         },
         {
+            "@type": "Party",
+            "uid": "/user/pfoerdie",
+            "partOf": [
+                "/group/kunde"
+            ]
+        },
+        {
             "@type": "Asset",
-            "uid": "/webapp/index.html"
+            "uid": "/webapp/index.html",
+            "partOf": [
+                "/collection/webapp"
+            ]
+        },
+        {
+            "@type": "Asset",
+            "uid": "/webapp/favicon.ico",
+            "partOf": [
+                "/collection/webapp"
+            ]
+        },
+        {
+            "@type": "Asset",
+            "uid": "/ware/deathstar-2.10.7",
+            "partOf": [
+                "/collection/ware"
+            ]
+        },
+        {
+            "@type": "Asset",
+            "uid": "/ware/cantina-fanshirt",
+            "partOf": [
+                "/collection/ware"
+            ]
         }
     ]
 }

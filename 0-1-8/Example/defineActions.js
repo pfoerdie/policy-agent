@@ -8,11 +8,13 @@ module.exports = function (pep) {
 	pep.defineAction(
 		"readFile",
 		async function (session, response) {
-			if (this.target['@type'] !== "File")
-				throw new Error(`The asset-type ${this.target['@type']} is not supported by readFile`);
+			let target = await this.target();
 
-			let fileBuffer = await _promify(Fs.readFile, Path.join(__dirname, this.target.path));
-			response.type(this.target.mimeType).send(fileBuffer);
+			if (target['@type'] !== "File")
+				throw new Error(`The asset-type ${target['@type']} is not supported by readFile`);
+
+			let fileBuffer = await _promify(Fs.readFile, Path.join(__dirname, target.path));
+			response.type(target.mimeType).send(fileBuffer);
 		},
 		"use", [],
 	); // readFile
@@ -33,20 +35,64 @@ module.exports = function (pep) {
 		"use", [],
 	); // logout
 
+	const _listMembers = {
+		'Ware': [
+			"deathstar-2.10.7",
+			"cantina-fanshirt"
+		]
+	};
+
 	pep.defineAction(
 		"listMembers",
-		function (session, response) {
-			// TODO 
+		async function (session) {
+			let target = await this.target();
+
+			if (target['@type'] !== "Collection")
+				throw new Error(`The asset-type ${target['@type']} is not supported by listMembers`);
+			if (!_listMembers[target['@id']])
+				throw new Error(`collection ${target['@id']} unknown`);
+
+			let
+				memberIDs = _listMembers[target['@id']],
+				members = await Promise.all(memberIDs.map((id) => new Promise(async (resolve, reject) => {
+					try {
+						let result = await pep.request({
+							action: 'use',
+							target: {
+								'@type': target['@id'],
+								'@id': id
+							},
+							assignee: {
+								'@type': "User",
+								'@id': this.assignee
+							}
+						}, session);
+						resolve(result);
+					} catch (err) {
+						console.error(err);
+						resolve();
+					}
+				})));
+
+			return members.filter(val => val);
 		},
 		"use", [],
 	); // listMembers
 
 	pep.defineAction(
 		"kunde:auflisten",
-		function (session, response) {
-			// TODO 
+		async function (session, response) {
+			let members = await this.target();
+			let output = members
+				.filter(ware => parseInt(ware.bestand) > 0)
+				.map(ware => ({
+					'Bezeichnung': ware.bezeichnung,
+					'Preis': ware.preis
+				}));
+
+			response.type('json').send(output);
 		},
-		"use", ["listMembers"],
+		"listMembers", [],
 	); // kunde:auflisten
 
 	pep.defineAction(

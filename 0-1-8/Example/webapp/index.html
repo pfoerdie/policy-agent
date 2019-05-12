@@ -6,10 +6,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Hello World!</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 </head>
 
 <body>
-    <h1>Hello World!</h1>
+    <h2>Test (kunde:auflisten)</h2>
+
+    <script>
+        let userID = "";
+        let search = /user=(.+(!?&|$))/.exec(location.search);
+        if (search) userID = search[1];
+
+        $('body').append(`<p>Kunde: ${userID}</p>`);
+
+        $.ajax({
+            type: "POST",
+            url: location.href,
+            data: {
+                action: "kunde:auflisten",
+                target: {
+                    '@type': "Collection",
+                    '@id': "Ware"
+                },
+                assignee: {
+                    '@type': "User",
+                    '@id': userID
+                }
+            },
+            success: function (result) {
+                if (Array.isArray(result)) {
+                    let $list = $(`<ul></ul>`);
+                    for (let entry of result) {
+                        $list.append(`<li>${entry.Bezeichnung}: ${entry.Preis}</li>`);
+                    }
+                    $('body').append(`<h3>Waren</h3>`).append($list);
+                }
+            },
+            error: function (err) {
+                console.error(err);
+                $('body').append(`<p>Request failed</p>`);
+            }
+        });
+    </script>
 </body>
 
 </html>

@@ -17,7 +17,7 @@ async function _main(policyAgent) {
 
     _defineActions(pep);
 
-    app.use(BodyParser.urlencoded({ extended: false }));
+    app.use(BodyParser.urlencoded({ extended: true }));
     app.use(BodyParser.json());
 
     app.use(ExpressSession({
@@ -34,6 +34,21 @@ async function _main(policyAgent) {
                 target: {
                     '@type': "File",
                     '@id': "/"
+                }
+            },
+            session = request.session,
+            args = [response];
+
+        pep.request(param, session, ...args).catch(next);
+    });
+
+    app.get("/favicon.ico", function (request, response, next) {
+        let
+            param = {
+                action: "readFile",
+                target: {
+                    '@type': "File",
+                    '@id': "/favicon.ico"
                 }
             },
             session = request.session,
