@@ -42,8 +42,15 @@ async function _executeActionRequest(session, responseContext, requestID, ...arg
         ? (...includedInArgs) => _executeActionRequest.call(this, session, responseContext, response['includedIn'], ...includedInArgs)
         : responseContext['resource'][response['target']]);
 
-    _enumerate(actionContext, 'assigner', response['assigner'] ? responseContext['subject'][response['assigner']]['@id'] : undefined);
-    _enumerate(actionContext, 'assignee', response['assignee'] ? responseContext['subject'][response['assignee']]['@id'] : undefined);
+    if (response['assigner']) {
+        let assigner = responseContext['subject'][response['assigner']];
+        _enumerate(actionContext, 'assigner', { '@type': assigner['@type'], '@id': assigner['@id'] });
+    }
+
+    if (response['assignee']) {
+        let assignee = responseContext['subject'][response['assignee']];
+        _enumerate(actionContext, 'assignee', { '@type': assignee['@type'], '@id': assignee['@id'] });
+    }
 
     _enumerate(actionContext, 'implies', {});
     for (let implName of response['implies']) {

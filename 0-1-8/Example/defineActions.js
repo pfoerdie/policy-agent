@@ -62,10 +62,7 @@ module.exports = function (pep) {
 								'@type': target['@id'],
 								'@id': id
 							},
-							assignee: {
-								'@type': "User",
-								'@id': this.assignee
-							}
+							assignee: this.assignee
 						}, session);
 						resolve(result);
 					} catch (err) {
