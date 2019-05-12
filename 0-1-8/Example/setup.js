@@ -7,7 +7,8 @@ const
     Neo4j = require('neo4j-driver').v1,
     MongoDB = require('mongodb').MongoClient,
     _policyAgent = {},
-    _delayAfterStartingNeo4j = 8e3;
+    _delayAfterStartingNeo4j = 8e3,
+    _defineActions = require("./defineActions.js");
 
 
 async function _startNeo4jMongoDB() {
@@ -59,6 +60,7 @@ async function _buildPolicyAgent() {
     _policyAgent.pep = new PolicyAgent.PEP({
         'PDP': _policyAgent.pdp
     }); // _policyAgent.pep
+
 } // _buildPolicyAgent
 
 async function _initialize() {
@@ -66,6 +68,7 @@ async function _initialize() {
     await _startNeo4jMongoDB();
     console.log("building PolicyAgent");
     await _buildPolicyAgent();
+    _defineActions(_policyAgent.pep);
     console.log("setup finished:", _policyAgent);
     return _policyAgent;
 } // _initialize
