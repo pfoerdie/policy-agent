@@ -4,38 +4,52 @@ const
     Util = require('util'),
     ChildProcess = require('child_process'),
     _exec = Util.promisify(ChildProcess.exec),
-    Neo4j = require('neo4j-driver').v1,
-    MongoDB = require('mongodb').MongoClient,
     _policyAgent = {},
     _delayAfterStartingNeo4j = 8e3,
     _defineActions = require("./defineActions.js");
 
 
-async function _startNeo4jMongoDB() {
-    if (/\s/.test(__dirname))
-        throw new Error("Neo4j will not start, if the __dirname contains any whitespaces (currently: " + __dirname + ").");
+function _startNeo4jMongoDB() {
+    return new Promise((resolve, reject) => {
+        let _finished = false;
+        try {
+            if (/\s/.test(__dirname))
+                throw new Error("Neo4j will not start, if the __dirname contains any whitespaces (currently: " + __dirname + ").");
 
-    let
-        path_neo4j = Path.join(__dirname, "neo4j-community-3.5.5"),
-        path_mongoDB = Path.join(__dirname, "mongodb-win32-x86_64-2008plus-ssl-4.0.9"),
-        path_mongoDB_data = Path.join(__dirname, "mongodb-win32-x86_64-2008plus-ssl-4.0.9", "data/database"),
-        cmd_startNeo4j = `cd "${path_neo4j}" && cd bin && start neo4j.bat console`,
-        cmd_startMongoDB = `cd "${path_mongoDB}" && start bin/mongod --dbpath="${path_mongoDB_data}"`,
-        error_neo4j = null,
-        error_mongodb = null,
-        promise_neo4j = _exec(cmd_startNeo4j),
-        promise_mongodb = _exec(cmd_startMongoDB);
+            let
+                path_neo4j = Path.join(__dirname, "neo4j-community-3.5.5"),
+                path_mongoDB = Path.join(__dirname, "mongodb-win32-x86_64-2008plus-ssl-4.0.9"),
+                path_mongoDB_data = Path.join(__dirname, "mongodb-win32-x86_64-2008plus-ssl-4.0.9", "data/database"),
+                cmd_startNeo4j = `cd "${path_neo4j}" && cd bin && start neo4j.bat console`,
+                cmd_startMongoDB = `cd "${path_mongoDB}" && start bin/mongod --dbpath="${path_mongoDB_data}"`;
 
-    promise_neo4j.catch(err => { error_neo4j = err });
-    promise_mongodb.catch(err => { error_mongodb = err });
-    promise_neo4j.finally(() => console.warn('MongoDB closed'));
-    promise_mongodb.finally(() => console.warn('Neo4j closed'));
+            _exec(cmd_startNeo4j).finally(() => {
+                console.warn('Neo4j closed');
+                if (!_finished) {
+                    _finished = true;
+                    reject();
+                }
+            });
 
-    await new Promise((resolve, reject) => setTimeout(() => {
-        if (error_neo4j) reject(error_neo4j);
-        else if (error_mongodb) reject(error_mongodb);
-        else resolve();
-    }, _delayAfterStartingNeo4j));
+            _exec(cmd_startMongoDB).finally(() => {
+                console.warn('MongoDB closed');
+                if (!_finished) {
+                    _finished = true;
+                    reject();
+                }
+            });
+
+            setTimeout(() => {
+                if (!_finished) {
+                    _finished = true;
+                    resolve();
+                }
+            }, _delayAfterStartingNeo4j);
+        } catch (err) {
+            _finished = true;
+            reject(err);
+        }
+    });
 } // _startNeo4jMongoDB
 
 async function _buildPolicyAgent() {
@@ -77,7 +91,11 @@ async function _initialize() {
 let _ready = false;
 let _readyPromise = _initialize();
 _readyPromise.then(() => (_ready = true));
+_readyPromise.catch(console.error);
 exports.ready = (callback) => {
-    if (_ready) callback(_policyAgent);
-    else _readyPromise.then(callback);
+    if (callback) {
+        if (_ready) callback(_policyAgent);
+        else _readyPromise.then(() => callback(_policyAgent));
+    }
+    return _readyPromise;
 };
