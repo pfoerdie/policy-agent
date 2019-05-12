@@ -1,9 +1,18 @@
-module.exports = function(pep) {
+const
+	Path = require('path'),
+	Fs = require('fs'),
+	_promify = (fn, ...args) => new Promise((resolve, reject) => fn(...args, (err, result) => err ? reject(err) : resolve(result)));
+
+module.exports = function (pep) {
 
 	pep.defineAction(
 		"readFile",
-		function (session, response) {
-			// TODO 
+		async function (session, response) {
+			if (this.target['@type'] !== "File")
+				throw new Error(`The asset-type ${this.target['@type']} is not supported by readFile`);
+
+			let fileBuffer = await _promify(Fs.readFile, Path.join(__dirname, this.target.path));
+			response.type(this.target.mimeType).send(fileBuffer);
 		},
 		"use", [],
 	); // readFile
@@ -39,14 +48,6 @@ module.exports = function(pep) {
 		},
 		"use", ["listMembers"],
 	); // kunde:auflisten
-
-	pep.defineAction(
-		"kunde:erstellen",
-		function (session, response) {
-			// TODO 
-		},
-		"transfer", ["versand:benachrichtigen"],
-	); // kunde:erstellen
 
 	pep.defineAction(
 		"versand:aktualisieren",
@@ -119,5 +120,13 @@ module.exports = function(pep) {
 		},
 		"transfer", [],
 	); // zeiterfassung:aktualisieren
+
+	pep.defineAction(
+		"kunde:erstellen",
+		function (session, response) {
+			// TODO 
+		},
+		"transfer", ["versand:benachrichtigen"],
+	); // kunde:erstellen
 
 }; // module.exports

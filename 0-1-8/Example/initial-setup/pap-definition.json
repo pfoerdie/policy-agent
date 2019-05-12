@@ -278,6 +278,10 @@
             "partOf": [
                 "/group/kunde"
             ]
+        },
+        {
+            "@type": "Asset",
+            "uid": "/webapp/index.html"
         }
     ]
 }

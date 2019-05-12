@@ -3,16 +3,19 @@ const
     BodyParser = require('body-parser'),
     Express = require('express'),
     ExpressSession = require('express-session'),
-    Setup = require("./setup.js");
+    Setup = require("./setup.js"),
+    _defineActions = require("./defineActions.js");
 
 Setup.ready(_main);
 
 async function _main(policyAgent) {
 
     let
-        { pep, pdp, pip, pap } = policyAgent,
+        { pep } = policyAgent,
         app = Express(),
         server = Http.createServer(app);
+
+    _defineActions(pep);
 
     app.use(BodyParser.urlencoded({ extended: false }));
     app.use(BodyParser.json());
@@ -24,7 +27,7 @@ async function _main(policyAgent) {
         cookie: { secure: false }
     }));
 
-    app.get("/", function (request, response) {
+    app.get("/", function (request, response, next) {
         let
             param = {
                 action: "readFile",
@@ -36,9 +39,7 @@ async function _main(policyAgent) {
             session = request.session,
             args = [response];
 
-        pep.request(param, session, ...args).then((result) => {
-            response.type('text/html').send(result);
-        }).catch(next);
+        pep.request(param, session, ...args).catch(next);
     });
 
     app.use(function (request, response, next) {
@@ -50,5 +51,5 @@ async function _main(policyAgent) {
         pep.request(param, session, ...args).catch(next);
     });
 
-    server.listen(80, () => console.log("running"));
+    server.listen(80, () => console.log("App running"));
 } // _main
