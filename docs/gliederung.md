@@ -96,6 +96,7 @@ Aus diesem Grund soll das Ziel der Arbeit die Untersuchung der beiden Modelle in
 - Informationen von Resources und Subjects auch in Neo4j, statt in extra PIP
 - Das Action-Modell der ODRL für Server-Policies erweitern, statt es leer zu lassen.
     - Ableitung der Actions dann von eigenem erweiterten Modell
+    - ODRL Policy-Profile erstellen
 - GraphQL als Schnittstelle zu Neo4j in Betracht ziehen
     - [Neo4j - GraphQL](https://neo4j.com/developer/graphql/)
     - [GraphQL - Introduction](https://graphql.github.io/learn/)
@@ -103,7 +104,7 @@ Aus diesem Grund soll das Ziel der Arbeit die Untersuchung der beiden Modelle in
     - [Proposing a Secure XACML architecture ensuring privacy and trust](https://www.researchgate.net/profile/Hs_Venter/publication/228849158_Proposing_a_Secure_XACML_architecture_ensuring_privacy_and_trust/links/00463521dd0113e496000000/Proposing-a-Secure-XACML-architecture-ensuring-privacy-and-trust.pdf)
 - PEP im Browser integrieren für ein Webframework, dadurch besserer Support für Webapps
 
-## Re­sü­mee
+## Resümee
 - Sehr brauchbares Projekt für Server-Applikationen :)
 - ODRL als sehr geeignete Policy-Sprache und bestens einzubetten in Neo4j
 - Implementation ist keine leichte Aufgabe! (vor allem, wenn man alle Features umsetzen will)
