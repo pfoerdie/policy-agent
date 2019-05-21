@@ -504,6 +504,7 @@ class PAP extends PolicyPoint {
         if (!Array.isArray(responseArr) || responseArr.some(elem => !elem || typeof elem !== 'object'))
             this.throw('_retrievePolicies', new TypeError(`invalid argument`));
 
+        this.log('_retrievePolicies', "send request-query to Neo4j");
         let resultArr = await _requestNeo4j.call(this, _retrievePoliciesQuery, { 'entries': responseArr });
         // NOTE order of the entries might change
         return resultArr;

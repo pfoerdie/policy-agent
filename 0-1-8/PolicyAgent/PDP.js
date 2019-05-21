@@ -65,7 +65,7 @@ async function _gatherResources(requestContext, responseContext) {
     } // for
 
     for (let resource of found) {
-        if (resource)
+        if (resource && resource['uid'])
             _enumerate(responseContext['resource'], resource['uid'], resource);
     } // for
 
@@ -126,7 +126,8 @@ async function _gatherSubjects(requestContext, responseContext) {
     } // for
 
     for (let subject of found) {
-        _enumerate(responseContext['subject'], subject['uid'], subject);
+        if (subject && subject['uid'])
+            _enumerate(responseContext['subject'], subject['uid'], subject);
     } // for
 
 } // _gatherSubjects
@@ -178,6 +179,7 @@ class PDP extends PolicyPoint {
         /* 1. - create ResponseContext */
 
         const responseContext = new _namespace.ResponseContext(this, requestContext);
+        this.log('_decisionRequest', "ResponseContext constructed");
 
         /* 2. - gather necessary resources and subjects */
 
@@ -185,12 +187,14 @@ class PDP extends PolicyPoint {
             _gatherResources.call(this, requestContext, responseContext),
             _gatherSubjects.call(this, requestContext, responseContext)
         ]);
+        this.log('_decisionRequest', "gathering of subjects and resources completed");
 
         /* 3. - retrieve Policies for the collected data in the responses */
 
         let applicablePolicies = await this.data.PAP._retrievePolicies(
             Object.entries(responseContext['response']).map(entry => entry[1])
         );
+        this.log('_decisionRequest', "collecting of applicable policies completed");
 
         for (let { 'id': requestID, 'result': policyArr } of applicablePolicies) {
             let
@@ -212,6 +216,7 @@ class PDP extends PolicyPoint {
         } // for
 
         _enumerate(responseContext, 'decision', responseContext['response'][responseContext['entryPoint']]['decision']);
+        this.log('_decisionRequest', "decision assigned");
 
         // TODO für die transfer-Action müssen hier zusätzliche Methoden
         //      angehängt werden, je nachdem von welchem Typ das target ist.

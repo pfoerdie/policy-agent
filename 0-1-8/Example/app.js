@@ -27,28 +27,23 @@ async function _main(policyAgent) {
         cookie: { secure: false }
     }));
 
-    app.get("/", function (request, response, next) {
-        let
-            param = {
-                action: "readFile",
-                target: {
-                    '@type': "File",
-                    '@id': "/"
-                }
-            },
-            session = request.session,
-            args = [response];
+    let
+        getFiles = ["/", "/favicon.ico"],
+        tmpRplStr = getFiles.map(str => str.replace(/\/|\./g, match => "\\" + match)).join("|"),
+        RE_files = new RegExp(`^(?:${tmpRplStr})$`);
 
-        pep.request(param, session, ...args).catch(next);
+    app.use(function (request, response, next) {
+        console.log("__________________________________________________\n");
+        next();
     });
 
-    app.get("/favicon.ico", function (request, response, next) {
+    app.get(RE_files, function (request, response, next) {
         let
             param = {
                 action: "readFile",
                 target: {
                     '@type': "File",
-                    '@id': "/favicon.ico"
+                    '@id': request.url
                 }
             },
             session = request.session,
@@ -63,7 +58,8 @@ async function _main(policyAgent) {
             session = request.session,
             args = [response];
 
-        pep.request(param, session, ...args).catch(next);
+        if (!param['action']) response.sendStatus(400);
+        else pep.request(param, session, ...args).catch(next);
     });
 
     server.listen(80, () => console.log("App running"));

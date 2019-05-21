@@ -5,48 +5,98 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Hello World!</title>
+    <title>kunde:auflisten</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 </head>
 
 <body>
-    <h2>Test (kunde:auflisten)</h2>
+    <h2>Test</h2>
+
+    <form action="#" id="loginForm">
+        <input type="text" name="user" id="userInput" placeholder="user">
+        <input type="submit" value="kunde:auflisten">
+    </form>
+
+    <p>User: <span id="userDisplay"></span></p>
+    <h3>Waren</h3>
+    <ul id="warenListe"></ul>
 
     <script>
-        let userID = "";
-        let search = /user=(.+(!?&|$))/.exec(location.search);
-        if (search) userID = search[1];
 
-        $('body').append(`<p>Kunde: ${userID}</p>`);
+        $('#loginForm').submit(function (event) {
+            event.preventDefault();
+            let userID = $('#userInput').val();
+            $('#userDisplay').text(userID);
+            $warenListe = $('#warenListe');
+            $warenListe.html(`<li>...</li>`);
 
-        $.ajax({
-            type: "POST",
-            url: location.href,
-            data: {
-                action: "kunde:auflisten",
-                target: {
-                    '@type': "Collection",
-                    '@id': "Ware"
-                },
-                assignee: {
-                    '@type': "User",
-                    '@id': userID
-                }
-            },
-            success: function (result) {
-                if (Array.isArray(result)) {
-                    let $list = $(`<ul></ul>`);
-                    for (let entry of result) {
-                        $list.append(`<li>${entry.Bezeichnung}: ${entry.Preis}</li>`);
+            $.ajax({
+                type: "POST",
+                url: location.href,
+                data: {
+                    action: "kunde:auflisten",
+                    target: {
+                        '@type': "Collection",
+                        '@id': "Ware"
+                    },
+                    assignee: {
+                        '@type': "User",
+                        '@id': userID
                     }
-                    $('body').append(`<h3>Waren</h3>`).append($list);
+                },
+                success: function (result) {
+                    try {
+                        $warenListe.empty();
+                        result.forEach(entry =>
+                            $warenListe.append(`<li>${entry.Bezeichnung}: ${entry.Preis}</li>`)
+                        );
+                    } catch (err) {
+                        console.error(err);
+                        $warenListe.append(`<li>Invalid result</li>`);
+                    }
+                },
+                error: function (err) {
+                    console.error(err);
+                    $warenListe.empty();
+                    $warenListe.append(`<li>Request failed</li>`);
                 }
-            },
-            error: function (err) {
-                console.error(err);
-                $('body').append(`<p>Request failed</p>`);
-            }
+            });
         });
+
+        // let userID = "";
+        // let search = /user=(.+(!?&|$))/.exec(location.search);
+        // if (search) userID = search[1];
+
+        // $('body').append(`<p>Kunde: ${userID}</p>`);
+
+        // $.ajax({
+        //     type: "POST",
+        //     url: location.href,
+        //     data: {
+        //         action: "kunde:auflisten",
+        //         target: {
+        //             '@type': "Collection",
+        //             '@id': "Ware"
+        //         },
+        //         assignee: {
+        //             '@type': "User",
+        //             '@id': userID
+        //         }
+        //     },
+        //     success: function (result) {
+        //         if (Array.isArray(result)) {
+        //             let $list = $(`<ul></ul>`);
+        //             for (let entry of result) {
+        //                 $list.append(`<li>${entry.Bezeichnung}: ${entry.Preis}</li>`);
+        //             }
+        //             $('body').append(`<h3>Waren</h3>`).append($list);
+        //         }
+        //     },
+        //     error: function (err) {
+        //         console.error(err);
+        //         $('body').append(`<p>Request failed</p>`);
+        //     }
+        // });
     </script>
 </body>
 

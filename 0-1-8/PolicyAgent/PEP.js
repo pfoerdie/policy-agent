@@ -162,22 +162,28 @@ class PEP extends PolicyPoint {
         /* 1. - create RequestContext */
 
         let requestContext = new _namespace.RequestContext(this, param, session);
+        this.log('request', "RequestContext constructed");
 
         /* 2. - send RequestContext to PDP#_decisionRequest */
 
         let responseContext = await this.data.PDP._decisionRequest(requestContext);
+        this.log('request', "ResponseContext recieved");
 
         // console.log(JSON.stringify(requestContext, null, 2));
         // console.log(JSON.stringify(responseContext, null, 2));
 
         if (responseContext['decision'] === 'Deny')
-            throw new Error("Permission denied");
+            this.throw('request', new Error("permission denied"));
         if (responseContext['decision'] === 'NotApplicable')
-            throw new Error("Decision not possible");
+            this.throw('request', new Error("decision not possible"));
+
+        this.log('request', "response-permission seems fine");
 
         /* 3. - execute Actions */
 
         let result = await _executeActionRequest.call(this, session, responseContext, requestContext['entryPoint'], ...args);
+
+        this.log('request', "execution of actions finished");
         return result;
 
     } // PEP#request
@@ -223,6 +229,8 @@ class PEP extends PolicyPoint {
             action: actionName,
             includedIn, implies
         });
+
+        this.log('defineAction', actionName + " defined");
 
     } // PEP#defineAction
 
