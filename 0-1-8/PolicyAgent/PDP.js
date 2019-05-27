@@ -201,7 +201,7 @@ class PDP extends PolicyPoint {
                 response = responseContext['response'][requestID],
                 // INFO "Permit" | "Deny" | "Condition" | "Indeterminate" | "NotApplicable"
                 decision = policyArr.reduce((decision, policy) => {
-                    if (decision === "Indeterminate" && policy['ruleType'] === 'permission')
+                    if (decision === "NotApplicable" && policy['ruleType'] === 'permission')
                         return "Permit";
                     if (policy['ruleType'] === 'prohibition')
                         return "Deny";
@@ -210,7 +210,7 @@ class PDP extends PolicyPoint {
                      * was später durch ConflictTerm entschieden werden muss.
                      */
                     return decision;
-                }, "Indeterminate");
+                }, "NotApplicable");
 
             _enumerate(response, 'decision', decision);
         } // for

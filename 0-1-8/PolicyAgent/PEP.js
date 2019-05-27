@@ -174,7 +174,7 @@ class PEP extends PolicyPoint {
 
         if (responseContext['decision'] === 'Deny')
             this.throw('request', new Error("permission denied"));
-        if (responseContext['decision'] === 'NotApplicable')
+        if (responseContext['decision'] === 'Indeterminate')
             this.throw('request', new Error("decision not possible"));
 
         this.log('request', "response-permission seems fine");
