@@ -1,8 +1,7 @@
 const
     Assert = require('assert'),
     T = require("./tools.js"),
-    _module = require("./index.js"),
-    _readyPromise = new Promise(resolve => process.nextTick(() => _module.PRP.ping().then(resolve)));
+    _module = require("./index.js");
 
 class Context {
 
@@ -21,7 +20,7 @@ class Context {
 
     async exec(request) {
         Assert.equal(this.phase, 'idle');
-        Assert(await _readyPromise, "PRP not connected");
+        Assert(await _module.PRP.ping(), "PRP not connected");
         this.tss = T.hrt();
         try {
 
@@ -48,7 +47,6 @@ class Context {
         } catch (err) {
             this.phase = 'error';
             this.error = err;
-            throw err;
         }
         this.tse = T.hrt();
     } // Context#exec
