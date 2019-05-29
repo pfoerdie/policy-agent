@@ -7,13 +7,18 @@ const
 
 T.enumerate(PEP, 'request', async function (param) {
     let context = new Context();
-    await context.exec({ /* request */ });
+    await context.exec({
+        action: param['action'] || null,
+        target: param['target'] || null,
+        assignee: param['assignee'] || null
+    });
     // TODO
 }); // PEP.request
 
-T.define(PEP, '_makeRequests', function (context, request) {
+T.define(PEP, '_makeRequest', function (context, request) {
     Assert(context instanceof Context, "invalid context");
+    Assert.equal(context.phase, 'make_request');
     // TODO
-}); // PEP._makeRequests
+}); // PEP._makeRequest
 
 module.exports = PEP;

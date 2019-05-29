@@ -5,9 +5,16 @@ const
     T = require("./tools.js"),
     PXP = {};
 
-T.define(PEP, '_expandActions', function (context) {
+T.define(PXP, '_expandAction', function (context) {
     Assert(context instanceof Context, "invalid context");
+    Assert.equal(context.phase, 'expand_action');
     // TODO
-}); // PEP._expandActions
+}); // PXP._expandAction
+
+T.define(PXP, '_executeAction', function (context) {
+    Assert(context instanceof Context, "invalid context");
+    Assert.equal(context.phase, 'execute_action');
+    // TODO
+}); // PXP._executeAction
 
 module.exports = PXP;

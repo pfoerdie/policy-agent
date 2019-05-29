@@ -19,19 +19,26 @@ class Context {
     } // Context#constructor
 
     async exec(request) {
-        Assert.equal(this.phase, 'idle', "already executed");
+        Assert.equal(this.phase, 'idle');
         try {
 
-            this.phase = 'make_requests';
-            await PEP._makeRequests(this, request);
+            this.phase = 'make_request';
+            await PEP._makeRequest(this, request);
 
-            this.phase = 'expand_actions';
-            await PXP._expandActions(this);
+            this.phase = 'expand_action';
+            await PXP._expandAction(this);
 
-            // PIP._retrieveEntities
-            // PAP._retrievePolicies
-            // PDP._makeDecision
-            // PXP._executeActions
+            this.phase = 'cache_entities';
+            await PIP._cacheEntities(this);
+
+            this.phase = 'cache_policies';
+            await PAP._cachePolicies(this);
+
+            this.phase = 'make_decision';
+            await PDP._makeDecision(this);
+
+            this.phase = 'execute_action';
+            await PXP._executeAction(this);
 
             this.phase = 'finished';
             this.tse = T.hrt();
