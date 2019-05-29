@@ -39,4 +39,16 @@ T.enumerate(PRP, 'ping', async function () {
     }
 });
 
+T.define(PRP, '_retrieveActions', async function () {
+    // TODO
+}); // PRP._retrieveActions
+
+T.define(PRP, '_retrieveEntities', async function () {
+    // TODO
+}); // PRP._retrieveEntities
+
+T.define(PRP, '_retrievePolicies', async function () {
+    // TODO
+}); // PRP._retrievePolicies
+
 module.exports = PRP;

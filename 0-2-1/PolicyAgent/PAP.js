@@ -5,9 +5,9 @@ const
     T = require("./tools.js"),
     PAP = {};
 
-T.define(PAP, '_cachePolicies', function (context) {
+T.define(PAP, '_cachePolicies', async function (context) {
     Assert(context instanceof Context, "invalid context");
-    Assert.equal(this.phase, 'cache_policies');
+    Assert.equal(context.phase, 'cache_policies');
     // TODO
 }); // PAP._cachePolicies
 

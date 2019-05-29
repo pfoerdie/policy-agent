@@ -5,9 +5,9 @@ const
     T = require("./tools.js"),
     PIP = {};
 
-T.define(PIP, '_cacheEntities', function (context) {
+T.define(PIP, '_cacheEntities', async function (context) {
     Assert(context instanceof Context, "invalid context");
-    Assert.equal(this.phase, 'cache_entities');
+    Assert.equal(context.phase, 'cache_entities');
     // TODO
 }); // PIP._cacheEntities
 

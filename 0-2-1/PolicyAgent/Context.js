@@ -1,15 +1,23 @@
 const
     Assert = require('assert'),
-    PRP = require("./PRP.js"),
-    PIP = require("./PIP.js"),
-    PAP = require("./PAP.js"),
-    PDP = require("./PDP.js"),
-    PXP = require("./PXP.js"),
+    T = require("./tools.js");
+
+let PRP, PIP, PAP, PDP, PXP, PEP, _ready = false;
+
+process.nextTick(function () {
+    PRP = require("./PRP.js");
+    PIP = require("./PIP.js");
+    PAP = require("./PAP.js");
+    PDP = require("./PDP.js");
+    PXP = require("./PXP.js");
     PEP = require("./PEP.js");
+    _ready = true;
+});
 
 class Context {
 
     constructor() {
+        Assert(_ready, "not ready yet");
         this.phase = 'idle';
         this.id = T.uuid();
         this.tss = T.hrt();
@@ -40,11 +48,11 @@ class Context {
             this.phase = 'execute_action';
             await PXP._executeAction(this);
 
-            this.phase = 'finished';
+            this.phase = 'success';
             this.tse = T.hrt();
 
         } catch (err) {
-            this.phase = 'failed';
+            this.phase = 'error';
             this.tse = T.hrt();
             throw err;
         }

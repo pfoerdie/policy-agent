@@ -7,7 +7,7 @@ const
 
 T.define(PDP, '_makeDecision', function (context) {
     Assert(context instanceof Context, "invalid context");
-    Assert.equal(this.phase, 'make_decision');
+    Assert.equal(context.phase, 'make_decision');
     // TODO
 }); // PDP._makeDecision
 
