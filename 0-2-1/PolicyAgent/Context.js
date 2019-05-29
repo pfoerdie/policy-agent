@@ -1,6 +1,5 @@
 const
     Assert = require('assert'),
-    UUID = require('uuid/v4'),
     PRP = require("./PRP.js"),
     PIP = require("./PIP.js"),
     PAP = require("./PAP.js"),
@@ -12,7 +11,8 @@ class Context {
 
     constructor() {
         this.phase = 'idle';
-        this.id = UUID();
+        this.id = T.uuid();
+        this.tss = T.hrt();
         this.requests = new Map();
         this.cache = new Map();
         // TODO
