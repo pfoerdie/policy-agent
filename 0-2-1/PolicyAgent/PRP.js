@@ -34,7 +34,7 @@ T.enumerate(PRP, 'ping', async function () {
         session.close();
         return true;
     } catch (err) {
-        console.error(err.message);
+        console.error(err.toString());
         return false;
     }
 });
