@@ -11,4 +11,8 @@ T.define(PIP, '_cacheEntities', async function (context) {
     // TODO
 }); // PIP._cacheEntities
 
+T.define(PIP, '_getInformation', async function () {
+    // TODO
+}); // PIP._getInformation
+
 module.exports = PIP;
