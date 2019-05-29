@@ -8,7 +8,7 @@ const
 let
     _driver = null;
 
-T.define(PRP, 'connect', function (host = "localhost", user = "neo4j", password = "neo4j") {
+T.enumerate(PRP, 'connect', function (host = "localhost", user = "neo4j", password = "neo4j") {
     Assert(host && typeof host === 'string');
     Assert(user && typeof user === 'string');
     Assert(password && typeof password === 'string');
@@ -26,7 +26,7 @@ T.defineGetter(PRP, 'connected', function () {
     return !!_driver;
 }); // PRP.connected
 
-T.define(PRP, 'ping', async function () {
+T.enumerate(PRP, 'ping', async function () {
     Assert(_driver, "not connected");
     try {
         let session = _driver.session();
