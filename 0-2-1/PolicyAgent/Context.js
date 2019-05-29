@@ -1,7 +1,7 @@
 const
     Assert = require('assert'),
-    T = require("./tools.js"),
-    _module = require("./index.js");
+    _module = require("./index.js"),
+    T = require("./tools.js");
 
 class Context {
 

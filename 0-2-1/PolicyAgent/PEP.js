@@ -1,7 +1,7 @@
 const
     Assert = require('assert'),
     Context = require("./Context.js"),
-    PRP = require("./PRP.js"),
+    _module = require("./index.js"),
     T = require("./tools.js"),
     PEP = {};
 

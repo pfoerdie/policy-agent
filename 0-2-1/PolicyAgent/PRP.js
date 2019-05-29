@@ -1,7 +1,7 @@
 const
     Assert = require('assert'),
     Neo4j = require("neo4j-driver").v1,
-    Context = require("./Context.js"),
+    _module = require("./index.js"),
     T = require("./tools.js"),
     PRP = {};
 
@@ -12,12 +12,12 @@ T.enumerate(PRP, 'connect', function (host = "localhost", user = "neo4j", passwo
     Assert(host && typeof host === 'string');
     Assert(user && typeof user === 'string');
     Assert(password && typeof password === 'string');
-    Assert(!_driver, "already connected");
+    Assert(!_driver, "PRP already connected");
     _driver = Neo4j.driver("bolt://" + host, Neo4j.auth.basic(user, password));
 }); // PRP.connect
 
 T.define(PRP, 'disconnect', function () {
-    Assert(_driver, "not connected");
+    Assert(_driver, "PRP not connected");
     _driver.close();
     _driver = null;
 }); // PRP.disconnect
@@ -27,7 +27,7 @@ T.defineGetter(PRP, 'connected', function () {
 }); // PRP.connected
 
 T.enumerate(PRP, 'ping', async function () {
-    Assert(_driver, "not connected");
+    Assert(_driver, "PRP not connected");
     try {
         let session = _driver.session();
         await session.run("RETURN NULL");
