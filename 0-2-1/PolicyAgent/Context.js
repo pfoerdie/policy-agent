@@ -1,61 +1,56 @@
 const
     Assert = require('assert'),
-    T = require("./tools.js");
-
-let PRP, PIP, PAP, PDP, PXP, PEP, _ready = false;
-
-process.nextTick(function () {
-    PRP = require("./PRP.js");
-    PIP = require("./PIP.js");
-    PAP = require("./PAP.js");
-    PDP = require("./PDP.js");
-    PXP = require("./PXP.js");
-    PEP = require("./PEP.js");
-    _ready = true;
-});
+    T = require("./tools.js"),
+    _module = require("./index.js"),
+    _readyPromise = new Promise(resolve => process.nextTick(() => _module.PRP.ping().then(resolve)));
 
 class Context {
 
     constructor() {
-        Assert(_ready, "not ready yet");
-        this.phase = 'idle';
         this.id = T.uuid();
-        this.tss = T.hrt();
+        this.phase = 'idle';
         this.requests = new Map();
         this.cache = new Map();
+        this.mainRequest = null;
+        this.result = null;
+        this.error = null;
+        this.tss = null;
+        this.tse = null;
         // TODO
     } // Context#constructor
 
     async exec(request) {
         Assert.equal(this.phase, 'idle');
+        Assert(await _readyPromise, "PRP not connected");
+        this.tss = T.hrt();
         try {
 
             this.phase = 'make_request';
-            await PEP._makeRequest(this, request);
+            await _module.PEP._makeRequest(this, request);
 
             this.phase = 'expand_action';
-            await PXP._expandAction(this);
+            await _module.PXP._expandAction(this);
 
             this.phase = 'cache_entities';
-            await PIP._cacheEntities(this);
+            await _module.PIP._cacheEntities(this);
 
             this.phase = 'cache_policies';
-            await PAP._cachePolicies(this);
+            await _module.PAP._cachePolicies(this);
 
             this.phase = 'make_decision';
-            await PDP._makeDecision(this);
+            await _module.PDP._makeDecision(this);
 
             this.phase = 'execute_action';
-            await PXP._executeAction(this);
+            await _module.PXP._executeAction(this);
 
             this.phase = 'success';
-            this.tse = T.hrt();
 
         } catch (err) {
             this.phase = 'error';
-            this.tse = T.hrt();
+            this.error = err;
             throw err;
         }
+        this.tse = T.hrt();
     } // Context#exec
 
 } // Context

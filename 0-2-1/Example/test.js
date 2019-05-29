@@ -5,10 +5,8 @@ const { PRP, PIP, PAP, PDP, PXP, PEP } = require("../PolicyAgent");
     PRP.connect(undefined, undefined, "odrl");
     // console.log(await PRP.ping());
 
-    setImmediate(function () {
-        PEP.request({})
-            .then(console.log)
-            .catch(console.error);
-    });
+    PEP.request()
+        .then(console.log)
+        .catch(console.error);
 
 })(/* async closure */).catch(console.error);
