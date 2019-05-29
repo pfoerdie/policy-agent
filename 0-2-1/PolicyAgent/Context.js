@@ -34,9 +34,11 @@ class Context {
             // PXP._executeActions
 
             this.phase = 'finished';
+            this.tse = T.hrt();
 
         } catch (err) {
             this.phase = 'failed';
+            this.tse = T.hrt();
             throw err;
         }
     } // Context#exec
