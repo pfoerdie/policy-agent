@@ -1,5 +1,4 @@
 const
-    Assert = require('assert'),
     _module = require("./index.js"),
     T = require("./tools.js");
 
@@ -19,8 +18,8 @@ class Context {
     } // Context#constructor
 
     async exec(request) {
-        Assert.equal(this.phase, 'idle');
-        Assert(await _module.PRP.ping(), "PRP not connected");
+        T.assert.equal(this.phase, 'idle');
+        T.assert(await _module.PRP.ping(), "PRP not connected");
         this.tss = T.hrt();
         try {
 

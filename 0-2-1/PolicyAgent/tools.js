@@ -1,4 +1,5 @@
 const
+    Assert = require('assert'),
     UUID = require('uuid/v4');
 
 module.exports = {
@@ -13,7 +14,7 @@ module.exports = {
         Object.defineProperty(obj, key, { value: val, enumerable: true }),
 
     hrt: Date.now,
-
     uuid: UUID,
+    assert: Assert
 
 }; // module.exports

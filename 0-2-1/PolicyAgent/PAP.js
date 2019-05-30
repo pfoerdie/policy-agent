@@ -1,14 +1,10 @@
 const
-    Assert = require('assert'),
-    Context = require("./Context.js"),
     _module = require("./index.js"),
-    T = require("./tools.js"),
-    PAP = {};
+    Context = require("./Context.js"),
+    T = require("./tools.js");
 
-T.define(PAP, '_cachePolicies', async function (context) {
-    Assert(context instanceof Context, "invalid context");
-    Assert.equal(context.phase, 'cache_policies');
+T.define(exports, '_cachePolicies', async function (context) {
+    T.assert(context instanceof Context, "invalid context");
+    T.assert.equal(context.phase, 'cache_policies');
     // TODO
 }); // PAP._cachePolicies
-
-module.exports = PAP;

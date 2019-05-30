@@ -3,9 +3,9 @@ const { PRP, PIP, PAP, PDP, PXP, PEP } = require("../PolicyAgent");
 
 (async (/* async closure */) => {
 
-    await require("./setup.js");
+    // await require("./setup.js");
 
-    PRP.connect(undefined, undefined, "odrl");
+    // PRP.connect(undefined, undefined, "odrl");
 
     PEP.request()
         .then(console.log)

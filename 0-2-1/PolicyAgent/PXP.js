@@ -1,20 +1,16 @@
 const
-    Assert = require('assert'),
-    Context = require("./Context.js"),
     _module = require("./index.js"),
-    T = require("./tools.js"),
-    PXP = {};
+    Context = require("./Context.js"),
+    T = require("./tools.js");
 
-T.define(PXP, '_expandAction', function (context) {
-    Assert(context instanceof Context, "invalid context");
-    Assert.equal(context.phase, 'expand_action');
+T.define(exports, '_expandAction', function (context) {
+    T.assert(context instanceof Context, "invalid context");
+    T.assert.equal(context.phase, 'expand_action');
     // TODO
 }); // PXP._expandAction
 
-T.define(PXP, '_executeAction', function (context) {
-    Assert(context instanceof Context, "invalid context");
-    Assert.equal(context.phase, 'execute_action');
+T.define(exports, '_executeAction', function (context) {
+    T.assert(context instanceof Context, "invalid context");
+    T.assert.equal(context.phase, 'execute_action');
     // TODO
 }); // PXP._executeAction
-
-module.exports = PXP;

@@ -1,14 +1,10 @@
 const
-    Assert = require('assert'),
-    Context = require("./Context.js"),
     _module = require("./index.js"),
-    T = require("./tools.js"),
-    PDP = {};
+    Context = require("./Context.js"),
+    T = require("./tools.js");
 
-T.define(PDP, '_makeDecision', function (context) {
-    Assert(context instanceof Context, "invalid context");
-    Assert.equal(context.phase, 'make_decision');
+T.define(exports, '_makeDecision', function (context) {
+    T.assert(context instanceof Context, "invalid context");
+    T.assert.equal(context.phase, 'make_decision');
     // TODO
 }); // PDP._makeDecision
-
-module.exports = PDP;
