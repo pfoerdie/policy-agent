@@ -1,31 +1,31 @@
 const
+    _ = require("./tools.js"),
     _module = require("./index.js"),
-    Neo4j = require("neo4j-driver").v1,
-    T = require("./tools.js");
+    Neo4j = require("neo4j-driver").v1;
 
 let
     _driver = null;
 
-T.enumerate(exports, 'connect', function (host = "localhost", user = "neo4j", password = "neo4j") {
-    T.assert(host && typeof host === 'string');
-    T.assert(user && typeof user === 'string');
-    T.assert(password && typeof password === 'string');
-    T.assert(!_driver, "PRP already connected");
+_.enumerate(exports, 'connect', function (host = "localhost", user = "neo4j", password = "neo4j") {
+    _.assert(host && typeof host === 'string');
+    _.assert(user && typeof user === 'string');
+    _.assert(password && typeof password === 'string');
+    _.assert(!_driver, "PRP already connected");
     _driver = Neo4j.driver("bolt://" + host, Neo4j.auth.basic(user, password));
 }); // PRP.connect
 
-T.define(exports, 'disconnect', function () {
-    T.assert(_driver, "PRP not connected");
+_.define(exports, 'disconnect', function () {
+    _.assert(_driver, "PRP not connected");
     _driver.close();
     _driver = null;
 }); // PRP.disconnect
 
-T.defineGetter(exports, 'connected', function () {
+_.defineGetter(exports, 'connected', function () {
     return !!_driver;
 }); // PRP.connected
 
-T.enumerate(exports, 'ping', async function () {
-    T.assert(_driver, "PRP not connected");
+_.enumerate(exports, 'ping', async function () {
+    _.assert(_driver, "PRP not connected");
     try {
         let session = _driver.session();
         await session.run("RETURN NULL");
@@ -37,14 +37,14 @@ T.enumerate(exports, 'ping', async function () {
     }
 });
 
-T.define(exports, '_retrieveActions', async function () {
+_.define(exports, '_retrieveActions', async function () {
     // TODO
 }); // PRP._retrieveActions
 
-T.define(exports, '_retrieveEntities', async function () {
+_.define(exports, '_retrieveEntities', async function () {
     // TODO
 }); // PRP._retrieveEntities
 
-T.define(exports, '_retrievePolicies', async function () {
+_.define(exports, '_retrievePolicies', async function () {
     // TODO
 }); // PRP._retrievePolicies

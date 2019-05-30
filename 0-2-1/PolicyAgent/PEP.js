@@ -1,9 +1,9 @@
 const
+    _ = require("./tools.js"),
     _module = require("./index.js"),
-    Context = require("./Context.js"),
-    T = require("./tools.js");
+    Context = require("./Context.js");
 
-T.enumerate(exports, 'request', async function (param = {}) {
+_.enumerate(exports, 'request', async function (param = {}) {
     let context = new Context();
 
     await context.exec({
@@ -18,8 +18,8 @@ T.enumerate(exports, 'request', async function (param = {}) {
     else if (context.phase === 'success') return context.result;
 }); // PEP.request
 
-T.define(exports, '_makeRequest', function (context, request) {
-    T.assert(context instanceof Context, "invalid context");
-    T.assert.equal(context.phase, 'make_request');
+_.define(exports, '_makeRequest', function (context, request) {
+    _.assert(context instanceof Context, "invalid context");
+    _.assert.equal(context.phase, 'make_request');
     // TODO
 }); // PEP._makeRequest

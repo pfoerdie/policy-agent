@@ -1,11 +1,11 @@
 const
-    _module = require("./index.js"),
-    T = require("./tools.js");
+    _ = require("./tools.js"),
+    _module = require("./index.js");
 
 class Context {
 
     constructor() {
-        this.id = T.uuid();
+        this.id = _.uuid();
         this.phase = 'idle';
         this.requests = new Map();
         this.cache = new Map();
@@ -18,9 +18,9 @@ class Context {
     } // Context#constructor
 
     async exec(request) {
-        T.assert.equal(this.phase, 'idle');
-        T.assert(await _module.PRP.ping(), "PRP not connected");
-        this.tss = T.hrt();
+        _.assert.equal(this.phase, 'idle');
+        _.assert(await _module.PRP.ping(), "PRP not connected");
+        this.tss = _.hrt();
         try {
 
             this.phase = 'make_request';
@@ -47,7 +47,7 @@ class Context {
             this.phase = 'error';
             this.error = err;
         }
-        this.tse = T.hrt();
+        this.tse = _.hrt();
     } // Context#exec
 
 } // Context
