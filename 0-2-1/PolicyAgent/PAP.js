@@ -5,6 +5,6 @@ const
 
 _.define(exports, '_cachePolicies', async function (context) {
     _.assert(context instanceof Context, "invalid context");
-    _.assert.equal(context.phase, 'cache_policies');
+    _.assert(context.phase === 'cache_policies');
     // TODO
 }); // PAP._cachePolicies

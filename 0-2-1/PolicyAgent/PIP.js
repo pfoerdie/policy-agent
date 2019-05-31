@@ -5,7 +5,7 @@ const
 
 _.define(exports, '_cacheEntities', async function (context) {
     _.assert(context instanceof Context, "invalid context");
-    _.assert.equal(context.phase, 'cache_entities');
+    _.assert(context.phase === 'cache_entities');
     // TODO
 }); // PIP._cacheEntities
 

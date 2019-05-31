@@ -37,7 +37,7 @@ _.enumerate(exports, 'ping', async function () {
     }
 });
 
-_.define(exports, '_retrieveActions', async function () {
+_.define(exports, '_retrieveActions', async function (actionID) {
     // TODO
 }); // PRP._retrieveActions
 
@@ -48,3 +48,22 @@ _.define(exports, '_retrieveEntities', async function () {
 _.define(exports, '_retrievePolicies', async function () {
     // TODO
 }); // PRP._retrievePolicies
+
+async function _requestNeo4j(query, param = null) {
+    _.assert(_driver);
+    _.assert(typeof query === 'string');
+    _.assert(typeof param === 'object');
+
+    let
+        session = _driver.session(),
+        result = await session.run(query, param);
+
+    session.close();
+    return result['records'].map(record => {
+        let betterRecord = {};
+        for (let key of record['keys']) {
+            _.enumerate(betterRecord, key, record['_fields'][record['_fieldLookup'][key]]);
+        }
+        return betterRecord;
+    });
+} // _requestNeo4j

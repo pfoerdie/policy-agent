@@ -5,7 +5,9 @@ const { PRP, PIP, PAP, PDP, PXP, PEP } = require("../PolicyAgent");
 
     // await require("./setup.js");
 
-    // PRP.connect(undefined, undefined, "odrl");
+    PRP.connect(undefined, undefined, "odrl");
+
+    PXP.defineAction('test', function () { console.log("Lorem Ipsum") });
 
     PEP.request()
         .then(console.log)
