@@ -8,7 +8,7 @@ const
 
 function _startNeo4j() {
     let
-        path_neo4j = Path.join(__dirname, "../../0-1-8_current/Example/neo4j-community-3.5.5"),
+        path_neo4j = Path.join(__dirname, "../neo4j-community-3.5.6"),
         cmd_startNeo4j = `cd "${path_neo4j}" && cd bin && start neo4j.bat console`,
         driver = Neo4j.driver(
             `bolt://localhost:7687`,
@@ -44,10 +44,15 @@ async function _initialize() {
     let seconds = 0, loop = setInterval(() => console.log("... " + (++seconds)), 1e3);
 
     console.log("starting Neo4j ...");
-    await _startNeo4j();
 
-    clearInterval(loop);
-    console.log("... finished\n");
+    try {
+        await _startNeo4j();
+        clearInterval(loop);
+        console.log("... finished\n");
+    } catch (err) {
+        clearInterval(loop);
+        throw err;
+    }
 } // _initialize
 
 
