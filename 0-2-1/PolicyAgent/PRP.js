@@ -37,7 +37,20 @@ _.enumerate(exports, 'ping', async function () {
     }
 });
 
+_.enumerate(exports, 'defineAction', async function (actionID, includedIn, implies = []) {
+    _.assert(actionID && typeof actionID === 'string', "invalid actionID");
+    if (actionID === 'use' || actionID === 'transfer') {
+        includedIn = null;
+        implies = [];
+    }
+    _.assert((includedIn && typeof includedIn === 'string') || (actionID === 'use' || actionID === 'transfer'), "invalid includedIn");
+    _.assert(Array.isArray(implies) && implies.every(val => val && typeof val === 'string'), "invalid implies");
+    // TODO
+    `MERGE (action:Action {id: $actionID})`;
+}); // PRP.defineAction
+
 _.define(exports, '_retrieveActions', async function (actionID) {
+    _.assert(actionID && typeof actionID === 'string', "invalid actionID");
     // TODO
 }); // PRP._retrieveActions
 
