@@ -18,3 +18,8 @@ exports.assert = (value, errorMsg) => {
 
 exports.hrt = Date.now;
 exports.uuid = UUID;
+
+exports.normalizeStr = str => str
+    .replace(/^\s*\/\/.*\n/mg, "") // remove comments
+    .replace(/\s+/g, " ") // shrink whitespaces
+    .trim();

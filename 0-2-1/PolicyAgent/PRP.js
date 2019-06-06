@@ -35,12 +35,13 @@ _.enumerate(exports, 'ping', async function () {
 }); // PRP.ping
 
 _.define(exports, 'wipeData', async function (confirm = false) {
+    // NOTE maybe delete this method at some point
     _.assert(confirm === true, "wipeData not confirmed");
     await _requestNeo4j(`MATCH (n) DETACH DELETE n`);
     // TODO: await _requestNeo4j(`CREATE CONSTRAINT ON (action:Action) ASSERT action.id IS UNIQUE`);
 }); // PRP.wipeData
 
-const _defineActionQuery = _trimQuery(`
+const _defineActionQuery = _.normalizeStr(`
 MERGE (action:Action {id: $action})
     SET action.valid = true
 
@@ -75,7 +76,7 @@ _.enumerate(exports, 'defineAction', async function (action, includedIn, implies
     await _requestNeo4j(_defineActionQuery, { action, includedIn, implies });
 }); // PRP.defineAction
 
-const _retrieveActionsQuery = _trimQuery(`
+const _retrieveActionsQuery = _.normalizeStr(`
 MATCH (action:Action {id: $action, valid: true})
     OPTIONAL MATCH (action)-[ref:includedIn|:implies]->(target:Action {valid: true})
     RETURN [action.id, type(ref), target.id] AS result
@@ -108,15 +109,37 @@ _.define(exports, '_retrieveActions', async function (action) {
     return Array.from(resultMap.values());
 }); // PRP._retrieveActions
 
-const _retrieveEntitiesQuery = _trimQuery(`
+const _findEntitiesQuery = _.normalizeStr(`
+UNWIND $entities AS entity
+MATCH (result:Asset|:Party|:AssetCollection|:PartyCollection)
+WHERE all(
+    key in keys(entity)
+    WHERE result[key] = entity[key]
+)
+RETURN result
     // TODO
-`); // _retrieveEntitiesQuery
+`); // _findEntitiesQuery
 
-_.define(exports, '_retrieveEntities', async function () {
+_.define(exports, '_findEntities', async function (...entities) {
+    _.assert(entities.every(val => val && typeof val === 'object'));
+
+    let recordArr = await _requestNeo4j(_findEntitiesQuery, { entities });
     // TODO
-}); // PRP._retrieveEntities
+}); // PRP._findEntities
 
-const _retrievePoliciesQuery = _trimQuery(`
+_.define(exports, '_createEntities', async function () {
+    // TODO
+}); // PRP._createEntities
+
+_.define(exports, '_updateEntities', async function () {
+    // TODO
+}); // PRP._updateEntities
+
+_.define(exports, '_deleteEntities', async function () {
+    // TODO
+}); // PRP._deleteEntities
+
+const _retrievePoliciesQuery = _.normalizeStr(`
     // TODO
 `); // _retrievePoliciesQuery
 
@@ -142,11 +165,3 @@ async function _requestNeo4j(query, param = null) {
         return betterRecord;
     });
 } // _requestNeo4j
-
-function _trimQuery(query) {
-    _.assert(typeof query === 'string');
-    return query
-        .replace(/^\s*\/\/.*\n/mg, "") // remove comments
-        .replace(/\s+/g, " ") // shrink whitespaces
-        .trim();
-} // _trimQuery
