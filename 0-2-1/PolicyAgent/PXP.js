@@ -11,7 +11,7 @@ _.define(exports, '_expandAction', async function (context) {
     _.assert(context.phase === 'expand_action');
     let mainRequest = context.requests[0];
     _.assert(mainRequest.id === context.mainRequest);
-    let result = await _module.PRP._retrieveActions(mainRequest.action);
+    let result = await _module.PRP._extractActions(mainRequest.action);
     // TODO
 }); // PXP._expandAction
 

@@ -76,7 +76,7 @@ _.enumerate(exports, 'defineAction', async function (action, includedIn, implies
     await _requestNeo4j(_defineActionQuery, { action, includedIn, implies });
 }); // PRP.defineAction
 
-const _retrieveActionsQuery = _.normalizeStr(`
+const _extractActionsQuery = _.normalizeStr(`
 MATCH (action:Action {id: $action, valid: true})
     OPTIONAL MATCH (action)-[ref:includedIn|:implies]->(target:Action {valid: true})
     RETURN [action.id, type(ref), target.id] AS result
@@ -84,12 +84,12 @@ UNION
 MATCH (:Action {id: $action, valid: true})-[refs:includedIn|:implies*]->(action:Action {valid: true})
     OPTIONAL MATCH (action)-[ref:includedIn|:implies]->(target:Action {valid: true})
     RETURN [action.id, type(ref), target.id] AS result
-`); // _retrieveActionsQuery
+`); // _extractActionsQuery
 
-_.define(exports, '_retrieveActions', async function (action) {
+_.define(exports, '_extractActions', async function (action) {
     _.assert(action && typeof action === 'string', "invalid action");
 
-    let recordArr = await _requestNeo4j(_retrieveActionsQuery, { action });
+    let recordArr = await _requestNeo4j(_extractActionsQuery, { action });
     let resultMap = new Map();
 
     for (let { 'result': [action, refType, target] } of recordArr) {
@@ -107,7 +107,7 @@ _.define(exports, '_retrieveActions', async function (action) {
     }
 
     return Array.from(resultMap.values());
-}); // PRP._retrieveActions
+}); // PRP._extractActions
 
 const _findEntitiesQuery = _.normalizeStr(`
 UNWIND $entities AS entity
@@ -127,17 +127,7 @@ _.define(exports, '_findEntities', async function (...entities) {
     // TODO
 }); // PRP._findEntities
 
-_.define(exports, '_createEntities', async function () {
-    // TODO
-}); // PRP._createEntities
-
-_.define(exports, '_updateEntities', async function () {
-    // TODO
-}); // PRP._updateEntities
-
-_.define(exports, '_deleteEntities', async function () {
-    // TODO
-}); // PRP._deleteEntities
+// TODO further entity methods
 
 const _retrievePoliciesQuery = _.normalizeStr(`
     // TODO
