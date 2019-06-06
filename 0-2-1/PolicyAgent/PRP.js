@@ -1,6 +1,6 @@
 const
     _ = require("./tools.js"),
-    _module = require("./index.js"),
+    _module = require("./package.js"),
     Neo4j = require("neo4j-driver").v1;
 
 let
@@ -109,23 +109,23 @@ _.define(exports, '_extractActions', async function (action) {
     return Array.from(resultMap.values());
 }); // PRP._extractActions
 
-const _findEntitiesQuery = _.normalizeStr(`
+const _findAssetQuery = _.normalizeStr(`
 UNWIND $entities AS entity
-MATCH (result:Asset|:Party|:AssetCollection|:PartyCollection)
+MATCH (result:Asset)
 WHERE all(
     key in keys(entity)
     WHERE result[key] = entity[key]
 )
 RETURN result
     // TODO
-`); // _findEntitiesQuery
+`); // _findAssetQuery
 
-_.define(exports, '_findEntities', async function (...entities) {
+_.define(exports, '_findAsset', async function (...entities) {
     _.assert(entities.every(val => val && typeof val === 'object'));
 
-    let recordArr = await _requestNeo4j(_findEntitiesQuery, { entities });
+    let recordArr = await _requestNeo4j(_findAssetQuery, { entities });
     // TODO
-}); // PRP._findEntities
+}); // PRP._findAsset
 
 // TODO further entity methods
 

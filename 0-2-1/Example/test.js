@@ -4,11 +4,15 @@ const { PRP, PIP, PAP, PDP, PXP, PEP } = require("../PolicyAgent");
 (async (/* async closure */) => {
 
     await require("./init.js");
-    await require("./setup.js");
+    PRP.connect("localhost", "neo4j", "odrl");
+    // await require("./setup.js");
 
     PXP.defineAction('test', function () { console.log("Lorem Ipsum") });
 
-    PEP.request()
+    PEP.request({
+        target: "lorem_ipsum",
+        action: "read"
+    })
         .then(console.log)
         .catch(console.error);
 

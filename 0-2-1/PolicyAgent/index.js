@@ -1,7 +1,7 @@
-const _ = require("./tools.js");
-_.enumerate(exports, 'PRP', require("./PRP.js"));
-_.enumerate(exports, 'PIP', require("./PIP.js"));
-_.enumerate(exports, 'PAP', require("./PAP.js"));
-_.enumerate(exports, 'PDP', require("./PDP.js"));
-_.enumerate(exports, 'PXP', require("./PXP.js"));
-_.enumerate(exports, 'PEP', require("./PEP.js"));
+const _module = require("./package.js");
+exports.PEP = Object.assign({}, _module.PEP);
+exports.PXP = Object.assign({}, _module.PXP);
+exports.PIP = Object.assign({}, _module.PIP);
+exports.PAP = Object.assign({}, _module.PAP);
+exports.PDP = Object.assign({}, _module.PDP);
+exports.PRP = Object.assign({}, _module.PRP);

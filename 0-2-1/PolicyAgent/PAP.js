@@ -1,6 +1,6 @@
 const
     _ = require("./tools.js"),
-    _module = require("./index.js"),
+    _module = require("./package.js"),
     Context = require("./Context.js");
 
 _.define(exports, '_cachePolicies', async function (context) {

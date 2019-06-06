@@ -1,6 +1,6 @@
 const
     _ = require("./tools.js"),
-    _module = require("./index.js"),
+    _module = require("./package.js"),
     Context = require("./Context.js");
 
 _.enumerate(exports, 'request', async function (param = {}) {
@@ -22,7 +22,9 @@ _.define(exports, '_makeRequest', function (context, request) {
     _.assert(context instanceof Context, "invalid context");
     _.assert(request.action && request.target, "invalid request");
     _.enumerate(request, 'id', _.uuid());
+    _.assert(!context.requests.has(request.id));
     if (context.phase === 'make_request')
         _.define(context, 'mainRequest', request.id);
-    context.requests.push(request);
+    context.requests.set(request.id, request);
+    return request.id;
 }); // PEP._makeRequest

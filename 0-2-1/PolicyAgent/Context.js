@@ -1,6 +1,6 @@
 const
     _ = require("./tools.js"),
-    _module = require("./index.js"),
+    _module = require("./package.js"),
     _private = new WeakMap();
 
 class Context {
@@ -12,7 +12,7 @@ class Context {
             tss: 0,
             tse: 0
         });
-        _.define(this, 'requests', []);
+        _.define(this, 'requests', new Map());
         _.define(this, 'cache', new Map());
         this.mainRequest = null;
         this.result = null;
