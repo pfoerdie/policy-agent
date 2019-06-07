@@ -5,7 +5,7 @@ module.exports = (async (/* async closure */) => {
     await require("./init.js");
 
     PRP.connect("localhost", "neo4j", "odrl");
-    // await PRP.wipeData(true);
+    await PRP.wipeData(true);
 
     await Promise.all([
         PRP.defineAction('use', null, []),
@@ -16,7 +16,11 @@ module.exports = (async (/* async closure */) => {
         PRP.defineAction('test', 'transfer', []),
     ]);
 
-    let tmp = await PRP._retrieveActions('sendFile');
+    let tmp = await PRP._createAsset({
+        type: "File",
+        uid: "hello_world",
+        path: "/hello_world.txt"
+    });
     console.log(tmp);
 
 })(/* async closure */);

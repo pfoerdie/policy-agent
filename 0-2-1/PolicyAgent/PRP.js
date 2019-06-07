@@ -34,11 +34,13 @@ _.enumerate(exports, 'ping', async function () {
     }
 }); // PRP.ping
 
-_.define(exports, 'wipeData', async function (confirm = false) {
-    // NOTE maybe delete this method at some point
+// NOTE maybe delete this method at some point
+_.enumerate(exports, 'wipeData', async function (confirm = false) {
     _.assert(confirm === true, "wipeData not confirmed");
     await _requestNeo4j(`MATCH (n) DETACH DELETE n`);
-    // TODO: await _requestNeo4j(`CREATE CONSTRAINT ON (action:Action) ASSERT action.id IS UNIQUE`);
+    // TODO: 
+    await _requestNeo4j(`CREATE CONSTRAINT ON (action:Action) ASSERT action.id IS UNIQUE`);
+    await _requestNeo4j(`CREATE CONSTRAINT ON (node:ODRL) ASSERT node.uid IS UNIQUE`);
 }); // PRP.wipeData
 
 const _defineActionQuery = _.normalizeStr(`
@@ -126,6 +128,23 @@ _.define(exports, '_findAsset', async function (...entities) {
     let recordArr = await _requestNeo4j(_findAssetQuery, { entities });
     // TODO
 }); // PRP._findAsset
+
+const _createAssetQuery = _.normalizeStr(`
+UNWIND $entities AS entity
+CREATE (result:Asset)
+SET result = entity
+RETURN result
+`); // _createAssetQuery
+
+// TODO _.define
+_.enumerate(exports, '_createAsset', async function (...entities) {
+    _.assert(entities.every(val => val && typeof val === 'object'));
+    _.assert(entities.every(val => val['uid'] && typeof val['uid'] === 'string'));
+    _.assert(entities.every(val => val['type'] && typeof val['type'] === 'string'));
+
+    let recordArr = await _requestNeo4j(_createAssetQuery, { entities });
+    // TODO
+}); // PRP._createAsset
 
 // TODO further entity methods
 
