@@ -3,8 +3,7 @@ const
     _module = require("./package.js"),
     Neo4j = require("neo4j-driver").v1;
 
-let
-    _driver = null;
+let _driver = null;
 
 _.enumerate(exports, 'connect', function (host = "localhost", user = "neo4j", password = "neo4j") {
     _.assert(host && typeof host === 'string');
@@ -122,12 +121,14 @@ RETURN result
     // TODO
 `); // _findAssetQuery
 
-_.define(exports, '_findAsset', async function (...entities) {
-    _.assert(entities.every(val => val && typeof val === 'object'));
+const _RE_atType = /^\w+(?::\w+)*$/;
 
-    let recordArr = await _requestNeo4j(_findAssetQuery, { entities });
+_.define(exports, '_find', async function (entities) {
+    _.assert(Array.isArray(entities) && entities.every(val => val && typeof val === 'object' && _RE_atType.test(val['@type'])));
+
+    // let recordArr = await _requestNeo4j(_findAssetQuery, { entities });
     // TODO
-}); // PRP._findAsset
+}); // PRP._find
 
 const _createAssetQuery = _.normalizeStr(`
 UNWIND $entities AS entity
