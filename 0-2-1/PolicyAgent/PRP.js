@@ -125,6 +125,17 @@ RETURN result
     // TODO
 `); // _findAssetQuery
 
+const _findPartyQuery = _.normalizeStr(`
+UNWIND $parties AS party
+MATCH (result:Party)
+WHERE all(
+    key in keys(party)
+    WHERE result[key] = party[key]
+)
+RETURN result
+    // TODO
+`); // _findPartyQuery
+
 _.define(exports, '_findInformation', async function (entities) {
     _.assert(Array.isArray(entities) && entities.every(val =>
         val && typeof val === 'object' &&
