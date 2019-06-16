@@ -10,7 +10,7 @@ const { PRP, PIP, PAP, PDP, PXP, PEP } = require("../PolicyAgent");
     PXP.defineAction('test', function () { console.log("Lorem Ipsum") });
 
     PEP.request({
-        target: "lorem_ipsum",
+        target: { uid: "lorem_ipsum" },
         action: "read"
     })
         .then(console.log)

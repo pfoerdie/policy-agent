@@ -13,8 +13,10 @@ _.define(exports, '_expandAction', async function (context) {
     _.assert(mainRequest);
     let defResult = await _module.PRP._extractActions(mainRequest.action);
     let defMap = new Map(defResult.map(val => [val.id, val]));
+    console.log(defResult);
+    return; // TODO
     (function expandAction(requestID) {
-        let request = contest.requests.get(request.id);
+        let request = context.requests.get(requestID);
         let def = defMap.get(request.action);
         _.assert(def);
         // TODO find good solution

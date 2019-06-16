@@ -10,6 +10,10 @@ _.define(exports, '_cacheEntities', async function (context) {
     _.assert(context instanceof Context, "invalid context");
     _.assert(context.phase === 'cache_entities');
     // TODO
+    _module.PRP._findInformation([{
+        '@type': "Asset",
+        'uid': "lorem_ipsum"
+    }]); // TODO
 }); // PIP._cacheEntities
 
 _.define(exports, '_getInformation', async function () {

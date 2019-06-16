@@ -115,7 +115,7 @@ _.define(exports, '_extractActions', async function (action) {
 }); // PRP._extractActions
 
 const _findAssetQuery = _.normalizeStr(`
-UNWIND $assets AS asset
+UNWIND $Asset AS asset
 MATCH (result:Asset)
 WHERE all(
     key in keys(asset)
@@ -126,7 +126,7 @@ RETURN result
 `); // _findAssetQuery
 
 const _findPartyQuery = _.normalizeStr(`
-UNWIND $parties AS party
+UNWIND $Party AS party
 MATCH (result:Party)
 WHERE all(
     key in keys(party)
@@ -136,13 +136,29 @@ RETURN result
     // TODO
 `); // _findPartyQuery
 
-_.define(exports, '_findInformation', async function (entities) {
-    _.assert(Array.isArray(entities) && entities.every(val =>
+_.define(exports, '_findInformation', async function (searchArr) {
+    _.assert(Array.isArray(searchArr) && searchArr.every(val =>
         val && typeof val === 'object' &&
         _RE_atType.test(val['@type'])
     ));
 
-    // let recordArr = await _requestNeo4j(_findAssetQuery, { entities });
+    let param = { 'Asset': [] };
+    for (let search of searchArr) {
+        if (param[search['@type']]) {
+            let entity = {}, valid = false;
+            for (let key in search) {
+                if (!key.startsWith('@')) {
+                    entity[key] = search[key];
+                    valid = true;
+                }
+            }
+            if (valid)
+                param[search['@type']].push(entity);
+        }
+    }
+
+    let recordArr = await _requestNeo4j(_findAssetQuery, param);
+    console.log(recordArr);
     // TODO
 }); // PRP._findInformation
 
