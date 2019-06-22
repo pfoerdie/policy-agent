@@ -9,6 +9,12 @@ const
 
 let _driver = null;
 
+function Record(record) {
+    for (let key of record['keys']) {
+        _.enumerate(this, key, record['_fields'][record['_fieldLookup'][key]]);
+    }
+} // Record
+
 _.enumerate(exports, 'connect', function (host = "localhost", user = "neo4j", password = "neo4j") {
     _.assert(host && typeof host === 'string');
     _.assert(user && typeof user === 'string');
@@ -45,6 +51,8 @@ _.enumerate(exports, 'wipeData', async function (confirm = false) {
     await _requestNeo4j(`CREATE CONSTRAINT ON (action:Action) ASSERT action.id IS UNIQUE`);
     await _requestNeo4j(`CREATE CONSTRAINT ON (node:ODRL) ASSERT node.uid IS UNIQUE`);
 }); // PRP.wipeData
+
+//#region PXP
 
 const _defineActionQuery = _.normalizeStr(`
 MERGE (action:Action {id: $action})
@@ -114,51 +122,125 @@ _.define(exports, '_extractActions', async function (action) {
     return Array.from(resultMap.values());
 }); // PRP._extractActions
 
-const _findAssetQuery = _.normalizeStr(`
-UNWIND $Asset AS asset
-MATCH (result:Asset)
-WHERE all(
-    key in keys(asset)
-    WHERE result[key] = asset[key]
-)
-RETURN result
-    // TODO
-`); // _findAssetQuery
+//#endregion PXP
+//#region PIP
 
-const _findPartyQuery = _.normalizeStr(`
-UNWIND $Party AS party
-MATCH (result:Party)
-WHERE all(
-    key in keys(party)
-    WHERE result[key] = party[key]
-)
-RETURN result
-    // TODO
-`); // _findPartyQuery
+const _entities = {
+    'Asset': {
+        findQuery: `
+        MATCH (result:Asset)
+        WHERE all(
+            key in keys($search)
+            WHERE key = "@type"
+            OR (key = "@id" AND $search[key] = result.uid)
+            OR $search[key] = result[key]
+        )
+        RETURN result
+        `,
+        factory(record) {
+            return record;
+        }
+    }
+};
+
+_.define(exports, '_findEntities', async function (searchArr) {
+    _.assert(Array.isArray(searchArr) && searchArr.every(val => typeof val === 'object'));
+
+    let session = _driver.session();
+    let resultArr = await Promise.all(searchArr.map(async (search) => {
+        if (!search) return null;
+        let entityDef = _entities[search['@type']];
+        if (!entityDef) return null;
+        let result = await session.run(entityDef.findQuery, { search });
+        if (result['records'].length !== 1) return null;
+        return entityDef.factory(new Record(result['records'][0]));
+        // return result['records'].map(record => new Record(record));
+    }));
+    session.close();
+
+    return resultArr;
+
+}); // PRP._findEntities
+
+const _findQueries = ['Asset', 'Party'].reduce((result, type) => {
+    let query = _.normalizeStr(`
+    MATCH (result:${type})
+    WHERE all(
+        key in keys($search)
+        WHERE key STARTS WITH "@"
+        OR result[key] = $search[key]
+    )
+    RETURN result
+    `);
+    _.define(result, type, query);
+    return result;
+}, {});
+
+// const _findAssetQuery = _.normalizeStr(`
+// UNWIND $Asset AS asset
+// MATCH (result:Asset)
+// WHERE all(
+//     key in keys(asset)
+//     WHERE result[key] = asset[key]
+// )
+// RETURN result
+//     // TODO
+// `); // _findAssetQuery
+
+// const _findPartyQuery = _.normalizeStr(`
+// UNWIND $Party AS party
+// MATCH (result:Party)
+// WHERE all(
+//     key in keys(party)
+//     WHERE result[key] = party[key]
+// )
+// RETURN result
+//     // TODO
+// `); // _findPartyQuery
 
 _.define(exports, '_findInformation', async function (searchArr) {
     _.assert(Array.isArray(searchArr) && searchArr.every(val =>
-        val && typeof val === 'object' &&
-        _RE_atType.test(val['@type'])
+        val && typeof val === 'object' && _findQueries[val['@type']]
+        // _RE_atType.test(val['@type'])
     ));
 
-    let param = { 'Asset': [] };
-    for (let search of searchArr) {
-        if (param[search['@type']]) {
-            let entity = {}, valid = false;
-            for (let key in search) {
-                if (!key.startsWith('@')) {
-                    entity[key] = search[key];
-                    valid = true;
-                }
-            }
-            if (valid)
-                param[search['@type']].push(entity);
-        }
-    }
+    let session = _driver.session();
+    let resultArr = await Promise.all(searchArr.map(
+        search => session.run(_findQueries[search['@type']], { search })
+    ));
+    session.close();
 
-    let recordArr = await _requestNeo4j(_findAssetQuery, param);
-    console.log(recordArr);
+    resultArr = resultArr.map(result => result['records'].map(record => new Record(record)));
+
+    console.log(resultArr);
+    return;
+
+
+
+    // let param = searchArr.reduce((acc, val) => {
+    //     if (!acc[val['@type']]) {
+    //         let keys = Object.keys(val).filter(key => !key.startsWith('@'));
+    //     }
+    //     return acc;
+    // }, { 'Asset': [] });
+
+    // let param = { 'Asset': [] };
+    // for (let search of searchArr) {
+    //     if (param[search['@type']]) {
+    //         let entity = {}, valid = false;
+    //         for (let key in search) {
+    //             if (!key.startsWith('@')) {
+    //                 entity[key] = search[key];
+    //                 valid = true;
+    //             }
+    //         }
+    //         if (valid)
+    //             param[search['@type']].push(entity);
+    //     }
+    // }
+
+    // let recordArr = await _requestNeo4j(_findAssetQuery, param);
+    // console.log(recordArr);
     // TODO
 }); // PRP._findInformation
 
@@ -200,6 +282,9 @@ _.define(exports, '_deleteInformation', async function (entities) {
 
 // TODO further entity methods
 
+//#endregion PIP
+//#region PAP
+
 const _retrievePoliciesQuery = _.normalizeStr(`
     // TODO
 `); // _retrievePoliciesQuery
@@ -207,6 +292,8 @@ const _retrievePoliciesQuery = _.normalizeStr(`
 _.define(exports, '_retrievePolicies', async function () {
     // TODO
 }); // PRP._retrievePolicies
+
+//#endregion PAP
 
 async function _requestNeo4j(query, param = null) {
     _.assert(_driver);

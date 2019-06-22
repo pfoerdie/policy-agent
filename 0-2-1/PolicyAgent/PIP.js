@@ -10,7 +10,8 @@ _.define(exports, '_cacheEntities', async function (context) {
     _.assert(context instanceof Context, "invalid context");
     _.assert(context.phase === 'cache_entities');
     // TODO
-    _module.PRP._findInformation([{
+    // _module.PRP._findInformation([{
+    _module.PRP._findEntities([{
         '@type': "Asset",
         'uid': "lorem_ipsum"
     }]); // TODO

@@ -11,7 +11,8 @@ exports.enumerate = (obj, key, val) =>
 exports.assert = (value, errorMsg) => {
     if (!value) {
         let err = new Error(errorMsg);
-        err.stack = err.stack.replace(/^.*at .*\.assert \(.*\n/m, "");
+        // err.stack = err.stack.replace(/^.*at .*\.assert \(.*\n/m, "");
+        Error.captureStackTrace(err, exports.assert);
         throw err;
     }
 }; // exports.assert
