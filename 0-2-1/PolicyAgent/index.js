@@ -5,3 +5,4 @@ exports.PIP = Object.assign({}, _module.PIP);
 exports.PAP = Object.assign({}, _module.PAP);
 exports.PDP = Object.assign({}, _module.PDP);
 exports.PRP = Object.assign({}, _module.PRP);
+Object.freeze(exports);
