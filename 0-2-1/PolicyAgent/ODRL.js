@@ -1,16 +1,15 @@
 /** {@link https://www.w3.org/TR/odrl-model/#infoModel ODRL Information Model} */
 
 const
-    _ = require("./tools.js"),
-    _module = require("./package.js"),
-    _private = new WeakMap();
+    _ = require("./tools.js");
 
 class Asset {
 
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
-        _private.set(this, {});
+        _.define(this, 'attributes', {});
+        _.define(this, 'partOf', []);
     } // Asset#constructor
 
 } // Asset
@@ -21,7 +20,6 @@ class AssetCollection extends Asset {
         _.assert(param);
         throw new Error("not implemented jet");
         super(param);
-        _private.set(this, {});
     } // AssetCollection#constructor
 
 } // AssetCollection
@@ -31,7 +29,8 @@ class Party {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
-        _private.set(this, {});
+        _.define(this, 'attributes', {});
+        _.define(this, 'partOf', []);
     } // Party#constructor
 
 } // Party
@@ -42,7 +41,6 @@ class PartyCollection extends Party {
         _.assert(param);
         throw new Error("not implemented jet");
         super(param);
-        _private.set(this, {});
     } // PartyCollection#constructor
 
 } // PartyCollection
@@ -52,7 +50,6 @@ class Action {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
-        _private.set(this, {});
     } // Action#constructor
 
 } // Action
@@ -63,7 +60,6 @@ class Policy {
         _.assert(new.target !== Policy, "Policy is an abstract class.");
         _.assert(param);
         throw new Error("not implemented jet");
-        _private.set(this, {});
     } // Policy#constructor
 
 } // Policy
@@ -74,7 +70,6 @@ class Set extends Policy {
         _.assert(param);
         throw new Error("not implemented jet");
         super(param);
-        _private.set(this, {});
     } // Set#constructor
 
 } // Set
@@ -85,7 +80,6 @@ class Offer extends Policy {
         _.assert(param);
         throw new Error("not implemented jet");
         super(param);
-        _private.set(this, {});
     } // Offer#constructor
 
 } // Offer
@@ -96,7 +90,6 @@ class Agreement extends Policy {
         _.assert(param);
         throw new Error("not implemented jet");
         super(param);
-        _private.set(this, {});
     } // Agreement#constructor
 
 } // Agreement
@@ -106,7 +99,6 @@ class ConflictTerm {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
-        _private.set(this, {});
     } // ConflictTerm#constructor
 
 } // ConflictTerm
@@ -117,7 +109,6 @@ class Rule {
         _.assert(new.target !== Rule, "Rule is an abstract class.");
         _.assert(param);
         throw new Error("not implemented jet");
-        _private.set(this, {});
     } // Rule#constructor
 
 } // Rule
@@ -128,7 +119,6 @@ class Permission extends Rule {
         _.assert(param);
         throw new Error("not implemented jet");
         super(param);
-        _private.set(this, {});
     } // Permission#constructor
 
 } // Permission
@@ -139,7 +129,6 @@ class Prohibition extends Rule {
         _.assert(param);
         throw new Error("not implemented jet");
         super(param);
-        _private.set(this, {});
     } // Prohibition#constructor
 
 } // Prohibition
@@ -150,7 +139,6 @@ class Duty extends Rule {
         _.assert(param);
         throw new Error("not implemented jet");
         super(param);
-        _private.set(this, {});
     } // Duty#constructor
 
 } // Duty
@@ -160,7 +148,6 @@ class Constraint {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
-        _private.set(this, {});
     } // Contraint#constructor
 
 } // Contraint
@@ -170,7 +157,6 @@ class LogicalConstraint {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
-        _private.set(this, {});
     } // LogicalContraint#constructor
 
 } // LogicalContraint
@@ -180,7 +166,6 @@ class Operator {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
-        _private.set(this, {});
     } // Operator#constructor
 
 } // Operator
@@ -190,7 +175,6 @@ class LeftOperand {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
-        _private.set(this, {});
     } // LeftOperand#constructor
 
 } // LeftOperand
@@ -200,7 +184,6 @@ class RightOperand {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
-        _private.set(this, {});
     } // RightOperand#constructor
 
 } // RightOperand

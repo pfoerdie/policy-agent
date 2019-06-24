@@ -1,71 +1,55 @@
 const
     _ = require("./tools.js"),
-    _module = require("./package.js"),
-    _private = new WeakMap();
+    _module = require("./package.js");
 
 class Context {
 
     constructor() {
-        _private.set(this, {
-            id: _.uuid(),
-            phase: 'idle',
-            tss: 0,
-            tse: 0
-        });
+        _.enumerate(this, 'id', _.uuid());
+        this.phase = 'idel';
         _.define(this, 'requests', new Map());
         _.define(this, 'cache', new Map());
+        this.tss = 0;
+        this.tse = 0;
         this.mainRequest = null;
         this.result = null;
         this.error = null;
-        // TODO
     } // Context#constructor
 
-    get id() {
-        return _private.get(this).id;
-    }
-
-    get phase() {
-        return _private.get(this).phase;
-    }
-
     get lifetime() {
-        const _attr = _private.get(this);
-        return _attr.tss ? (_attr.tse || _.hrt()) - _attr.tss : 0;
+        return this.tss ? (this.tse || _.hrt()) - this.tss : 0;
     }
 
     async exec(request) {
-        const _attr = _private.get(this);
-        _.assert(_attr, "Context invalid");
-        _.assert(_attr.phase === 'idle', "Context already executed");
+        _.assert(this.phase === 'idle' && !this._tss && !this._tse, "Context already executed");
         _.assert(await _module.PRP.ping(), "PRP not connected");
-        _attr.tss = _.hrt();
+        _.define(this, 'tss', _.hrt());
         try {
 
-            _attr.phase = 'make_request';
+            this.phase = 'make_request';
             await _module.PEP._makeRequest(this, request);
 
-            _attr.phase = 'expand_action';
+            this.phase = 'expand_action';
             await _module.PXP._expandAction(this);
 
-            _attr.phase = 'cache_entities';
+            this.phase = 'cache_entities';
             await _module.PIP._cacheEntities(this);
 
-            _attr.phase = 'cache_policies';
+            this.phase = 'cache_policies';
             await _module.PAP._cachePolicies(this);
 
-            _attr.phase = 'make_decision';
+            this.phase = 'make_decision';
             await _module.PDP._makeDecision(this);
 
-            _attr.phase = 'execute_action';
+            this.phase = 'execute_action';
             await _module.PXP._executeAction(this);
 
-            _attr.phase = 'success';
-
+            _.enumerate(this, '_phase', 'success');
         } catch (err) {
-            _attr.phase = 'error';
-            _.define(this, 'error', err);
+            _.enumerate(this, '_phase', 'error');
+            _.enumerate(this, 'error', err);
         }
-        _attr.tse = _.hrt();
+        _.define(this, 'tse', _.hrt());
     } // Context#exec
 
 } // Context
