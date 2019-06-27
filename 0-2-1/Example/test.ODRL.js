@@ -1,3 +1,3 @@
 let ODRL = require("../PolicyAgent/ODRL.js");
 
-console.log(ODRL);
+console.log(ODRL.AssetCollection.name);

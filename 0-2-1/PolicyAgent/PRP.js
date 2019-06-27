@@ -1,6 +1,7 @@
 const
     _ = require("./tools.js"),
     _module = require("./package.js"),
+    ODRL = require('./ODRL.js'),
     Neo4j = require("neo4j-driver").v1;
 
 const
@@ -8,12 +9,6 @@ const
     _RE_uid = /^\w+(?::\w+)*$/;
 
 let _driver = null;
-
-function Record(record) {
-    for (let key of record['keys']) {
-        _.enumerate(this, key, record['_fields'][record['_fieldLookup'][key]]);
-    }
-} // Record
 
 _.enumerate(exports, 'connect', function (host = "localhost", user = "neo4j", password = "neo4j") {
     _.assert(host && typeof host === 'string');
@@ -125,162 +120,24 @@ _.define(exports, '_extractActions', async function (action) {
 //#endregion PXP
 //#region PIP
 
-const _entities = {
-    'Asset': {
-        findQuery: `
-        MATCH (result:Asset)
-        WHERE all(
-            key in keys($search)
-            WHERE key = "@type"
-            OR (key = "@id" AND $search[key] = result.uid)
-            OR $search[key] = result[key]
-        )
-        RETURN result
-        `,
-        factory(record) {
-            return record;
-        }
-    }
-};
+const _findTypes = [
+    ODRL.Asset,
+    ODRL.AssetCollection,
+    ODRL.Party,
+    ODRL.PartyCollection
+];
 
-_.define(exports, '_findEntities', async function (searchArr) {
-    _.assert(Array.isArray(searchArr) && searchArr.every(val => typeof val === 'object'));
+// IDEA move neo4j calls completely to ODRL.js and maybe rename it to ODRL4j.js
+// or find another solution for the problem of making neo4j calls from ODRL instances
 
-    let session = _driver.session();
-    let resultArr = await Promise.all(searchArr.map(async (search) => {
-        if (!search) return null;
-        let entityDef = _entities[search['@type']];
-        if (!entityDef) return null;
-        let result = await session.run(entityDef.findQuery, { search });
-        if (result['records'].length !== 1) return null;
-        return entityDef.factory(new Record(result['records'][0]));
-        // return result['records'].map(record => new Record(record));
-    }));
-    session.close();
-
-    return resultArr;
-
-}); // PRP._findEntities
-
-const _findQueries = ['Asset', 'Party'].reduce((result, type) => {
-    let query = _.normalizeStr(`
-    MATCH (result:${type})
-    WHERE all(
-        key in keys($search)
-        WHERE key STARTS WITH "@"
-        OR result[key] = $search[key]
-    )
-    RETURN result
-    `);
-    _.define(result, type, query);
-    return result;
-}, {});
-
-// const _findAssetQuery = _.normalizeStr(`
-// UNWIND $Asset AS asset
-// MATCH (result:Asset)
-// WHERE all(
-//     key in keys(asset)
-//     WHERE result[key] = asset[key]
-// )
-// RETURN result
-//     // TODO
-// `); // _findAssetQuery
-
-// const _findPartyQuery = _.normalizeStr(`
-// UNWIND $Party AS party
-// MATCH (result:Party)
-// WHERE all(
-//     key in keys(party)
-//     WHERE result[key] = party[key]
-// )
-// RETURN result
-//     // TODO
-// `); // _findPartyQuery
-
-_.define(exports, '_findInformation', async function (searchArr) {
-    _.assert(Array.isArray(searchArr) && searchArr.every(val =>
-        val && typeof val === 'object' && _findQueries[val['@type']]
-        // _RE_atType.test(val['@type'])
-    ));
-
-    let session = _driver.session();
-    let resultArr = await Promise.all(searchArr.map(
-        search => session.run(_findQueries[search['@type']], { search })
-    ));
-    session.close();
-
-    resultArr = resultArr.map(result => result['records'].map(record => new Record(record)));
-
-    console.log(resultArr);
-    return;
-
-
-
-    // let param = searchArr.reduce((acc, val) => {
-    //     if (!acc[val['@type']]) {
-    //         let keys = Object.keys(val).filter(key => !key.startsWith('@'));
-    //     }
-    //     return acc;
-    // }, { 'Asset': [] });
-
-    // let param = { 'Asset': [] };
-    // for (let search of searchArr) {
-    //     if (param[search['@type']]) {
-    //         let entity = {}, valid = false;
-    //         for (let key in search) {
-    //             if (!key.startsWith('@')) {
-    //                 entity[key] = search[key];
-    //                 valid = true;
-    //             }
-    //         }
-    //         if (valid)
-    //             param[search['@type']].push(entity);
-    //     }
-    // }
-
-    // let recordArr = await _requestNeo4j(_findAssetQuery, param);
-    // console.log(recordArr);
-    // TODO
-}); // PRP._findInformation
-
-const _createAssetQuery = _.normalizeStr(`
-UNWIND $entities AS entity
-CREATE (result:Asset:ODRL)
-SET result = entity
-RETURN result
-`); // _createAssetQuery
-
-_.define(exports, '_createInformation', async function (entities) {
-    _.assert(Array.isArray(entities) && entities.every(val =>
-        val && typeof val === 'object' &&
-        _RE_atType.test(val['@type']) &&
-        _RE_uid.test(val['uid'])
-    ));
-
-    _.assert(entities.every(val => val['uid'] && typeof val['uid'] === 'string'));
-    // TODO
-}); // PRP._createInformation
-
-_.define(exports, '_updateInformation', async function (entities) {
-    _.assert(Array.isArray(entities) && entities.every(val =>
-        val && typeof val === 'object' &&
-        _RE_atType.test(val['@type']) &&
-        _RE_uid.test(val['uid'])
-    ));
-    // TODO
-}); // PRP._updateInformation
-
-_.define(exports, '_deleteInformation', async function (entities) {
-    _.assert(Array.isArray(entities) && entities.every(val =>
-        val && typeof val === 'object' &&
-        _RE_atType.test(val['@type']) &&
-        _RE_uid.test(val['uid'])
-    ));
-    // TODO
-}); // PRP._deleteInformation
-
-// TODO further entity methods
+_.define(exports, '_find', async function (param = null) {
+    _.assert(param && param['@type']);
+    const type = _findTypes.find(type => type.name === param['@type']);
+    _.assert(type && type.findQuery);
+    const queryResult = await _requestNeo4j(type.findQuery, { param });
+    if (queryResult.length !== 1) return null;
+    return new type(queryResult[0]);
+});
 
 //#endregion PIP
 //#region PAP
@@ -295,6 +152,13 @@ _.define(exports, '_retrievePolicies', async function () {
 
 //#endregion PAP
 
+function Record(record) {
+    _.assert(new.target === Record);
+    for (let key of record['keys']) {
+        _.enumerate(this, key, record['_fields'][record['_fieldLookup'][key]]);
+    }
+} // Record
+
 async function _requestNeo4j(query, param = null) {
     _.assert(_driver);
     _.assert(typeof query === 'string');
@@ -305,11 +169,5 @@ async function _requestNeo4j(query, param = null) {
         result = await session.run(query, param);
 
     session.close();
-    return result['records'].map(record => {
-        let betterRecord = {};
-        for (let key of record['keys']) {
-            _.enumerate(betterRecord, key, record['_fields'][record['_fieldLookup'][key]]);
-        }
-        return betterRecord;
-    });
+    return result['records'].map(record => new Record(record));
 } // _requestNeo4j
