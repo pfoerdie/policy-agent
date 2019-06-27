@@ -14,6 +14,17 @@ class Asset {
 
 } // Asset
 
+_.define(Asset, 'findQuery', _.normalizeStr(`
+MATCH (result:Asset)
+WHERE all(
+    key in keys($param)
+    WHERE (key = "@type" AND $param[key] = "Asset")
+    OR (key = "@id" AND $param[key] = result.uid)
+    OR $param[key] = result[key]
+)
+RETURN result
+`));
+
 class AssetCollection extends Asset {
 
     constructor(param) {
@@ -23,6 +34,14 @@ class AssetCollection extends Asset {
     } // AssetCollection#constructor
 
 } // AssetCollection
+
+_.define(AssetCollection, 'findQuery', _.normalizeStr(`
+MATCH (result:AssetCollection)
+WHERE 
+    $param["@type"] = "AssetCollection"
+    AND $param["@id"] = result.uid
+RETURN result
+`));
 
 class Party {
 
@@ -35,6 +54,17 @@ class Party {
 
 } // Party
 
+_.define(Party, 'findQuery', _.normalizeStr(`
+MATCH (result:Party)
+WHERE all(
+    key in keys($param)
+    WHERE (key = "@type" AND $param[key] = "Party")
+    OR (key = "@id" AND $param[key] = result.uid)
+    OR $param[key] = result[key]
+)
+RETURN result
+`));
+
 class PartyCollection extends Party {
 
     constructor(param) {
@@ -44,6 +74,14 @@ class PartyCollection extends Party {
     } // PartyCollection#constructor
 
 } // PartyCollection
+
+_.define(PartyCollection, 'findQuery', _.normalizeStr(`
+MATCH (result:PartyCollection)
+WHERE 
+    $param["@type"] = "PartyCollection"
+    AND $param["@id"] = result.uid
+RETURN result
+`));
 
 class Action {
 
