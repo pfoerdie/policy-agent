@@ -17,16 +17,19 @@ class Asset {
         _.define(this, 'partOf', []);
     } // Asset#constructor
 
+    static async find() {
+        let queryResult = await _requestNeo4j(Asset._findQuery, { param });
+        if (queryResult.length !== 1) return null;
+        return new Asset(queryResult[0].result);
+    } // Asset.find
+
 } // Asset
 
-_.define(Asset, 'findQuery', _.normalizeStr(`
-MATCH (result:Asset)
-WHERE all(
-    key in keys($param)
-    WHERE (key = "@type" AND $param[key] = "Asset")
-    OR (key = "@id" AND $param[key] = result.uid)
-    OR $param[key] = result[key]
-)
+_.define(Asset, '_findQuery', _.normalizeStr(`
+MATCH (result:AssetCollection)
+WHERE 
+    $param["@type"] = "AssetCollection"
+    AND $param["@id"] = result.uid
 RETURN result
 `));
 
@@ -38,9 +41,15 @@ class AssetCollection extends Asset {
         super(param);
     } // AssetCollection#constructor
 
+    static async find() {
+        let queryResult = await _requestNeo4j(AssetCollection._findQuery, { param });
+        if (queryResult.length !== 1) return null;
+        return new AssetCollection(queryResult[0].result);
+    } // AssetCollection.find
+
 } // AssetCollection
 
-_.define(AssetCollection, 'findQuery', _.normalizeStr(`
+_.define(AssetCollection, '_findQuery', _.normalizeStr(`
 MATCH (result:AssetCollection)
 WHERE 
     $param["@type"] = "AssetCollection"
@@ -57,9 +66,15 @@ class Party {
         _.define(this, 'partOf', []);
     } // Party#constructor
 
+    static async find() {
+        let queryResult = await _requestNeo4j(Party._findQuery, { param });
+        if (queryResult.length !== 1) return null;
+        return new Party(queryResult[0].result);
+    } // Party.find
+
 } // Party
 
-_.define(Party, 'findQuery', _.normalizeStr(`
+_.define(Party, '_findQuery', _.normalizeStr(`
 MATCH (result:Party)
 WHERE all(
     key in keys($param)
@@ -78,9 +93,15 @@ class PartyCollection extends Party {
         super(param);
     } // PartyCollection#constructor
 
+    static async find() {
+        let queryResult = await _requestNeo4j(PartyCollection._findQuery, { param });
+        if (queryResult.length !== 1) return null;
+        return new PartyCollection(queryResult[0].result);
+    } // PartyCollection.find
+
 } // PartyCollection
 
-_.define(PartyCollection, 'findQuery', _.normalizeStr(`
+_.define(PartyCollection, '_findQuery', _.normalizeStr(`
 MATCH (result:PartyCollection)
 WHERE 
     $param["@type"] = "PartyCollection"

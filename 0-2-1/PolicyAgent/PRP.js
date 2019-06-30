@@ -4,10 +4,6 @@ const
     ODRL4j = require('./ODRL4j.js'),
     Neo4j = require("neo4j-driver").v1;
 
-const
-    _RE_atType = /^\w+(?::\w+)*$/,
-    _RE_uid = /^\w+(?::\w+)*$/;
-
 _.enumerate(exports, 'connect', function (host = "localhost", user = "neo4j", password = "neo4j") {
     _.assert(host && typeof host === 'string');
     _.assert(user && typeof user === 'string');
@@ -27,8 +23,11 @@ _.defineGetter(exports, 'connected', function () {
 }); // PRP.connected
 
 _.enumerate(exports, 'ping', async function () {
+    _.assert(ODRL4j.driver);
     try {
-        await _requestNeo4j("RETURN NULL");
+        let session = ODRL4j.driver.session();
+        await session.run("RETURN NULL");
+        session.close();
         return true;
     } catch (err) {
         console.error(err.toString());
@@ -38,11 +37,14 @@ _.enumerate(exports, 'ping', async function () {
 
 // NOTE maybe delete this method at some point
 _.enumerate(exports, 'wipeData', async function (confirm = false) {
+    _.assert(ODRL4j.driver);
     _.assert(confirm === true, "wipeData not confirmed");
-    await _requestNeo4j(`MATCH (n) DETACH DELETE n`);
+    let session = ODRL4j.driver.session();
+    await session.run(`MATCH (n) DETACH DELETE n`);
     // TODO: 
-    await _requestNeo4j(`CREATE CONSTRAINT ON (action:Action) ASSERT action.id IS UNIQUE`);
-    await _requestNeo4j(`CREATE CONSTRAINT ON (node:ODRL4j) ASSERT node.uid IS UNIQUE`);
+    await session.run(`CREATE CONSTRAINT ON (action:Action) ASSERT action.id IS UNIQUE`);
+    await session.run(`CREATE CONSTRAINT ON (node:ODRL4j) ASSERT node.uid IS UNIQUE`);
+    session.close();
 }); // PRP.wipeData
 
 //#region PXP
@@ -78,8 +80,9 @@ _.enumerate(exports, 'defineAction', async function (action, includedIn, implies
         _.assert(includedIn && typeof includedIn === 'string', "invalid includedIn");
         _.assert(Array.isArray(implies) && implies.every(val => val && typeof val === 'string'), "invalid implies");
     }
-
-    await _requestNeo4j(_defineActionQuery, { action, includedIn, implies });
+    let session = ODRL4j.driver.session();
+    await session.run(_defineActionQuery, { action, includedIn, implies });
+    session.close();
 }); // PRP.defineAction
 
 const _extractActionsQuery = _.normalizeStr(`
@@ -131,10 +134,8 @@ const _findTypes = [
 _.define(exports, '_find', async function (param = null) {
     _.assert(param && param['@type']);
     const type = _findTypes.find(type => type.name === param['@type']);
-    _.assert(type && type.findQuery);
-    const queryResult = await _requestNeo4j(type.findQuery, { param });
-    if (queryResult.length !== 1) return null;
-    return new type(queryResult[0]);
+    _.assert(type && type.find);
+    return type.find(param);
 });
 
 //#endregion PIP
