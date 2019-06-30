@@ -236,19 +236,30 @@ function Record(record) {
     for (let key of record['keys']) {
         _.enumerate(this, key, record['_fields'][record['_fieldLookup'][key]]);
     }
-} // Record
+} // Record.constructor
 
 async function _requestNeo4j(query, param = null) {
     _.assert(_driver);
-    _.assert(typeof query === 'string');
-    _.assert(typeof param === 'object');
 
-    let
-        session = _driver.session(),
-        result = await session.run(query, param);
+    if (Array.isArray(query)) {
+        _.assert(query.every(entry => Array.isArray(entry) && typeof entry[0] === 'string' && (!entry[1] || typeof entry[1] === 'object')));
+        let
+            session = _driver.session(),
+            result = await Promise.all(query.map(([query, param = null]) => session.run(query, param)));
 
-    session.close();
-    return result['records'].map(record => new Record(record));
+        session.close();
+        return result.map(result => result['records'].map(record => new Record(record)));
+    } else {
+        _.assert(typeof query === 'string');
+        _.assert(typeof param === 'object');
+
+        let
+            session = _driver.session(),
+            result = await session.run(query, param);
+
+        session.close();
+        return result['records'].map(record => new Record(record));
+    }
 } // _requestNeo4j
 
 Object.assign(exports, {
