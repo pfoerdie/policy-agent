@@ -1,31 +1,29 @@
 const
     _ = require("./tools.js"),
     _module = require("./package.js"),
-    ODRL = require('./ODRL.js'),
+    ODRL4j = require('./ODRL4j.js'),
     Neo4j = require("neo4j-driver").v1;
 
 const
     _RE_atType = /^\w+(?::\w+)*$/,
     _RE_uid = /^\w+(?::\w+)*$/;
 
-let _driver = null;
-
 _.enumerate(exports, 'connect', function (host = "localhost", user = "neo4j", password = "neo4j") {
     _.assert(host && typeof host === 'string');
     _.assert(user && typeof user === 'string');
     _.assert(password && typeof password === 'string');
-    _.assert(!_driver, "PRP already connected");
-    _driver = Neo4j.driver("bolt://" + host, Neo4j.auth.basic(user, password));
+    _.assert(!ODRL4j.driver, "PRP already connected");
+    ODRL4j.driver = Neo4j.driver("bolt://" + host, Neo4j.auth.basic(user, password));
 }); // PRP.connect
 
 _.define(exports, 'disconnect', function () {
-    _.assert(_driver, "PRP not connected");
-    _driver.close();
-    _driver = null;
+    _.assert(ODRL4j.driver, "PRP not connected");
+    ODRL4j.driver.close();
+    ODRL4j.driver = null;
 }); // PRP.disconnect
 
 _.defineGetter(exports, 'connected', function () {
-    return !!_driver;
+    return !!ODRL4j.driver;
 }); // PRP.connected
 
 _.enumerate(exports, 'ping', async function () {
@@ -44,7 +42,7 @@ _.enumerate(exports, 'wipeData', async function (confirm = false) {
     await _requestNeo4j(`MATCH (n) DETACH DELETE n`);
     // TODO: 
     await _requestNeo4j(`CREATE CONSTRAINT ON (action:Action) ASSERT action.id IS UNIQUE`);
-    await _requestNeo4j(`CREATE CONSTRAINT ON (node:ODRL) ASSERT node.uid IS UNIQUE`);
+    await _requestNeo4j(`CREATE CONSTRAINT ON (node:ODRL4j) ASSERT node.uid IS UNIQUE`);
 }); // PRP.wipeData
 
 //#region PXP
@@ -121,14 +119,14 @@ _.define(exports, '_extractActions', async function (action) {
 //#region PIP
 
 const _findTypes = [
-    ODRL.Asset,
-    ODRL.AssetCollection,
-    ODRL.Party,
-    ODRL.PartyCollection
+    ODRL4j.Asset,
+    ODRL4j.AssetCollection,
+    ODRL4j.Party,
+    ODRL4j.PartyCollection
 ];
 
-// IDEA move neo4j calls completely to ODRL.js and maybe rename it to ODRL4j.js
-// or find another solution for the problem of making neo4j calls from ODRL instances
+// IDEA move neo4j calls completely to ODRL4j.js and maybe rename it to ODRL4j4j.js
+// or find another solution for the problem of making neo4j calls from ODRL4j instances
 
 _.define(exports, '_find', async function (param = null) {
     _.assert(param && param['@type']);
@@ -160,12 +158,12 @@ function Record(record) {
 } // Record
 
 async function _requestNeo4j(query, param = null) {
-    _.assert(_driver);
+    _.assert(ODRL4j.driver);
     _.assert(typeof query === 'string');
     _.assert(typeof param === 'object');
 
     let
-        session = _driver.session(),
+        session = ODRL4j.driver.session(),
         result = await session.run(query, param);
 
     session.close();

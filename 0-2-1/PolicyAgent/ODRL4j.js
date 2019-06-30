@@ -1,7 +1,12 @@
 /** {@link https://www.w3.org/TR/odrl-model/#infoModel ODRL Information Model} */
 
-const
-    _ = require("./tools.js");
+const _ = require("./tools.js");
+let _driver = null;
+
+Object.defineProperty(exports, 'driver', {
+    get: () => _driver,
+    set: (value) => { _driver = value || null }
+});
 
 class Asset {
 
@@ -225,6 +230,26 @@ class RightOperand {
     } // RightOperand#constructor
 
 } // RightOperand
+
+function Record(record) {
+    _.assert(new.target === Record);
+    for (let key of record['keys']) {
+        _.enumerate(this, key, record['_fields'][record['_fieldLookup'][key]]);
+    }
+} // Record
+
+async function _requestNeo4j(query, param = null) {
+    _.assert(_driver);
+    _.assert(typeof query === 'string');
+    _.assert(typeof param === 'object');
+
+    let
+        session = _driver.session(),
+        result = await session.run(query, param);
+
+    session.close();
+    return result['records'].map(record => new Record(record));
+} // _requestNeo4j
 
 Object.assign(exports, {
     Asset,
