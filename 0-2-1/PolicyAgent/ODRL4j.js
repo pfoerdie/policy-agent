@@ -126,7 +126,25 @@ class Policy {
         throw new Error("not implemented jet");
     } // Policy#constructor
 
+    static async find() {
+        let queryResult = await _requestNeo4j(Policy._findQuery, { param });
+        if (queryResult.length !== 1) return null;
+        return Policy.construct(queryResult[0].result);
+    } // Policy.find
+
+    static construct(param) {
+        // TODO create the right policy out of param
+    } // Policy.construct
+
 } // Policy
+
+_.define(Policy, '_findQuery', _.normalizeStr(`
+MATCH (result:Policy)
+WHERE 
+    any(type IN labels(result) WHERE $param["@type"] = type)
+    AND $param["@id"] = result.uid
+RETURN result
+`)); // Policy._findQuery
 
 class Set extends Policy {
 
