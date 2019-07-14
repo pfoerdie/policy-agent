@@ -17,8 +17,8 @@ class Asset {
         _.define(this, 'partOf', []);
     } // Asset#constructor
 
-    static async find() {
-        let queryResult = await _requestNeo4j(Asset._findQuery, { param });
+    static async find(param) {
+        let queryResult = await _requestNeo4j(param['@id'] ? Asset._findByIdQuery : Asset._findQuery, { param });
         if (queryResult.length !== 1) return null;
         return new Asset(queryResult[0].result);
     } // Asset.find
@@ -26,10 +26,19 @@ class Asset {
 } // Asset
 
 _.define(Asset, '_findQuery', _.normalizeStr(`
-MATCH (result:AssetCollection)
-WHERE 
-    $param["@type"] = "AssetCollection"
-    AND $param["@id"] = result.uid
+MATCH (result:Asset)
+WHERE all(
+    key in keys($param)
+    WHERE (key = "@type" AND $param[key] = "Asset")
+    OR (key = "@id" AND $param[key] = result.uid)
+    OR $param[key] = result[key]
+)
+RETURN result
+`));
+
+_.define(Asset, '_findByIdQuery', _.normalizeStr(`
+MATCH (result:Asset {uid: $param["@id"]})
+WHERE param["@type"] = "Asset"
 RETURN result
 `));
 
@@ -41,7 +50,7 @@ class AssetCollection extends Asset {
         super(param);
     } // AssetCollection#constructor
 
-    static async find() {
+    static async find(param) {
         let queryResult = await _requestNeo4j(AssetCollection._findQuery, { param });
         if (queryResult.length !== 1) return null;
         return new AssetCollection(queryResult[0].result);
@@ -66,7 +75,7 @@ class Party {
         _.define(this, 'partOf', []);
     } // Party#constructor
 
-    static async find() {
+    static async find(param) {
         let queryResult = await _requestNeo4j(Party._findQuery, { param });
         if (queryResult.length !== 1) return null;
         return new Party(queryResult[0].result);
@@ -93,7 +102,7 @@ class PartyCollection extends Party {
         super(param);
     } // PartyCollection#constructor
 
-    static async find() {
+    static async find(param) {
         let queryResult = await _requestNeo4j(PartyCollection._findQuery, { param });
         if (queryResult.length !== 1) return null;
         return new PartyCollection(queryResult[0].result);
@@ -126,7 +135,7 @@ class Policy {
         throw new Error("not implemented jet");
     } // Policy#constructor
 
-    static async find() {
+    static async find(param) {
         let queryResult = await _requestNeo4j(Policy._findQuery, { param });
         if (queryResult.length !== 1) return null;
         return Policy.construct(queryResult[0].result);
