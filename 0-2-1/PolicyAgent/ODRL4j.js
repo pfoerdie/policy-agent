@@ -18,26 +18,28 @@ class Asset {
     } // Asset#constructor
 
     static async find(param) {
-        let queryResult = await _requestNeo4j(param['@id'] ? Asset._findByIdQuery : Asset._findQuery, { param });
+        let queryResult = await _requestNeo4j(Asset._findQuery, { param });
         if (queryResult.length !== 1) return null;
         return new Asset(queryResult[0].result);
     } // Asset.find
 
 } // Asset
 
+// TODO combine the two search queries in a performant way
+
 _.define(Asset, '_findQuery', _.normalizeStr(`
-MATCH (result:Asset)
-WHERE all(
+MATCH (result:ODRL:Asset)
+WHERE (exists($param["@id"]) AND $param["@id"] = result.uid)
+OR all(
     key in keys($param)
     WHERE (key = "@type" AND $param[key] = "Asset")
-    OR (key = "@id" AND $param[key] = result.uid)
     OR $param[key] = result[key]
 )
 RETURN result
 `));
 
 _.define(Asset, '_findByIdQuery', _.normalizeStr(`
-MATCH (result:Asset {uid: $param["@id"]})
+MATCH (result:ODRL:Asset {uid: $param["@id"]})
 WHERE param["@type"] = "Asset"
 RETURN result
 `));
@@ -59,10 +61,10 @@ class AssetCollection extends Asset {
 } // AssetCollection
 
 _.define(AssetCollection, '_findQuery', _.normalizeStr(`
-MATCH (result:AssetCollection)
+MATCH (result:ODRL:AssetCollection)
 WHERE 
     $param["@type"] = "AssetCollection"
-    AND $param["@id"] = result.uid
+    AND ($param["@id"] = result.uid OR $param.uid = result.uid)
 RETURN result
 `));
 
@@ -84,7 +86,7 @@ class Party {
 } // Party
 
 _.define(Party, '_findQuery', _.normalizeStr(`
-MATCH (result:Party)
+MATCH (result:ODRL:Party)
 WHERE all(
     key in keys($param)
     WHERE (key = "@type" AND $param[key] = "Party")
@@ -111,10 +113,10 @@ class PartyCollection extends Party {
 } // PartyCollection
 
 _.define(PartyCollection, '_findQuery', _.normalizeStr(`
-MATCH (result:PartyCollection)
+MATCH (result:ODRL:PartyCollection)
 WHERE 
     $param["@type"] = "PartyCollection"
-    AND $param["@id"] = result.uid
+    AND ($param["@id"] = result.uid OR $param.uid = result.uid)
 RETURN result
 `));
 
@@ -148,10 +150,10 @@ class Policy {
 } // Policy
 
 _.define(Policy, '_findQuery', _.normalizeStr(`
-MATCH (result:Policy)
+MATCH (result:ODRL:Policy)
 WHERE 
-    any(type IN labels(result) WHERE $param["@type"] = type)
-    AND $param["@id"] = result.uid
+    any(type IN labels(result) WHERE $param["@type"] = type AND NOT type = "ODRL")
+    AND ($param["@id"] = result.uid OR $param.uid = result.uid)
 RETURN result
 `)); // Policy._findQuery
 
