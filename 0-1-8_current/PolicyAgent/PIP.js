@@ -175,7 +175,7 @@ class PIP extends PolicyPoint {
 
         if (!collection) return;
 
-        this.log('ping', `send find-query to MongoDB for ${query['@type']}<${query['@id']}>`);
+        this.log('_find', `send find-query to MongoDB for ${query['@type']}<${query['@id']}>`);
         return await new Promise((resolve, reject) => {
             collection.find(query).toArray((err, docs) => {
                 if (err) {
