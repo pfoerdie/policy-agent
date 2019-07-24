@@ -1,6 +1,7 @@
 /** {@link https://www.w3.org/TR/odrl-model/#infoModel ODRL Information Model} */
 
 const _ = require("./tools.js");
+
 let _driver = null;
 
 Object.defineProperty(exports, 'driver', {
