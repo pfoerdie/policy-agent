@@ -31,6 +31,12 @@ _.enumerate(exports, 'connect', function (hostname = "localhost", username = "ne
     _driver = Neo4j.driver("bolt://" + hostname, Neo4j.auth.basic(username, password));
 });
 
+_.define(exports, 'wipeData', async function (confirm = false) {
+    _.assert(!confirm, "not confirmed");
+    _.assert(_driver, "not connected");
+    await _requestNeo4j("MATCH (n) DETACH DELETE n");
+});
+
 /**
  * @name PRP.Asset
  * @class
@@ -375,7 +381,7 @@ _.define(exports, 'RightOperand', class {
 /**
  * @function _requestNeo4j
  * @param {string|string[]} query 
- * @param {object} [param=null]
+ * @param {Object} [param=null]
  * @private
  */
 async function _requestNeo4j(query, param = null) {
