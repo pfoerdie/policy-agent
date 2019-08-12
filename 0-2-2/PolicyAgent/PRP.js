@@ -7,6 +7,7 @@
 
 const
     Neo4j = require('neo4j-driver').v1,
+    EventEmitter = require('events'),
     _ = require("./tools.js"),
     _module = require("./module.js");
 
@@ -36,6 +37,63 @@ _.define(exports, 'wipeData', async function (confirm = false) {
     _.assert(_driver, "not connected");
     await _requestNeo4j("MATCH (n) DETACH DELETE n");
 });
+
+/**
+ * @name _uids
+ * @type {Mapy<string, ODRL>}
+ * @private
+ */
+const _UIDs = new Map();
+
+class ODRL extends EventEmitter {
+
+    constructor(param) {
+        // IDEA as base class for everything
+        _.assert(new.target != ODRL);
+        _.assert.object(param);
+        _.define(this, '_param', param);
+        if (param.uid && _.is.string(param.uid)) {
+            _.assert(!_UIDs.has(param.uid));
+            _UIDs.set(param.uid, this);
+        }
+        _.set(this, '_ts', Date.now());
+        _.set(this, '_cleared', false);
+    }
+
+    _touch() {
+        if (this._cleared) return false;
+        _.set(this, '_ts', Date.now());
+        return true;
+    }
+
+    _clear(clearedCB) {
+        _.assert(!this._cleared);
+        let cancel = false;
+        this.emit('clear', () => { cancel = true });
+        if (cancel) return false; // cancel because clearing was aborted
+        if (_.is.function(clearedCB)) clearedCB();
+        _UIDs.delete(this._param.uid);
+        this.removeAllListeners();
+        _.set(this, '_cleared', true);
+        this.emit('cleared');
+        return true;
+    }
+
+    _expire(ms = 0) {
+        _.assert(!this._cleared);
+        _.assert.number(ms);
+        if (ms <= 0) return false;
+        let expires = this._ts + ms;
+        _.set(this, '_expires', expires); // to know if expire got called another time
+        let timeout = setTimeout(() => {
+            if (this._expires != expires) return; // cancel because expire got called in the meantime
+            if (expires > Date.now() || !this._clear(() => this.emit('expired'))) this._expire(ms); // refresh expire if touched in the meantime or clearing was unsuccessful
+        }, expires + 1e3 - Date.now()); // add 1 sec for good measure
+        this.on('cleared', () => clearTimeout(timeout));
+        return true;
+    }
+
+}
 
 /**
  * @name PRP.Asset
