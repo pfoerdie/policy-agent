@@ -49,8 +49,9 @@ class ODRL extends EventEmitter {
 
     constructor(param) {
         // IDEA as base class for everything
-        _.assert(new.target != ODRL);
+        // _.assert(new.target != ODRL);
         _.assert.object(param);
+        super();
         _.define(this, '_param', param);
         if (param.uid && _.is.string(param.uid)) {
             _.assert(!_UIDs.has(param.uid));
