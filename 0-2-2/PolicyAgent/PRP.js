@@ -33,6 +33,7 @@ _.enumerate(exports, 'connect', function (hostname = "localhost", username = "ne
 });
 
 _.define(exports, 'wipeData', async function (confirm = false) {
+    // TODO temporary - remove after testing
     _.assert(!confirm, "not confirmed");
     _.assert(_driver, "not connected");
     await _requestNeo4j("MATCH (n) DETACH DELETE n");
@@ -45,8 +46,19 @@ _.define(exports, 'wipeData', async function (confirm = false) {
  */
 const _UIDs = new Map();
 
+/**
+ * @name ODRL
+ * @extends EventEmitter
+ * @class
+ * @private
+ * @abstract
+ */
 class ODRL extends EventEmitter {
 
+    /**
+     * @constructs ODRL
+     * @param {*} param 
+     */
     constructor(param) {
         // IDEA as base class for everything
         // _.assert(new.target != ODRL);
@@ -61,12 +73,23 @@ class ODRL extends EventEmitter {
         _.set(this, '_cleared', false);
     }
 
+    /**
+     * @name ODRL#_touch
+     * @returns {boolean}
+     * @private
+     */
     _touch() {
         if (this._cleared) return false;
         _.set(this, '_ts', Date.now());
         return true;
     }
 
+    /**
+     * @name ODRL#_clear
+     * @param {function} clearedCB
+     * @returns {boolean}
+     * @private
+     */
     _clear(clearedCB) {
         _.assert(!this._cleared);
         let cancel = false;
@@ -80,12 +103,18 @@ class ODRL extends EventEmitter {
         return true;
     }
 
+    /**
+     * @name ODRL#_expire
+     * @param {number} [ms=0]
+     * @returns {boolean}
+     * @private
+     */
     _expire(ms = 0) {
         _.assert(!this._cleared);
         _.assert.number(ms);
-        if (ms <= 0) return false;
         let expires = this._ts + ms;
         _.set(this, '_expires', expires); // to know if expire got called another time
+        if (ms <= 0) return false;
         let timeout = setTimeout(() => {
             if (this._expires != expires) return; // cancel because expire got called in the meantime
             if (expires > Date.now() || !this._clear(() => this.emit('expired'))) this._expire(ms); // refresh expire if touched in the meantime or clearing was unsuccessful
@@ -98,9 +127,10 @@ class ODRL extends EventEmitter {
 
 /**
  * @name PRP.Asset
+ * @extends ODRL
  * @class
  */
-_.define(exports, 'Asset', class {
+_.define(exports, 'Asset', class extends ODRL {
 
     /**
      * @constructs Asset
@@ -109,6 +139,7 @@ _.define(exports, 'Asset', class {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
+        super(param);
     }
 
 });
@@ -134,9 +165,10 @@ _.define(exports, 'AssetCollection', class extends exports.Asset {
 
 /**
  * @name PRP.Party
+ * @extends ODRL
  * @class
  */
-_.define(exports, 'Party', class {
+_.define(exports, 'Party', class extends ODRL {
 
     /**
      * @constructs Party
@@ -145,6 +177,7 @@ _.define(exports, 'Party', class {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
+        super(param);
     }
 
 });
@@ -170,9 +203,10 @@ _.define(exports, 'PartyCollection', class extends exports.Party {
 
 /**
  * @name PRP.Action
+ * @extends ODRL
  * @class
  */
-_.define(exports, 'Action', class {
+_.define(exports, 'Action', class extends ODRL {
 
     /**
      * @constructs Action
@@ -181,15 +215,17 @@ _.define(exports, 'Action', class {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
+        super(param);
     }
 
 });
 
 /**
  * @name PRP.Policy
+ * @extends ODRL
  * @class
  */
-_.define(exports, 'Policy', class {
+_.define(exports, 'Policy', class extends ODRL {
 
     /**
      * @constructs Policy
@@ -199,6 +235,7 @@ _.define(exports, 'Policy', class {
         _.assert(new.target !== Policy, "Policy is an abstract class.");
         _.assert(param);
         throw new Error("not implemented jet");
+        super(param);
     } // Policy#constructor
 
 });
@@ -262,9 +299,10 @@ _.define(exports, 'Agreement', class extends exports.Policy {
 
 /**
  * @name PRP.ConflictTerm
+ * @extends ODRL
  * @class
  */
-_.define(exports, 'ConflictTerm', class {
+_.define(exports, 'ConflictTerm', class extends ODRL {
 
     /**
      * @constructs ConflictTerm
@@ -273,15 +311,17 @@ _.define(exports, 'ConflictTerm', class {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
+        super(param);
     }
 
 });
 
 /**
  * @name PRP.Rule
+ * @extends ODRL
  * @class
  */
-_.define(exports, 'Rule', class {
+_.define(exports, 'Rule', class extends ODRL {
 
     /**
      * @constructs Rule
@@ -291,6 +331,7 @@ _.define(exports, 'Rule', class {
         _.assert(new.target !== Rule, "Rule is an abstract class.");
         _.assert(param);
         throw new Error("not implemented jet");
+        super(param);
     }
 
 });
@@ -354,9 +395,10 @@ _.define(exports, 'Duty', class extends exports.Rule {
 
 /**
  * @name PRP.Contraint
+ * @extends ODRL
  * @class
  */
-_.define(exports, 'Contraint', class {
+_.define(exports, 'Contraint', class extends ODRL {
 
     /**
      * @constructs Contraint
@@ -365,15 +407,17 @@ _.define(exports, 'Contraint', class {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
+        super(param);
     }
 
 });
 
 /**
  * @name PRP.LogicalContraint
+ * @extends ODRL
  * @class
  */
-_.define(exports, 'LogicalContraint', class {
+_.define(exports, 'LogicalContraint', class extends ODRL {
 
     /**
      * @constructs LogicalContraint
@@ -382,15 +426,17 @@ _.define(exports, 'LogicalContraint', class {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
+        super(param);
     }
 
 });
 
 /**
  * @name PRP.Operator
+ * @extends ODRL
  * @class
  */
-_.define(exports, 'Operator', class {
+_.define(exports, 'Operator', class extends ODRL {
 
     /**
      * @constructs Operator
@@ -399,6 +445,7 @@ _.define(exports, 'Operator', class {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
+        super(param);
     }
 
 });
@@ -407,24 +454,27 @@ _.define(exports, 'Operator', class {
  * @name PRP.LeftOperand
  * @class
  */
-_.define(exports, 'LeftOperand', class {
+_.define(exports, 'LeftOperand', class extends ODRL {
 
     /**
      * @constructs LeftOperand
+ * @extends ODRL
      * @param {*} param 
      */
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
+        super(param);
     }
 
 });
 
 /**
  * @name PRP.RightOperand
+ * @extends ODRL
  * @class
  */
-_.define(exports, 'RightOperand', class {
+_.define(exports, 'RightOperand', class extends ODRL {
 
     /**
      * @constructs RightOperand
@@ -433,6 +483,7 @@ _.define(exports, 'RightOperand', class {
     constructor(param) {
         _.assert(param);
         throw new Error("not implemented jet");
+        super(param);
     }
 
 });
