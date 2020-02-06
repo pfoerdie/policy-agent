@@ -4,41 +4,47 @@
  */
 
 const _ = require("./tools.js");
-const _module = new (function PolicyAgent() { });
-module.exports = _module;
+
+_.define(exports, "id", "PolicyAgent");
 
 /**
  * @name enforce
  * @type {function}
+ * @public
  */
-_.enumerate(_module, "enforce", require("./enforce.js"));
+_.define(exports, "enforce", require("./enforce.js"));
 
 /**
  * @name exec
- * @type {*}
+ * @type {object}
+ * @public
  */
-_.enumerate(_module, "exec", require("./exec.js"));
+_.define(exports, "exec", require("./exec.js"));
 
 /**
  * @name decide
- * @type {*}
+ * @type {function}
+ * @private
  */
-_.enumerate(_module, "decide", require("./decide.js"));
+_.define(exports, "decide", require("./decide.js"));
 
 /**
  * @name info
- * @type {*}
+ * @type {object}
+ * @public
  */
-_.enumerate(_module, "info", require("./info.js"));
+_.define(exports, "info", require("./info.js"));
 
 /**
  * @name repo
- * @type {*}
+ * @type {object}
+ * @public
  */
-_.enumerate(_module, "repo", require("./repo.js"));
+_.define(exports, "repo", require("./repo.js"));
 
 /**
  * @name admin
- * @type {*}
+ * @type {object}
+ * @public
  */
-_.enumerate(_module, "admin", require("./admin.js"));
+_.define(exports, "admin", require("./admin.js"));

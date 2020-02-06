@@ -101,15 +101,16 @@ exports.is = {
     }
 }; // exports.is
 
-let logCount = 0, logSilent = false, logColored = true;
+let logCount = 0, logSilent = false, logColored = true, logDisabled = false;
 exports.log = function log(scope, method, ...args) {
+    if (logDisabled) return;
     let raw = "", color = "";
 
     if (typeof scope === "string") {
         raw = scope;
         color = Colors.yellow(scope);
     } else if (scope instanceof Object && typeof method === "string" && Reflect.has(scope, method)) {
-        let scopeName = typeof scope === "function" ? scope.name : scope.__proto__.constructor.name;
+        let scopeName = scope.__proto__.constructor.name;
         let scopeData = typeof scope.id === "string" ? scope.id : JSON.stringify(scope.data) || "";
         let argPairs = args.map(arg => [
             arg === undefined ? "undefined" : arg === null ? "null" : arg.__proto__.constructor.name,
