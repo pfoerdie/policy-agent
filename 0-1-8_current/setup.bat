@@ -1,1 +1,0 @@
-npm install uuid colors body-parser express express-session mongodb neo4j-driver
