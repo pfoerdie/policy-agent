@@ -97,7 +97,7 @@ exports.is = {
         return Array.isArray(value) && value.length >= minLength && value <= maxLength;
     },
     object: function (value, notNull = false) {
-        return typeof value == 'object' && !notNull === !value;
+        return typeof value == 'object' && (!notNull || value);
     }
 }; // exports.is
 

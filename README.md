@@ -1,4 +1,49 @@
 # PolicyAgent
 
-> The Policy Agent was a project due to my bachelor degree in computer science, but the development has stopped, because I want to leave the restrictions I set on myself for this project to be able to create a more flexible approach.
-> Development will continue under the new name EMS for Entity Management System. See https://github.com/Pfoerdie/EMS for further information.
+- __enforce__
+    - _@public_
+    - _@type_ {function}
+    - _@returns_ {function}
+        - _@public_
+        - _@async_
+        - _@param_ {object} request 
+        - _@param_ {object} [response = null] 
+        - _@param_ {function} [next] 
+- __exec__
+    - _@public_
+    - __register__
+        - _@type_ {function}
+        - _@param_ {function} action
+        - _@param_ {string} action.id
+- __repo__
+    - _@public_
+    - __connected__
+        - _@public_
+        - _@type_ boolean
+    - __connect__ :
+        - _@public_
+        - _@type_ {function}
+        - _@param_ {string} [hostname="localhost"]
+        - _@param_ {string} [username="neo4j"]
+        - _@param_ {string} [password="neo4j"]
+    - __disconnect__ 
+        - _@public_
+        - _@type_ {function}
+    - __ping__ 
+        - _@public_
+        - _@async_
+        - _@type_ {function}
+        - _@returns_ {Neo4j~ServerInfo}
+        - _@async_
+- __admin__
+    - _@public_
+    - __login__
+        - _@public_
+        - _@async_
+        - _@type_ {function}
+- __info__
+    - _@private_
+- __decide__
+    - _@private_
+    - _@async_
+    - _@type_ {function}
