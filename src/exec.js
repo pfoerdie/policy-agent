@@ -4,7 +4,7 @@
  */
 
 const _ = require("./tools.js");
-const _module = require("./index.js");
+const _module = require(".");
 
 _.define(exports, "id", "PolicyAgent.exec");
 
@@ -15,9 +15,10 @@ _.define(exports, "id", "PolicyAgent.exec");
  * @public
  * @async
  */
-_.enumerate(exports, "register", async function register(action) {
+_.enumerate(exports, "register", function register(action) {
 
     _.log(exports, "register", action);
+    _.assert(_.is.function(action) && _.is.string(action.id, 1), "invalid action");
 
     // TODO 
 

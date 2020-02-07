@@ -4,7 +4,7 @@
  */
 
 const _ = require("./tools.js");
-const _module = require("./index.js");
+const _module = require(".");
 module.exports = Enforce;
 
 /**
@@ -16,31 +16,33 @@ module.exports = Enforce;
 function Enforce(config = null) {
 
     _.log(_module, "enforce", config);
-
     _.assert.object(config);
 
     /**
      * @function enforce()
      * @param {object} request 
-     * @param {object} response 
+     * @param {object} [response = null] 
      * @param {function} [next] 
      * @returns {undefined}
      * @public
      * @async
      */
-    async function enforce(request, response, next) {
+    async function enforce(request, response = null, next = () => null) {
 
         _.log(enforce, "call", this, request, response, next);
-        // _.log(Enforce, "constructor", request, response, next);
+        _.assert(_.is.object(request, true) && _.is.object(response) && _.is.function(next), "invalid arguments");
 
         try {
 
-            // TODO
+            // TODO 
 
-            if (_.is.function(next)) next();
+            next();
+
         } catch (err) {
+
             _.log(err);
-            if (_.is.function(next)) next(err);
+            next(err);
+
         }
 
     } // enforce

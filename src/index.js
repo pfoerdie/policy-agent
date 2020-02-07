@@ -12,39 +12,39 @@ _.define(exports, "id", "PolicyAgent");
  * @type {function}
  * @public
  */
-_.define(exports, "enforce", require("./enforce.js"));
+_.enumerate(exports, "enforce", require("./enforce"));
 
 /**
  * @name exec
  * @type {object}
  * @public
  */
-_.define(exports, "exec", require("./exec.js"));
+_.enumerate(exports, "exec", require("./exec"));
 
 /**
  * @name decide
  * @type {function}
  * @private
  */
-_.define(exports, "decide", require("./decide.js"));
+_.enumerate(exports, "decide", require("./decide"));
 
 /**
  * @name info
  * @type {object}
  * @public
  */
-_.define(exports, "info", require("./info.js"));
+_.enumerate(exports, "info", require("./info"));
 
 /**
  * @name repo
  * @type {object}
  * @public
  */
-_.define(exports, "repo", require("./repo.js"));
+_.enumerate(exports, "repo", require("./repo"));
 
 /**
  * @name admin
  * @type {object}
  * @public
  */
-_.define(exports, "admin", require("./admin.js"));
+_.enumerate(exports, "admin", require("./admin"));

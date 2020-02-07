@@ -4,6 +4,6 @@
  */
 
 const _ = require("./tools.js");
-const _module = require("./index.js");
+const _module = require(".");
 
 _.define(exports, "id", "PolicyAgent.info");

@@ -4,12 +4,13 @@
  */
 
 const _ = require("./tools.js");
-const _module = require("./index.js");
+const _module = require(".");
 module.exports = decide;
 
 async function decide() {
 
     _.log(_module, "decide");
+    _.assert(_module.repo.connected, "repo not connected");
 
     // TODO
 
