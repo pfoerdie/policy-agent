@@ -1,8 +1,9 @@
 # PolicyAgent
 
-- __enforce__
+## Structure
+
+- _@function_ __enforce__
     - _@public_
-    - _@type_ {function}
     - _@returns_ {function}
         - _@public_
         - _@async_
@@ -11,39 +12,33 @@
         - _@param_ {function} [next] 
 - __exec__
     - _@public_
-    - __register__
-        - _@type_ {function}
+    - _@function_ __register__
         - _@param_ {function} action
         - _@param_ {string} action.id
 - __repo__
     - _@public_
     - __connected__
         - _@public_
-        - _@type_ boolean
-    - __connect__ :
+        - _@type_ {boolean}
+    - _@function_ __connect__
         - _@public_
-        - _@type_ {function}
         - _@param_ {string} [hostname="localhost"]
         - _@param_ {string} [username="neo4j"]
         - _@param_ {string} [password="neo4j"]
-    - __disconnect__ 
+    - _@function_ __disconnect__ 
         - _@public_
-        - _@type_ {function}
-    - __ping__ 
+    - _@function_ __ping__ 
         - _@public_
         - _@async_
-        - _@type_ {function}
         - _@returns_ {Neo4j~ServerInfo}
         - _@async_
 - __admin__
     - _@public_
-    - __login__
+    - _@function_ __login__
         - _@public_
         - _@async_
-        - _@type_ {function}
 - __info__
     - _@private_
-- __decide__
+- _@function_ __decide__
     - _@private_
     - _@async_
-    - _@type_ {function}
