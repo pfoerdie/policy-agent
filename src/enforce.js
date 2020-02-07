@@ -8,7 +8,7 @@ const _module = require(".");
 module.exports = Enforce;
 
 /**
- * @function enforce
+ * @function enforce.constructor
  * @param {object} [config = null] 
  * @returns {function}
  * @public
@@ -19,7 +19,7 @@ function Enforce(config = null) {
     _.assert.object(config);
 
     /**
-     * @function enforce()
+     * @function enforce
      * @param {object} request 
      * @param {object} [response = null] 
      * @param {function} [next] 
@@ -47,10 +47,10 @@ function Enforce(config = null) {
 
     } // enforce
 
-    _.define(enforce, "id", "PolicyAgent.enforce()");
+    _.define(enforce, "id", "PolicyAgent.enforce");
 
     return enforce;
 
 } // Enforce
 
-_.define(Enforce, "id", "PolicyAgent.enforce");
+_.define(Enforce, "id", "PolicyAgent.enforce.constructor");
