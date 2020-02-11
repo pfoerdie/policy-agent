@@ -1,5 +1,7 @@
 # PolicyAgent
 
+First draft. Readme is not accurate!
+
 ## Structure
 
 - _@function_ __enforce__
