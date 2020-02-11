@@ -23,7 +23,7 @@ function Record(record) {
 async function query(cypher, param = null) {
 
     _.log(exports, "query");
-    const _private = _package.private.get(_package.repo);
+    const _private = _package.private(_package.repo);
     _.assert(_private.driver, "not connected");
     _.assert.string(cypher, 1);
     _.assert.object(param);

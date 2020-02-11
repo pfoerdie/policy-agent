@@ -5,8 +5,6 @@ const
     ExpressSession = require("express-session"),
     SocketIO = require("socket.io");
 
-// console.log(PolicyAgent);
-
 const
     app = Express(),
     server = Http.createServer(app),
@@ -20,27 +18,26 @@ const
     port = 80;
 
 PolicyAgent.repo.connect("localhost", "neo4j", "odrl");
-// PolicyAgent.repo.ping().then(console.log).catch(console.error);
+PolicyAgent.repo.ping().then(console.log).catch((err) => null);
 PolicyAgent.exec.register(PolicyAgent.admin.login);
 // PolicyAgent.admin.login();
 
+app.use(function (request, response, next) {
+    console.log(request.method, request.url);
+    next();
+});
 
-// io.on("connection", function (socket) {
-//     const socketID = socket.id;
-//     console.log("Socket<" + socketID + "> connected");
+app.use(sessions);
+app.use(PolicyAgent.enforce.express);
+app.use(Express.static(__dirname));
 
-//     socket.on("disconnect", function () {
-//         console.log("Socket<" + socketID + "> disconnected");
-//     });
-// });
-
-// app.use(function (request, response, next) {
-//     console.log("Request<" + request.url + "> arrived");
+// io.use(function (request, next) {
+//     console.log(request.request.method, request.request.url);
 //     next();
 // });
 
-io.use((request, next) => sessions(request.request, request.request.res, (err) => err ? next(err) : PolicyAgent.enforce(request.request, request.request.res, next)));
-app.use(sessions, PolicyAgent.enforce, Express.static(__dirname));
+// io.use((request, next) => sessions(request.request, request.request.res, next));
+// io.use(PolicyAgent.enforce.io);
 
-server.listen(port, () => console.log("running at http://localhost:" + port));
+server.listen(port, () => console.log(`running at http://localhost:${port}`));
 

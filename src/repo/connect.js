@@ -12,7 +12,7 @@ module.exports = connect;
 function connect(hostname = "localhost", username = "neo4j", password = "neo4j") {
 
     _.log(_package.repo, "connect", hostname, username, password);
-    const _private = _package.private.get(_package.repo);
+    const _private = _package.private(_package.repo);
     _.assert(!_private.driver, "already connected");
     _.assert(_.is.string(hostname) && _.is.string(username) && _.is.string(password), "invalid arguments");
 

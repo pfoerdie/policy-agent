@@ -8,7 +8,7 @@ module.exports = disconnect;
 function disconnect() {
 
     _.log(_package.repo, "disconnect");
-    const _private = _package.private.get(_package.repo);
+    const _private = _package.private(_package.repo);
     _.assert(_private.driver, "not connected");
 
     _private.driver.close();

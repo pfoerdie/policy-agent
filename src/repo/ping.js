@@ -10,7 +10,7 @@ module.exports = ping;
 async function ping() {
 
     _.log(_package.repo, "ping");
-    const _private = _package.private.get(_package.repo);
+    const _private = _package.private(_package.repo);
     _.assert(_private.driver, "not connected");
 
     let session = _private.driver.session();
@@ -19,6 +19,7 @@ async function ping() {
         session.close();
         return result.summary.server;
     } catch (err) {
+        _.log(err);
         session.close();
         throw err;
     }

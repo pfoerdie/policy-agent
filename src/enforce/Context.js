@@ -6,6 +6,7 @@ class Context {
     constructor(session, param = null) {
         _.define(this, "id", _.uuid());
         _.log(this, "constructor", session, param);
+        // _.log(_package.enforce, "Context", session, param);
         // TODO
         _.assert.object(session, true);
         _.assert.object(param);
@@ -19,8 +20,9 @@ class Context {
     }
 
     nextStage() {
-        // TODO
+        _.log(this, "nextStage");
         if (this._state < States.length) this._state++;
+        // TODO
     }
 
 } // Context

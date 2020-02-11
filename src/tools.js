@@ -102,7 +102,7 @@ _.is = {
     }
 }; // _.is
 
-let logCount = 0, logSilent = false, logColored = true, logDisabled = false, logTimes = [];
+let logCount = 0, logSilent = false, logColored = true, logDisabled = false;
 _.log = function log(scope, method, ...args) {
     if (logDisabled) return;
     let raw = "", colored = "";
@@ -131,7 +131,7 @@ _.log = function log(scope, method, ...args) {
                     Colors.blue(argName) + (argData ? Colors.grey("<") + Colors.green(argData) + Colors.grey(">") : "")
                 ).join(Colors.grey(", "))
                 + Colors.grey(")");
-        } else {
+        } else if (!method) {
             let argPairs = Object.entries(Object.assign({}, scope)).map(([argName, argData]) => [argName, argData instanceof Object ? argData.__proto__.constructor.name : argData]);
 
             raw = `${scopeName}<${scopeData}> {${argPairs.map(([argName, argData]) => `${argName}: ${argData}`).join(", ")}}`;
@@ -141,15 +141,20 @@ _.log = function log(scope, method, ...args) {
                     Colors.blue(argName) + Colors.grey(": ") + Colors.green(argData)
                 ).join(Colors.grey(", "))
                 + Colors.grey("}");
+        } else {
+            raw = "invalid scope";
+            colored = Colors.red("invalid scope");
+            debugger;
         }
     } else {
-        return null;
+        raw = "invalid scope";
+        colored = Colors.red("invalid scope");
+        debugger;
     }
 
     raw = `log[${logCount}]: ` + raw;
     colored = Colors.grey(`log[${logCount}]: `) + colored;
     logCount++;
-    logTimes.push(Date.now());
 
     if (!logSilent) console.log(logColored ? colored : raw);
 

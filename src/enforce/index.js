@@ -4,10 +4,8 @@
  */
 
 const { tools: _ } = _package = require("..");
-_package.enforce = require("./enforce.js");
-module.exports = _package.enforce;
-_package.private.set(_package.enforce, {});
+module.exports = _package.construct("enforce", __dirname);
 
-_package.define("enforce.id", "PolicyAgent.enforce");
-_package.add("enforce.Context", "./enforce/Context.js");
-_package.define("enforce.Context.id", "PolicyAgent.enforce.Context");
+_package.enforce.require("Context", "./Context.js");
+_package.enforce.require("express", "./express.js");
+_package.enforce.require("io", "./io.js");
