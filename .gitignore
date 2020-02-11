@@ -1,4 +1,5 @@
-**/node_modules
+.vscode
+node_modules
 **/mongodb-*/*
 **/neo4j-*/*
 !**/mongodb-*/data
