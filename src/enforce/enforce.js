@@ -1,9 +1,5 @@
-const _ = require("../tools");
+const { tools: _ } = _package = require("..");
 module.exports = enforce;
-_.define(enforce, "id", "PolicyAgent.enforce");
-const _module = require("..");
-const Context = require("./Context.js");
-_.define(enforce, "Context", Context);
 
 /**
  * @function enforce
@@ -17,12 +13,12 @@ _.define(enforce, "Context", Context);
 async function enforce(request, response = null, next = () => null) {
     try {
 
-        _.log(_module, "enforce", request, response, next);
+        _.log(_package, "enforce", request, response, next);
         _.assert(_.is.object(request, true) && _.is.object(response) && _.is.function(next), "invalid arguments");
         _.assert(_.is.object(request.session), "invalid session");
 
         const param = { action: request.method, assignee: null, target: request.url };
-        const context = new Context(request.session, param);
+        const context = new _package.enforce.Context(request.session, param);
         context.nextStage();
 
         // TODO 

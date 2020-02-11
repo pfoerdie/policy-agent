@@ -21,7 +21,7 @@ const
 
 PolicyAgent.repo.connect("localhost", "neo4j", "odrl");
 // PolicyAgent.repo.ping().then(console.log).catch(console.error);
-// PolicyAgent.exec.register(PolicyAgent.admin.login);
+PolicyAgent.exec.register(PolicyAgent.admin.login);
 // PolicyAgent.admin.login();
 
 

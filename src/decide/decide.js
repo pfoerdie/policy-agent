@@ -1,7 +1,5 @@
-const _ = require("../tools");
+const { tools: _ } = _package = require("..");
 module.exports = decide;
-_.define(decide, "id", "PolicyAgent.decide");
-const _module = require("..");
 
 /**
  * @function decide

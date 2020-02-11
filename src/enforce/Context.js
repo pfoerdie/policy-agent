@@ -1,5 +1,4 @@
-const _ = require("../tools");
-const _module = require("..");
+const { tools: _ } = _package = require("..");
 const States = ["init"];
 
 class Context {
@@ -26,5 +25,4 @@ class Context {
 
 } // Context
 
-_.define(Context, "id", "PolicyAgent.enforce.Context");
 module.exports = Context;
