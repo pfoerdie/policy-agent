@@ -3,48 +3,16 @@
  * @author Simon Petrac
  */
 
-const _ = require("./tools.js");
+const _ = require("./tools");
 
 _.define(exports, "id", "PolicyAgent");
+_.define(exports, "private", new WeakMap());
 
-/**
- * @name enforce
- * @type {function}
- * @public
- */
-_.enumerate(exports, "enforce", require("./enforce"));
+_.enumerate(exports, "enforce", require("./enforce/enforce.js"));
+_.enumerate(exports, "exec", require("./exec/exec.js"));
+_.enumerate(exports, "decide", require("./decide/decide.js"));
+_.enumerate(exports, "info", require("./info/info.js"));
+_.enumerate(exports, "repo", require("./repo/repo.js"));
+_.enumerate(exports, "admin", require("./admin/admin.js"));
 
-/**
- * @name exec
- * @type {object}
- * @public
- */
-_.enumerate(exports, "exec", require("./exec"));
-
-/**
- * @name decide
- * @type {function}
- * @private
- */
-_.enumerate(exports, "decide", require("./decide"));
-
-/**
- * @name info
- * @type {object}
- * @public
- */
-_.enumerate(exports, "info", require("./info"));
-
-/**
- * @name repo
- * @type {object}
- * @public
- */
-_.enumerate(exports, "repo", require("./repo"));
-
-/**
- * @name admin
- * @type {object}
- * @public
- */
-_.enumerate(exports, "admin", require("./admin"));
+_.log(exports);

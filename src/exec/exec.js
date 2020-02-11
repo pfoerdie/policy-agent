@@ -1,15 +1,9 @@
-/**
- * @module PolicyAgent.exec
- * @author Simon Petrac
- */
-
-const _ = require("./tools.js");
-const _module = require(".");
-
+const _ = require("../tools");
 _.define(exports, "id", "PolicyAgent.exec");
+const _module = require("..");
 
 /**
- * @function enforce
+ * @function register
  * @param {function} action
  * @returns {boolean}
  * @public
@@ -23,5 +17,4 @@ _.enumerate(exports, "register", function register(action) {
     // TODO 
 
 }); // exports.register
-
 _.define(exports.register, "id", "PolicyAgent.exec.register");
