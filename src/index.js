@@ -4,9 +4,9 @@
  */
 
 const _ = require("./tools");
+const Module = require("./Module.js");
 
-const Package = require("./Package.js");
-const _package = new Package("PolicyAgent", __dirname);
+const _package = new Module("PolicyAgent", __dirname);
 module.exports = _package;
 
 _package.define("tools", _);

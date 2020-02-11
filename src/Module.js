@@ -5,7 +5,7 @@ const
     _re_identifier = /^(?:\w+\.)*\w+$/,
     _private = new WeakMap();
 
-class Package {
+class Module {
 
     constructor(id, directory) {
         _.assert(_re_identifier.test(id), "invalid id");
@@ -26,7 +26,7 @@ class Package {
         _.assert(_re_identifier.test(id), "invalid key");
         let target = this, stack = id.split("."), key = stack.shift();
         while (stack.length > 0) {
-            _.assert(target[key] instanceof Package, "invalid target");
+            _.assert(target[key] instanceof Module, "invalid target");
             target = target[key];
             key = stack.shift();
         }
@@ -42,7 +42,7 @@ class Package {
         _.assert(_re_identifier.test(id), "invalid key");
         let target = this, stack = id.split("."), key = stack.shift();
         while (stack.length > 0) {
-            _.assert(target[key] instanceof Package, "invalid target");
+            _.assert(target[key] instanceof Module, "invalid target");
             target = target[key];
             key = stack.shift();
         }
@@ -58,12 +58,12 @@ class Package {
         _.assert(_re_identifier.test(id), "invalid key");
         let target = this, stack = id.split("."), key = stack.shift();
         while (stack.length > 0) {
-            _.assert(target[key] instanceof Package, "invalid target");
+            _.assert(target[key] instanceof Module, "invalid target");
             target = target[key];
             key = stack.shift();
         }
         _.assert(!Reflect.has(target, key), "id already used");
-        const child = new Package(`${target.id}.${key}`, directory);
+        const child = new Module(`${target.id}.${key}`, directory);
         _.enumerate(target, key, child);
         return child;
     }
@@ -74,7 +74,7 @@ class Package {
         _.assert.string(location, 1);
         let target = this, stack = id.split("."), key = stack.shift();
         while (stack.length > 0) {
-            _.assert(target[key] instanceof Package, "invalid target");
+            _.assert(target[key] instanceof Module, "invalid target");
             target = target[key];
             key = stack.shift();
         }
@@ -92,7 +92,7 @@ class Package {
         _.assert.string(location, 1);
         let target = this, stack = id.split("."), key = stack.shift();
         while (stack.length > 0) {
-            _.assert(target[key] instanceof Package, "invalid target");
+            _.assert(target[key] instanceof Module, "invalid target");
             target = target[key];
             key = stack.shift();
         }
@@ -106,4 +106,4 @@ class Package {
 
 } // Package
 
-module.exports = Package;
+module.exports = Module;
