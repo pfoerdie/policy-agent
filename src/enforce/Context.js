@@ -1,28 +1,30 @@
 const { tools: _ } = _package = require("..");
-const States = ["init"];
+const _stages = ["enforce", "info", "decide", "exec", "trash"];
 
 class Context {
 
-    constructor(session, param = null) {
+    constructor(request) {
         _.define(this, "id", _.uuid());
-        _.log(this, "constructor", session, param);
+        _.log(this, "constructor", request);
         // _.log(_package.enforce, "Context", session, param);
         // TODO
-        _.assert.object(session, true);
-        _.assert.object(param);
-        _.enumerate(this, "session", session);
-        _.enumerate(this, "param", param);
-        this._state = 0;
+        // _.assert.object(session, true);
+        _.assert.object(request, true);
+        // _.assert.string(param.target, 1);
+        // _.assert.string(param.action, 1);
+        // if (param.assignee) _.assert.string(param.assignee, 1);
+        _package.private(this, { state: 0, request });
     }
 
     get stage() {
-        return States[this._state];
+        return _stages[_package.private(this).state];
     }
 
     nextStage() {
         _.log(this, "nextStage");
-        if (this._state < States.length) this._state++;
-        // TODO
+        const data = _package.private(this);
+        _.assert(data.state < _stages.length - 1, "last stage reached");
+        data.state++;
     }
 
 } // Context

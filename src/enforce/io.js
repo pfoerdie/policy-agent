@@ -16,8 +16,10 @@ async function io(request, next) {
         _.assert(_.is.object(request, true) && _.is.function(next), "invalid arguments");
         _.assert(_.is.object(request.request.session), "invalid session");
 
-        const param = { action: null, assignee: null, target: null };
-        const context = new _package.enforce.Context(request.request.session, param);
+        // const param = { action: null, assignee: null, target: null };
+        // const context = new _package.enforce.Context(request.request.session, param);
+
+        // const context = new _package.enforce.Context(request.request, request.request.res);
 
         // TODO 
 

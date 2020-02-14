@@ -12,13 +12,20 @@ class Module {
         _.assert.string(directory, 1);
         _.define(this, "id", id);
         _.define(this, "dir", directory);
-        _private.set(this, {});
+        // _private.set(this, {});
     }
 
-    private(instance) {
+    private(instance, input = null) {
         // _.log(this, "private", instance);
-        _.assert(_private.has(instance), "instance not found");
-        return _private.get(instance);
+        _.assert(instance instanceof Object, "not an instance");
+        _.assert.object(input);
+        let data = _private.get(instance);
+        if (!data) {
+            data = {};
+            _private.set(instance, data);
+        }
+        if (input) Object.assign(data, input);
+        return data;
     }
 
     define(id, value) {

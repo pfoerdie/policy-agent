@@ -33,55 +33,41 @@ _.assert = Object.assign(function assert(value, errMsg, errType = Error) {
         throw err;
     }
 }, {
-    number(value) {
-        if (!_.is.number(value)) {
-            err = new TypeError("not a number");
+    number(...args) {
+        if (!_.is.number(...args)) {
+            err = new TypeError("not a valid number");
             Error.captureStackTrace(err, _.assert.number);
             throw err;
         }
     }, // _.assert.number
-    string(value) {
-        if (!_.is.string(value)) {
-            err = new TypeError("not a string");
+    string(...args) {
+        if (!_.is.string(...args)) {
+            err = new TypeError("not a valid string");
             Error.captureStackTrace(err, _.assert.string);
             throw err;
         }
     }, // _.assert.string
-    String(value) {
-        if (!_.is.string(value, 1)) {
-            err = new TypeError("not a non empty string");
-            Error.captureStackTrace(err, _.assert.String);
-            throw err;
-        }
-    }, // _.assert.String
-    function(value) {
-        if (!_.is.function(value)) {
-            err = new TypeError("not a function");
+    function(...args) {
+        if (!_.is.function(...args)) {
+            err = new TypeError("not a valid function");
             Error.captureStackTrace(err, _.assert.function);
             throw err;
         }
     }, // _.assert.function
-    array(value) {
-        if (!_.is.array(value)) {
-            err = new TypeError("not an array");
+    array(...args) {
+        if (!_.is.array(...args)) {
+            err = new TypeError("not a valid array");
             Error.captureStackTrace(err, _.assert.array);
             throw err;
         }
     }, // _.assert.array
-    object(value) {
-        if (!_.is.object(value)) {
-            err = new TypeError("not an object");
+    object(...args) {
+        if (!_.is.object(...args)) {
+            err = new TypeError("not a valid object");
             Error.captureStackTrace(err, _.assert.object);
             throw err;
         }
     }, // _.assert.object
-    Object(value) {
-        if (!_.is.object(value, true)) {
-            err = new TypeError("not a non null object");
-            Error.captureStackTrace(err, _.assert.Object);
-            throw err;
-        }
-    } // _.assert.Object
 }); // _.assert
 
 _.is = {

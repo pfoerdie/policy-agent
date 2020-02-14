@@ -12,10 +12,10 @@ module.exports = connect;
 function connect(hostname = "localhost", username = "neo4j", password = "neo4j") {
 
     _.log(_package.repo, "connect", hostname, username, password);
-    const _private = _package.private(_package.repo);
-    _.assert(!_private.driver, "already connected");
+    const data = _package.private(_package.repo);
+    _.assert(!data.driver, "already connected");
     _.assert(_.is.string(hostname) && _.is.string(username) && _.is.string(password), "invalid arguments");
 
-    _private.driver = Neo4j.driver("bolt://" + hostname, Neo4j.auth.basic(username, password));
+    data.driver = Neo4j.driver("bolt://" + hostname, Neo4j.auth.basic(username, password));
 
 } // connect
