@@ -3,5 +3,5 @@
  * @author Simon Petrac
  */
 
-const { tools: _ } = _package = require("..");
-module.exports = _package.construct("info", __dirname);
+const { util: _ } = _package = require("..");
+module.exports = _package._construct("info", __dirname);

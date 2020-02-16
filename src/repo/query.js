@@ -1,4 +1,4 @@
-const { tools: _ } = _package = require("..");
+const { util: _ } = _package = require("..");
 module.exports = query;
 
 /**
@@ -23,7 +23,7 @@ function Record(record) {
 async function query(cypher, param = null) {
 
     _.log(exports, "query");
-    const _private = _package.private(_package.repo);
+    const _private = _package._private(_package.repo);
     _.assert(_private.driver, "not connected");
     _.assert.string(cypher, 1);
     _.assert.object(param);

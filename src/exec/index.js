@@ -3,7 +3,7 @@
  * @author Simon Petrac
  */
 
-const { tools: _ } = _package = require("..");
-module.exports = _package.construct("exec", __dirname);
+const { util: _ } = _package = require("..");
+module.exports = _package._construct("exec", __dirname);
 
-_package.exec.require("register", "./register.js");
+_package.exec._require("register", "./register.js");

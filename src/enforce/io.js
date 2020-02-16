@@ -1,4 +1,4 @@
-const { tools: _ } = _package = require("..");
+const { util: _ } = _package = require("..");
 module.exports = io;
 
 /**
@@ -13,7 +13,7 @@ async function io(request, next) {
     try {
 
         _.log(_package.enforce, "io", request, next);
-        _.assert(_.is.object(request, true) && _.is.function(next), "invalid arguments");
+        _.assert(_.is.object.notnull(request) && _.is.function(next), "invalid arguments");
         _.assert(_.is.object(request.request.session), "invalid session");
 
         // const param = { action: null, assignee: null, target: null };

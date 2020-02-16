@@ -3,14 +3,11 @@
  * @author Simon Petrac
  */
 
-const _ = require("./tools");
 const Module = require("./Module.js");
-
 const _package = new Module("PolicyAgent", __dirname);
 module.exports = _package;
 
-_package.define("tools", _);
-
+require("./util");
 require("./enforce");
 require("./exec");
 require("./decide");
