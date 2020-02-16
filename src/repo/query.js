@@ -3,7 +3,7 @@ module.exports = query;
 
 /** 
  * @function query
- * @returns {*}
+ * @returns {Array<Record>}
  * @async
  * @private
  */

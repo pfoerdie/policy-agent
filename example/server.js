@@ -17,10 +17,20 @@ const
     }),
     port = 80;
 
-PolicyAgent.repo.connect("localhost", "neo4j", "odrl");
-PolicyAgent.repo.ping().then(console.log).catch((err) => null);
-PolicyAgent.exec.register(PolicyAgent.admin.login);
-// PolicyAgent.admin.login();
+(async (/* async iife */) => {
+
+    PolicyAgent.repo.connect("localhost", "neo4j", "odrl");
+    await PolicyAgent.repo.ping();
+
+    await PolicyAgent.exec.register("read", "use");
+    await PolicyAgent.exec.register("http:GET", "read");
+    await PolicyAgent.exec.register("hello_world", "use", ["read", "lorem_ipsum"]);
+
+    PolicyAgent.exec.define("read", function (...args) {
+        console.log(`read.call(${this}, ${args.join(", ")})`);
+    });
+
+})(/* async iife */).catch(err => null);
 
 app.use(function (request, response, next) {
     console.log(request.method, request.url);

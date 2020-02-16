@@ -1,6 +1,13 @@
 const { util: _ } = package = require("..");
 module.exports = enforce;
 
+/** 
+ * @function enforce
+ * @param {Context}
+ * @returns {undefined}
+ * @async
+ * @private
+ */
 function enforce(context) {
     _.log(package.info, "enforce", context);
     _.assert.instance(context, package.enforce.Context);

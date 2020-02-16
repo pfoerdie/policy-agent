@@ -20,8 +20,13 @@ assert.number = function (value, min = -Infinity, max = Infinity) {
     }
 };
 
-assert.string = function (value, minLength = 0, maxLength = Infinity) {
-    if (!(_.is.string(value) && value.length >= minLength && value.length <= maxLength)) {
+assert.string = function (value, minLength = 0, maxLength = Infinity, regExp) {
+    if (!(
+        _.is.string(value) &&
+        value.length >= minLength &&
+        value.length <= maxLength &&
+        (!regExp || regExp.test(value))
+    )) {
         err = new TypeError("not a valid string");
         Error.captureStackTrace(err, assert.string);
         throw err;
@@ -36,8 +41,13 @@ assert.function = function (value) {
     }
 };
 
-assert.array = function (value, minLength = 0, maxLength = Infinity) {
-    if (!(_.is.Array(value) && value.length >= minLength && value.length <= maxLength)) {
+assert.array = function (value, minLength = 0, maxLength = Infinity, childValidator) {
+    if (!(
+        _.is.Array(value) &&
+        value.length >= minLength &&
+        value.length <= maxLength &&
+        (!childValidator || value.every(childValidator))
+    )) {
         err = new TypeError("not a valid array");
         Error.captureStackTrace(err, assert.array);
         throw err;

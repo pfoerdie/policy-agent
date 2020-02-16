@@ -1,2 +1,2 @@
 MATCH (action:Action { id: $id })
-RETURN action
+RETURN action.id AS id

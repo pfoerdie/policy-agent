@@ -57,7 +57,5 @@ function log(scope, method, ...args) {
     logCount++;
 
     if (!logSilent) console.log(logColored ? colored : raw);
-
-    // debugger;
     return raw;
 }
