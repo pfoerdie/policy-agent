@@ -3,7 +3,7 @@
  * @author Simon Petrac
  */
 
-const { util: _ } = _package = require("..");
-module.exports = _package._construct("decide", __dirname);
+const { util: _ } = package = require("..");
+module.exports = package._construct("decide", __dirname);
 
-// _package.decide._require("temp", "./temp.js");
+package.decide._require("enforce", "./enforce.js");

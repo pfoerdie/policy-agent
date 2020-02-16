@@ -1,5 +1,5 @@
 const UUID = require("uuid/v4");
-// const Assert = require("assert");
+// const Handlebars = require("handlebars");
 
 exports.set = function (obj, key, value) {
     const enumerable = true, writable = true;
@@ -18,3 +18,11 @@ exports.enumerate = function (obj, key, value, get, set) {
 exports.uuid = function () {
     return UUID();
 };
+
+exports.now = function () {
+    return Date.now();
+};
+
+// exports.hbs = function (template) {
+//     return Handlebars.compile(template);
+// };

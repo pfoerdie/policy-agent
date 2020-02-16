@@ -1,4 +1,4 @@
-const { util: _ } = _package = require("..");
+const { util: _ } = package = require("..");
 module.exports = io;
 
 /**
@@ -12,14 +12,14 @@ module.exports = io;
 async function io(request, next) {
     try {
 
-        _.log(_package.enforce, "io", request, next);
+        _.log(package.enforce, "io", request, next);
         _.assert(_.is.object.notnull(request) && _.is.function(next), "invalid arguments");
         _.assert(_.is.object(request.request.session), "invalid session");
 
         // const param = { action: null, assignee: null, target: null };
-        // const context = new _package.enforce.Context(request.request.session, param);
+        // const context = new package.enforce.Context(request.request.session, param);
 
-        // const context = new _package.enforce.Context(request.request, request.request.res);
+        // const context = new package.enforce.Context(request.request, request.request.res);
 
         // TODO 
 

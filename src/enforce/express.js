@@ -1,4 +1,4 @@
-const { util: _ } = _package = require("..");
+const { util: _ } = package = require("..");
 module.exports = express;
 
 /**
@@ -13,23 +13,19 @@ module.exports = express;
 async function express(request, response, next) {
     try {
 
-        _.log(_package.enforce, "express", request, response, next);
+        _.log(package.enforce, "express", request, response, next);
         _.assert(_.is.object.notnull(request) && _.is.object.notnull(response) && _.is.function(next), "invalid arguments");
         _.assert(_.is.object.notnull(request.session), "invalid session");
 
-        const param = {
-            action: {
-                "type": "Action",
-                "id": "http:" + request.method
-            },
+
+        const context = await package.enforce.request({
+            action: "http:" + request.method,
             target: {
                 "type": "Asset",
                 "uid": request.url
             },
             assignee: null
-        };
-
-        const context = new _package.enforce.Context(param);
+        });
 
         // TODO 
 

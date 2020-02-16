@@ -1,4 +1,4 @@
-const { util: _ } = _package = require("..");
+const { util: _ } = package = require("..");
 module.exports = register;
 
 /**
@@ -10,7 +10,7 @@ module.exports = register;
  */
 function register(action) {
 
-    _.log(_package.exec, "register", action);
+    _.log(package.exec, "register", action);
     _.assert(_.is.function(action) && _.is.string.nonempty(action.id), "invalid action");
 
     // TODO 

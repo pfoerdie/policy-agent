@@ -3,8 +3,8 @@
  * @author Simon Petrac
  */
 
-const { util: _ } = _package = require("..");
-module.exports = _package._construct("admin", __dirname);
+const { util: _ } = package = require("..");
+module.exports = package._construct("admin", __dirname);
 
-_package.admin._require("login", "./login.js");
-_package.admin._require("audit", "./audit.js");
+package.admin._require("login", "./login.js");
+package.admin._require("audit", "./audit.js");

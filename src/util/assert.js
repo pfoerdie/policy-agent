@@ -52,8 +52,11 @@ assert.object = function (value, notNull = false) {
     }
 };
 
-assert.instance = function (value, noClasses = false) {
-    if (!(noClasses ? _.is.object(value) && _.is.Object(value) : _.is.Object(value))) {
+assert.instance = function (value, validClass = false) {
+    if (!(validClass === true ? _.is.Object(value)
+        : validClass === false ? _.is.object(value) && _.is.Object(value)
+            : value instanceof validClass
+    )) {
         err = new TypeError("not a valid instance");
         Error.captureStackTrace(err, assert.instance);
         throw err;

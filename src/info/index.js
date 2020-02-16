@@ -3,5 +3,10 @@
  * @author Simon Petrac
  */
 
-const { util: _ } = _package = require("..");
-module.exports = _package._construct("info", __dirname);
+const { util: _ } = package = require("..");
+module.exports = package._construct("info", __dirname);
+
+package.info._load("findAsset", "./findAsset.cyp");
+package.info._load("findParty", "./findParty.cyp");
+
+package.info._require("enforce", "./enforce.js");

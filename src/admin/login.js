@@ -1,4 +1,4 @@
-const { util: _ } = _package = require("..");
+const { util: _ } = package = require("..");
 module.exports = login;
 
 /**
@@ -7,7 +7,7 @@ module.exports = login;
  */
 async function login(username, password) {
 
-    _.log(_package.admin, "login");
+    _.log(package.admin, "login");
 
     // TODO 
 

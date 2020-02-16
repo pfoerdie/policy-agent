@@ -3,10 +3,11 @@
  * @author Simon Petrac
  */
 
-const { util: _ } = _package = require("..");
-module.exports = _package._construct("repo", __dirname);
+const { util: _ } = package = require("..");
+module.exports = package._construct("repo", __dirname);
 
-_package.repo._require("connect", "./connect.js");
-_package.repo._require("disconnect", "./disconnect.js");
-_package.repo._require("ping", "./ping.js");
-_package.repo._require("query", "./query.js");
+package.repo._require("Record", "./Record.js");
+package.repo._require("connect", "./connect.js");
+package.repo._require("disconnect", "./disconnect.js");
+package.repo._require("ping", "./ping.js");
+package.repo._require("query", "./query.js");

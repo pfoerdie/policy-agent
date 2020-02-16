@@ -1,4 +1,4 @@
-const { util: _ } = _package = require("..");
+const { util: _ } = package = require("..");
 module.exports = ping;
 
 /** 
@@ -9,13 +9,13 @@ module.exports = ping;
  */
 async function ping() {
 
-    _.log(_package.repo, "ping");
-    const _private = _package._private(_package.repo);
+    _.log(package.repo, "ping");
+    const _private = _.private(package.repo);
     _.assert(_private.driver, "not connected");
 
-    let session = _private.driver.session();
+    const session = _private.driver.session();
     try {
-        let result = await session.run("RETURN null");
+        const result = await session.run("RETURN null");
         session.close();
         return result.summary.server;
     } catch (err) {

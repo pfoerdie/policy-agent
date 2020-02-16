@@ -1,4 +1,4 @@
-const { util: _ } = _package = require("..");
+const { util: _ } = package = require("..");
 module.exports = disconnect;
 
 /** 
@@ -7,8 +7,8 @@ module.exports = disconnect;
  */
 function disconnect() {
 
-    _.log(_package.repo, "disconnect");
-    const _private = _package._private(_package.repo);
+    _.log(package.repo, "disconnect");
+    const _private = _.private(package.repo);
     _.assert(_private.driver, "not connected");
 
     _private.driver.close();

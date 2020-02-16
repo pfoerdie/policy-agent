@@ -1,3 +1,3 @@
-const _package = require("./src");
-module.exports = _package;
+const package = require("./src");
+module.exports = package;
 // TODO privatize

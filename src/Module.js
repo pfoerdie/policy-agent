@@ -5,8 +5,7 @@ const
     _re_key = /^\w+$/,
     _re_identifier = /^(?:\w+\.)*\w+$/,
     _re_require_id = /^(?:\w+\.)*(?:\w+|\*)$/,
-    _re_directory = /.+/,
-    _private = new WeakMap();
+    _re_directory = /.+/;
 
 class Module {
 
@@ -17,18 +16,6 @@ class Module {
             id: { value: id },
             dir: { value: directory }
         });
-    }
-
-    _private(instance, input = null) {
-        assert(instance instanceof Object, "invalid instance");
-        assert(typeof input === "object", "invalid input");
-        let data = _private.get(instance);
-        if (!data) {
-            data = {};
-            _private.set(instance, data);
-        }
-        if (input) Object.assign(data, input);
-        return data;
     }
 
     _define(id, value) {
@@ -104,7 +91,7 @@ class Module {
         }
     }
 
-    _load(id, location) {
+    _load(id, location, parser) {
         assert(_re_identifier.test(id), "invalid id");
         assert(_re_directory.test(location), "invalid location");
         let target = this, stack = id.split("."), key = stack.shift();
@@ -115,9 +102,14 @@ class Module {
         }
         assert(!Reflect.has(target, key), "id already used");
         const path = Path.join(this.dir, location);
-        const child = Fs.readFileSync(path).toString();
-        if (child instanceof Object) Object.defineProperty(child, "id", { value: `${target.id}.${key}` });
-        Object.defineProperty(target, key, { value: child });
+        const file = Fs.readFileSync(path).toString();
+        const child = typeof parser === "function" ? parser(file) : file;
+        if (child instanceof Object) {
+            Object.defineProperty(child, "id", { value: `${target.id}.${key}` });
+            Object.defineProperty(target, key, { value: child, enumerable: true });
+        } else {
+            Object.defineProperty(target, key, { value: child });
+        }
         return child;
     }
 

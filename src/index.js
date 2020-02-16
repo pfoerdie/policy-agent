@@ -4,8 +4,8 @@
  */
 
 const Module = require("./Module.js");
-const _package = new Module("PolicyAgent", __dirname);
-module.exports = _package;
+const package = new Module("PolicyAgent", __dirname);
+module.exports = package;
 
 require("./util");
 require("./enforce");

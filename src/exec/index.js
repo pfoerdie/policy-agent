@@ -3,7 +3,10 @@
  * @author Simon Petrac
  */
 
-const { util: _ } = _package = require("..");
-module.exports = _package._construct("exec", __dirname);
+const { util: _ } = package = require("..");
+module.exports = package._construct("exec", __dirname);
 
-_package.exec._require("register", "./register.js");
+package.exec._load("findActions", "./findActions.cyp");
+
+package.exec._require("register", "./register.js");
+package.exec._require("enforce", "./enforce.js");
