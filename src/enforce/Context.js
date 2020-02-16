@@ -3,17 +3,17 @@ const _stages = ["enforce", "info", "decide", "exec", "trash"];
 
 class Context {
 
-    constructor(request) {
+    constructor(param) {
         _.define(this, "id", _.uuid());
-        _.log(this, "constructor", request);
+        _.log(this, "constructor", param);
         // _.log(_package.enforce, "Context", session, param);
         // TODO
         // _.assert.object(session, true);
-        _.assert.object(request, true);
+        _.assert.object(param, true);
         // _.assert.string(param.target, 1);
         // _.assert.string(param.action, 1);
         // if (param.assignee) _.assert.string(param.assignee, 1);
-        _package._private(this, { state: 0, request });
+        _package._private(this, { state: 0, param });
     }
 
     get stage() {

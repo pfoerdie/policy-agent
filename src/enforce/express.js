@@ -18,15 +18,18 @@ async function express(request, response, next) {
         _.assert(_.is.object.notnull(request.session), "invalid session");
 
         const param = {
-            action: "http:" + request.method,
+            action: {
+                "type": "Action",
+                "id": "http:" + request.method
+            },
             target: {
-                "type": "HTMLDocument",
+                "type": "Asset",
                 "uid": request.url
             },
             assignee: null
         };
 
-        // const context = new _package.enforce.Context(param, request);
+        const context = new _package.enforce.Context(param);
 
         // TODO 
 
