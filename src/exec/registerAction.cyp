@@ -2,11 +2,7 @@ MERGE (action:Action { id: $id })
 // REMOVE action.temp
 
 WITH action
-OPTIONAL MATCH (action)-[rel:includedIn]->(:Action)
-DELETE rel
-
-WITH DISTINCT action
-OPTIONAL MATCH (action)-[rel:implies]->(:Action)
+OPTIONAL MATCH (action)-[rel:includedIn|:implies]->(:Action)
 DELETE rel
 
 WITH DISTINCT action
