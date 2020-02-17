@@ -20,7 +20,7 @@ const
 (async (/* async iife */) => {
 
     PolicyAgent.repo.connect("localhost", "neo4j", "odrl");
-    await PolicyAgent.repo.ping();
+    console.log(await PolicyAgent.repo.ping());
 
     await PolicyAgent.exec.register("read", "use");
     await PolicyAgent.exec.register("http:GET", "read");
