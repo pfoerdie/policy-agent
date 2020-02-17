@@ -13,9 +13,13 @@ async function enforce(context) {
     _.assert.instance(context, package.enforce.Context);
     const { param } = _.private(context);
     _.assert.string(param.action, 1);
-    const result = await package.repo.query(package.exec.findActions, { id: param.action });
-    // _.assert(result.length === 1 && result[0].id === param.action, "invalid result");
-    // _.log(result[0]);
-    console.log(result);
-    // TODO
+    const records = await package.repo.query(package.exec.findActions, { id: param.action });
+    _.assert(records.length > 0 && records[0].id === param.action, "invalid first result");
+    const actions = {}, { actionMap } = _.private(package.exec);
+    for (let record of records) {
+        _.assert(actionMap.has(record.id), "action not defined");
+        const action = new package.exec.Action(record);
+        _.enumerate(actions, record.id, action);
+    }
+    _.private(context, { action: param.action, actions });
 }

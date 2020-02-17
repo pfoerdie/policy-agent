@@ -1,7 +1,13 @@
 const { util: _ } = package = require("..");
 module.exports = define;
 
-_.private(package.exec, { actionMap: new Map() });
+_.private(package.exec, {
+    actionMap: new Map([
+        ["use", async function (...args) {
+            console.log(`use.call(${this}, ${args.join(", ")})`);
+        }]
+    ])
+});
 
 /**
  * @function define

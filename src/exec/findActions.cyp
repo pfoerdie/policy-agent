@@ -1,14 +1,19 @@
 MATCH (action:Action { id: $id })
-RETURN action.id AS id
 
-// MATCH (action:Action {id: $id})
-//     WHERE NOT action.temp
-//     OPTIONAL MATCH (action)-[rel:includedIn|:implies]->(target:Action)
-//     WHERE NOT target.temp
-//     RETURN [action.id, type(rel), target.id] AS result
-// UNION
-// MATCH (source:Action {id: $id})-[refs:includedIn|:implies*]->(action:Action)
-//     WHERE NOT source.temp AND NOT action.temp
-//     OPTIONAL MATCH (action)-[ref:includedIn|:implies]->(target:Action)
-//     WHERE NOT target.temp
-//     RETURN [action.id, type(ref), target.id] AS result
+OPTIONAL MATCH  (action)-[:includedIn]->(includedIn:Action)
+OPTIONAL MATCH  (action)-[:implies]->(implies:Action)
+
+RETURN action.id AS id, 
+       collect(includedIn.id) AS includedIn, 
+       collect(implies.id) AS implies
+
+UNION 
+
+MATCH (:Action { id: $id })-[:includedIn|:implies*]->(action:Action)
+
+OPTIONAL MATCH  (action)-[:includedIn]->(includedIn:Action)
+OPTIONAL MATCH  (action)-[:implies]->(implies:Action)
+
+RETURN action.id AS id, 
+       collect(includedIn.id) AS includedIn, 
+       collect(implies.id) AS implies

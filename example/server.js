@@ -22,15 +22,26 @@ const
     PolicyAgent.repo.connect("localhost", "neo4j", "odrl");
     console.log(await PolicyAgent.repo.ping());
 
-    await PolicyAgent.exec.register("read", "use");
-    await PolicyAgent.exec.register("http:GET", "read");
-    await PolicyAgent.exec.register("hello_world", "use", ["read", "lorem_ipsum"]);
+    await Promise.all([
+        await PolicyAgent.exec.register("read", "use"),
+        await PolicyAgent.exec.register("http:GET", "read", ["lorem_ipsum"]),
+        await PolicyAgent.exec.register("hello_world", "use", ["read", "lorem_ipsum"]),
+        await PolicyAgent.exec.register("lorem_ipsum", "use")
+    ]);
 
     PolicyAgent.exec.define("read", function (...args) {
         console.log(`read.call(${this}, ${args.join(", ")})`);
     });
 
-})(/* async iife */).catch(err => null);
+    PolicyAgent.exec.define("http:GET", function (...args) {
+        console.log(`http:GET.call(${this}, ${args.join(", ")})`);
+    });
+
+    PolicyAgent.exec.define("lorem_ipsum", function (...args) {
+        console.log(`lorem_ipsum.call(${this}, ${args.join(", ")})`);
+    });
+
+})(/* async iife */).catch(console.error);
 
 app.use(function (request, response, next) {
     console.log(request.method, request.url);

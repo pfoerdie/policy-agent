@@ -32,7 +32,9 @@ async function express(request, response, next) {
         next();
     } catch (err) {
         _.log(err);
+        console.error(err);
         // response.sendStatus(500);
+        // debugger;
         response.status(500).send(err.message);
         // next(err);
     }

@@ -26,3 +26,7 @@ exports.now = function () {
 // exports.hbs = function (template) {
 //     return Handlebars.compile(template);
 // };
+
+// exports.clearSpaces = function (str) {
+//     return str.trim().replace(/\s+/g, " ");
+// };
