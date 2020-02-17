@@ -21,7 +21,7 @@ async function express(request, response, next) {
         const context = await package.enforce.request({
             action: "http:" + request.method,
             target: {
-                "type": "Asset",
+                "type": "HTMLDocument",
                 "uid": request.url
             },
             assignee: null

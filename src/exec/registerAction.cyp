@@ -1,3 +1,7 @@
+// NOTE Changing the first MERGE to CREATE and the others to MATCH, 
+//      will be a more strikt approach, were you also cannot overwrite actions.
+//      Though for development it is convenient to just overwrite them.
+
 MERGE (action:Action { id: $id })
 
 WITH action

@@ -11,10 +11,10 @@ module.exports = request;
 async function request(param) {
     _.log(package.enforce, "request", param);
     const context = new package.enforce.Context(param);
-    await package.exec.enforce(context); // TODO finish
-    debugger;
+    await package.exec.enforce(context);
     await package.info.enforce(context); // TODO finish
     await package.decide.enforce(context); // TODO finish
     // TODO next steps
+    console.log("Context->private:", _.private(context));
     return context;
 } // request

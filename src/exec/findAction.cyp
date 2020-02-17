@@ -1,3 +1,7 @@
+// NOTE The order of the two queries ensures, that if anything was found, 
+//      the first record would always be the one searched for and
+//      the others would be any from the includedIn/implies chain.
+
 MATCH (action:Action { id: $id })
 
 OPTIONAL MATCH  (action)-[:includedIn]->(includedIn:Action)

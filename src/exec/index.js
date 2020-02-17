@@ -6,7 +6,7 @@
 const { util: _ } = package = require("..");
 module.exports = package._construct("exec", __dirname);
 
-package.exec._load("findActions", "./findActions.cyp");
+package.exec._load("findAction", "./findAction.cyp");
 package.exec._load("registerAction", "./registerAction.cyp");
 
 package.exec._require("Action", "./Action.js");
