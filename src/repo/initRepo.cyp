@@ -7,7 +7,7 @@ ASSERT action.id IS UNIQUE
 ;
 
 CREATE CONSTRAINT ON (entity:Entity) 
-ASSERT Entity.uid IS UNIQUE
+ASSERT entity.uid IS UNIQUE
 ;
 
 MERGE (:Action, {id: "use"})
