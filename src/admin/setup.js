@@ -9,9 +9,13 @@ async function setup() {
 
     _.log(package.admin, "setup");
 
+    _.log("Delete all nodes!");
     await package.repo.query("MATCH (n) DETACH DELETE n"); // TODO temp
-    // await package.repo.query(package.admin.setupConstraints);
-    await Promise.all(package.admin.setupConstraints.map(query => package.repo.query(query)));
+
+    _.log("Setup indices and constraints.");
+    await package.repo.query(package.admin.setupConstraints);
+
+    _.log("Setup basic nodes.");
     await package.repo.query(package.admin.setupNodes);
 
 }
