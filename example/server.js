@@ -22,6 +22,8 @@ const
     PolicyAgent.repo.connect("localhost", "neo4j", "odrl");
     console.log(await PolicyAgent.repo.ping());
 
+    await PolicyAgent.admin.setup();
+
     await Promise.all([
         await PolicyAgent.exec.register("read", "use"),
         await PolicyAgent.exec.register("http:GET", "read", ["lorem_ipsum"]),

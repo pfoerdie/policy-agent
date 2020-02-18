@@ -2,7 +2,7 @@ const { util: _ } = package = require("..");
 module.exports = enforce;
 
 /** 
- * @function enforce
+ * @function exec.enforce
  * @param {Context}
  * @returns {undefined} 
  * @async

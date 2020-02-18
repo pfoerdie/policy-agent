@@ -27,6 +27,8 @@ exports.now = function () {
 //     return Handlebars.compile(template);
 // };
 
-// exports.clearSpaces = function (str) {
-//     return str.trim().replace(/\s+/g, " ");
-// };
+exports.minimizeStr = function (input) {
+    return input.trim()
+        .replace(/^\s*\/\/.*$/mg, "")
+        .replace(/\s+/g, " ");
+};
