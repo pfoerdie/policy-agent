@@ -38,7 +38,7 @@ function log(scope, method, ...args) {
             colored = Colors.cyan(scopeName) + Colors.grey("<") + Colors.green(scopeData) + Colors.grey(">")
                 + Colors.grey(" {")
                 + argPairs.map(([argName, argData]) =>
-                    Colors.blue(argName) + Colors.grey(": ") + Colors.green(argData)
+                    Colors.blue(argName) + Colors.grey(": ") + Colors.green("" + argData)
                 ).join(Colors.grey(", "))
                 + Colors.grey("}");
         } else {

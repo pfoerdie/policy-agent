@@ -19,17 +19,10 @@ const
 
 (async (/* async iife */) => {
 
+    // await require("./example.setup.js");
     PolicyAgent.repo.connect("localhost", "neo4j", "odrl");
+
     console.log(await PolicyAgent.repo.ping());
-
-    await PolicyAgent.admin.setup();
-
-    await Promise.all([
-        await PolicyAgent.exec.register("read", "use"),
-        await PolicyAgent.exec.register("http:GET", "read", ["lorem_ipsum"]),
-        await PolicyAgent.exec.register("hello_world", "use", ["read", "lorem_ipsum"]),
-        await PolicyAgent.exec.register("lorem_ipsum", "use")
-    ]);
 
     PolicyAgent.exec.define("read", function (...args) {
         console.log(`read.call(${this}, ${args.join(", ")})`);
