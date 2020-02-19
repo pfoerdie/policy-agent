@@ -2,7 +2,7 @@ const { util: _ } = package = require("..");
 module.exports = audit;
 
 /**
- * @function audit
+ * @function admin.audit
  * TODO
  */
 async function audit(...args) {

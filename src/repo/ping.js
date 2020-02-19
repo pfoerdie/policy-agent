@@ -2,7 +2,7 @@ const { util: _ } = package = require("..");
 module.exports = ping;
 
 /** 
- * @function ping
+ * @function repo.ping
  * @returns {Neo4j~ServerInfo}
  * @async
  * @public
@@ -24,4 +24,4 @@ async function ping() {
         throw err;
     }
 
-} // ping
+}

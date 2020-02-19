@@ -2,7 +2,7 @@ const { util: _ } = package = require("..");
 module.exports = register;
 
 /**
- * @function register
+ * @function exec.register
  * @param {string} id
  * @param {string} [includedIn="use"]
  * @param {Array<string>} [implies=[]]
@@ -18,7 +18,7 @@ async function register(id, includedIn = "use", implies = []) {
     _.assert.string(includedIn, 1);
     _.assert.array(implies, undefined, undefined, _.is.string.nonempty);
 
-    const result = await package.repo.query(package.exec.mergeAction, { id, includedIn, implies });
+    const result = await package.exec.mergeAction({ id, includedIn, implies });
     _.assert(result.length === 1 && result[0].id === id, "invalid result");
 
 }

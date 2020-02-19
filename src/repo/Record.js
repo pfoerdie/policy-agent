@@ -2,7 +2,7 @@ const { util: _ } = package = require("..");
 module.exports = Record;
 
 /**
- * @name Record
+ * @name repo.Record
  * @param {Neo4j~Record} record 
  * @constructor
  * @private

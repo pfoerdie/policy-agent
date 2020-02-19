@@ -2,7 +2,7 @@ const { util: _ } = package = require("..");
 module.exports = express;
 
 /**
- * @function express
+ * @function enforce.express
  * @param {object} request 
  * @param {object} response 
  * @param {function} next

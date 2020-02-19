@@ -29,6 +29,6 @@ exports.now = function () {
 
 exports.minimizeStr = function (input) {
     return input.trim()
-        .replace(/^\s*\/\/.*$/mg, "")
+        .replace(/\/\/.*$/mg, "")
         .replace(/\s+/g, " ");
 };

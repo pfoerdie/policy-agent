@@ -2,7 +2,7 @@ const { util: _ } = package = require("..");
 module.exports = login;
 
 /**
- * @function login
+ * @function admin.login
  * TODO
  */
 async function login(username, password) {

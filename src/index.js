@@ -8,9 +8,9 @@ const package = new Module("PolicyAgent", __dirname);
 module.exports = package;
 
 require("./util");
-require("./enforce");
-require("./exec");
-require("./decide");
-require("./info");
 require("./repo");
 require("./admin");
+require("./exec");
+require("./info");
+require("./decide");
+require("./enforce");

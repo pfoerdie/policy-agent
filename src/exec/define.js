@@ -10,7 +10,7 @@ _.private(package.exec, {
 });
 
 /**
- * @function define
+ * @function exec.define
  * @param {string} id
  * @param {function} callback
  * @returns {undefined}

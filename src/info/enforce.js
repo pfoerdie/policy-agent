@@ -11,7 +11,7 @@ module.exports = enforce;
 function enforce(context) {
     _.log(package.info, "enforce", context);
     _.assert.instance(context, package.enforce.Context);
-    // const targetArr = await package.repo.query(package.info.findAsset, param.target);
-    // const assigneeArr = await package.repo.query(package.info.findParty, param.assignee);
+    // const targetRecords = await package.info.findAsset(param.target);
+    // const assigneeRecords = await package.info.findParty(param.assignee);
     // TODO
 }

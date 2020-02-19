@@ -1,7 +1,4 @@
-/**
- * @module PolicyAgent.util
- * @author Simon Petrac
- */
+/** @module PolicyAgent.util */
 
 const package = require("..");
 module.exports = package._construct("util", __dirname);

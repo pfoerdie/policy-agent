@@ -1,7 +1,4 @@
-/**
- * @module PolicyAgent.enforce
- * @author Simon Petrac
- */
+/** @module PolicyAgent.enforce */
 
 const { util: _ } = package = require("..");
 module.exports = package._construct("enforce", __dirname);

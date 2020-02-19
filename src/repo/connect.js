@@ -3,7 +3,7 @@ const { util: _ } = package = require("..");
 module.exports = connect;
 
 /** 
- * @function connect
+ * @function repo.connect
  * @param {string} [hostname="localhost"]
  * @param {string} [username="neo4j"]
  * @param {string} [password="neo4j"]

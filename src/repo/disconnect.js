@@ -2,7 +2,7 @@ const { util: _ } = package = require("..");
 module.exports = disconnect;
 
 /** 
- * @function disconnect
+ * @function repo.disconnect
  * @public
  */
 function disconnect() {
@@ -14,4 +14,4 @@ function disconnect() {
     _private.driver.close();
     _private.driver = null;
 
-} // disconnect
+}

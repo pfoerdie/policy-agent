@@ -2,7 +2,7 @@ const { util: _ } = package = require("..");
 module.exports = io;
 
 /**
- * @function io
+ * @function enforce.io
  * @param {object} request 
  * @param {function} next
  * @returns {undefined}

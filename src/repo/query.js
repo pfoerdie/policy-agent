@@ -2,7 +2,7 @@ const { util: _ } = package = require("..");
 module.exports = query;
 
 /** 
- * @function query
+ * @function repo.query
  * @returns {Array<Record>}
  * @async
  * @private
@@ -33,4 +33,4 @@ async function query(cypher, param = null) {
         throw err;
     }
 
-} // query
+}

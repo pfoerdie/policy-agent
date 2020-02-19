@@ -6,7 +6,6 @@ class Context {
         _.define(this, "id", _.uuid());
         _.log(this, "constructor");
         _.assert.object(param, true);
-        _.define(this, "ts", _.now());
         _.private(this, { param });
     }
 
