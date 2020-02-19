@@ -2,7 +2,7 @@ const PolicyAgent = require("..");
 
 module.exports = (async (/* async iife */) => {
 
-    PolicyAgent.repo.connect("localhost", "neo4j", "odrl");
+    // PolicyAgent.repo.connect("localhost", "neo4j", "odrl");
 
     await package.repo.query("MATCH (n) DETACH DELETE n");
 

@@ -19,8 +19,8 @@ const
 
 (async (/* async iife */) => {
 
-    // await require("./example.setup.js");
     PolicyAgent.repo.connect("localhost", "neo4j", "odrl");
+    // await require("./example.setup.js");
 
     console.log(await PolicyAgent.repo.ping());
 

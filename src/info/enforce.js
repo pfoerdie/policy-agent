@@ -22,5 +22,11 @@ async function enforce(context) {
         _.assert.string(assignee.uid, 1);
         _.assert.array(assignee.type, 1, undefined, _.is.string.nonempty);
     }
-    _.private(context, { target, assignee });
+    const assigner = param.assigner ? (await package.info.findParty({ param: param.assigner }))[0].result : null;
+    _.assert.object(assigner);
+    if (assigner) {
+        _.assert.string(assigner.uid, 1);
+        _.assert.array(assigner.type, 1, undefined, _.is.string.nonempty);
+    }
+    _.private(context, { target, assignee, assigner });
 }

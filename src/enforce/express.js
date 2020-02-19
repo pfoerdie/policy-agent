@@ -24,7 +24,8 @@ async function express(request, response, next) {
                 "type": "File",
                 "uid": request.url
             },
-            assignee: null
+            assignee: request.session.user || null,
+            assigner: null
         });
 
         // TODO 
