@@ -9,6 +9,6 @@ class Context {
         _.private(this, { param });
     }
 
-} // Context
+}
 
 module.exports = Context;

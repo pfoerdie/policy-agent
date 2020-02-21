@@ -113,6 +113,6 @@ class Module {
         return child;
     }
 
-} // Package
+}
 
 module.exports = Module;

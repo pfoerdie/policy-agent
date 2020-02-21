@@ -18,4 +18,4 @@ function connect(hostname = "localhost", username = "neo4j", password = "neo4j")
 
     data.driver = Neo4j.driver("bolt://" + hostname, Neo4j.auth.basic(username, password));
 
-} // connect
+}

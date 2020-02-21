@@ -20,6 +20,6 @@ class Action {
         _.enumerate(this, "implies", record.implies);
     }
 
-} // Action
+}
 
 module.exports = Action;
