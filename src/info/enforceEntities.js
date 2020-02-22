@@ -11,22 +11,17 @@ module.exports = enforceEntities;
 async function enforceEntities(context) {
     _.log(package.info, "enforceEntities", context);
     _.assert.instance(context, package.enforce.Context);
-    const { param } = _.private(context);
-    const target = (await package.info.findAsset({ param: param.target }))[0].result;
-    _.assert.object(target, true);
-    _.assert.string(target.uid, 1);
-    _.assert.array(target.type, 1, undefined, _.is.string.nonempty);
-    const assignee = param.assignee ? (await package.info.findParty({ param: param.assignee }))[0].result : null;
-    _.assert.object(assignee);
-    if (assignee) {
-        _.assert.string(assignee.uid, 1);
-        _.assert.array(assignee.type, 1, undefined, _.is.string.nonempty);
+    const { param, ressource, subject } = _.private(context);
+    const targetRecord = await package.info.findAsset({ param: param.target });
+    _.enumerate(ressource, "target", new package.info.Asset(targetRecord[0].result));
+    if (param.assignee) {
+        const assigneeRecord = await package.info.findParty({ param: param.assignee });
+        if (assigneeRecord[0].result)
+            _.enumerate(subject, "assignee", new package.info.Party(assigneeRecord[0].result));
     }
-    const assigner = param.assigner ? (await package.info.findParty({ param: param.assigner }))[0].result : null;
-    _.assert.object(assigner);
-    if (assigner) {
-        _.assert.string(assigner.uid, 1);
-        _.assert.array(assigner.type, 1, undefined, _.is.string.nonempty);
+    if (param.assigner) {
+        const assignerRecord = await package.info.findParty({ param: param.assigner });
+        if (assignerRecord[0].result)
+            _.enumerate(subject, "assigner", new package.info.Party(assignerRecord[0].result));
     }
-    _.private(context, { target, assignee, assigner });
 }

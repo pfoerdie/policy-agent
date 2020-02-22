@@ -7,39 +7,40 @@ class Context {
         _.log(this, "constructor");
         _.assert.object(param, true);
         _.private(this, {
-            param,
-            ready: false,
-            env: {
-                ts_init: _.now(),
+            param: Object.assign({
+                /** @type {string} */
+                action: null,
+                /** @type {object} */
+                target: null,
+                /** @type {object} */
+                assignee: null,
+                /** @type {object} */
+                assigner: null
+            }, param),
+            action: {
+                /** @type {exec.Action} */
+            },
+            environment: {
+                /** @type {number} */
+                ts_init: null,
+                /** @type {number} */
                 ts_ready: null
             },
-            action: null,
-            actions: null,
-            target: null,
-            assignee: null,
-            assigner: null,
-            // IDEA !!!
-            // param: Object.assign({
-            //     action: null,
-            //     target: null,
-            //     assignee: null,
-            //     assigner: null
-            // }, param),
-            // action: {
-            //     use: null,
-            //     transfer: null
-            // },
-            // environment: {
-            //     ts_init: _.now(),
-            //     ts_ready: null
-            // },
-            // ressource: {
-            //     target: null
-            // },
-            // subject: {
-            //     assignee: null,
-            //     assigner: null
-            // }
+            ressource: {
+                /** @type {info.Asset} */
+                target: null
+            },
+            subject: {
+                /** @type {info.Party} */
+                assignee: null,
+                /** @type {info.Party} */
+                assigner: null
+            },
+            /** @type {Array<admin.Policy>} */
+            policies: [],
+            decision: {
+                authorization: false
+            }
         });
     }
 

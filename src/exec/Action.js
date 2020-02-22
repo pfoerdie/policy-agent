@@ -3,11 +3,11 @@ const { util: _ } = package = require("..");
 class Action {
 
     constructor(record) {
+        _.log(this, "constructor", record);
+
         _.assert.object(record, true);
         _.assert.string(record.id, 1);
         _.enumerate(this, "id", record.id);
-
-        _.log(this, "constructor");
 
         if (record.id === "use" || record.id === "transfer")
             _.enumerate(this, "includedIn", null);

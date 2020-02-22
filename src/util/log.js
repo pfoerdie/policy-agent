@@ -12,7 +12,7 @@ function log(scope, method, ...args) {
         colored = Colors.yellow(scope);
     } else if (scope instanceof Object) {
         let scopeName = scope.__proto__.constructor.name;
-        let scopeData = typeof scope.id === "string" ? scope.id : JSON.stringify(scope.data) || "";
+        let scopeData = _.is.string(scope.id, 1) ? scope.id : _.is.string(scope.uid, 1) ? scope.uid : JSON.stringify(scope.data) || "";
 
         if (scope instanceof Error) {
             raw = `${scopeName}<${scopeData}> ${scope.message}`;
@@ -21,7 +21,7 @@ function log(scope, method, ...args) {
         } else if (_.is.string(method, 1) && Reflect.has(scope, method) && _.is.function(scope[method])) {
             let argPairs = args.map(arg => [
                 arg === undefined ? "undefined" : arg === null ? "null" : arg.__proto__.constructor.name,
-                !arg ? "" : _.is.string(arg.id, 1) ? arg.id : JSON.stringify(arg.data) || ""
+                !arg ? "" : _.is.string(arg.id, 1) ? arg.id : _.is.string(arg.uid, 1) ? arg.uid : JSON.stringify(arg.data) || ""
             ]);
 
             raw = `${scopeName}<${scopeData}>.${method}(${argPairs.map(([argName, argData]) => argName + (argData ? `<${argData}>` : "")).join(", ")})`;

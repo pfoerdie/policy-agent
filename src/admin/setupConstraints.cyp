@@ -5,6 +5,8 @@ CREATE INDEX ON :Entity(type) ;
 // CREATE CONSTRAINT ON (entity:Entity) ASSERT exists(entity.uid) ;
 // CREATE CONSTRAINT ON (entity:Entity) ASSERT exists(entity.type) ;
 
+CREATE INDEX ON :Party(username) ;
+
 // CREATE INDEX ON :Asset(uid) ;
 // CREATE INDEX ON :Asset(type) ;
 // CREATE INDEX ON :Party(uid) ;

@@ -2,7 +2,7 @@
 //      the first record would always be the one searched for and
 //      the others would be any from the includedIn/implies chain.
 
-MATCH (action:Action { id: $id })
+MATCH (action:Action { id: $action })
 
 OPTIONAL MATCH  (action)-[:includedIn]->(includedIn:Action)
 OPTIONAL MATCH  (action)-[:implies]->(implies:Action)
@@ -13,7 +13,7 @@ RETURN action.id AS id,
 
 UNION 
 
-MATCH (:Action { id: $id })-[:includedIn|:implies*]->(action:Action)
+MATCH (:Action { id: $action })-[:includedIn|:implies*]->(action:Action)
 
 OPTIONAL MATCH  (action)-[:includedIn]->(includedIn:Action)
 OPTIONAL MATCH  (action)-[:implies]->(implies:Action)
