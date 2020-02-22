@@ -13,9 +13,9 @@ async function request(param) {
     const context = new package.enforce.Context(param);
     const data = _.private(context, { env: {} });
     data.env.ts_init = _.now();
-    await package.exec.enforce(context);
-    await package.info.enforce(context); // TODO finish
-    await package.decide.enforce(context); // TODO finish
+    await package.exec.enforceActions(context);
+    await package.info.enforceEntities(context);
+    await package.decide.enforcePolicies(context);
     // TODO next steps
     data.env.ts_ready = _.now();
     _.log(data);

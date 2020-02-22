@@ -1,15 +1,15 @@
 const { util: _ } = package = require("..");
-module.exports = enforce;
+module.exports = enforceEntities;
 
 /** 
- * @function info.enforce
+ * @function enforceEntities
  * @param {Context}
  * @returns {undefined}
  * @async
  * @private
  */
-async function enforce(context) {
-    _.log(package.info, "enforce", context);
+async function enforceEntities(context) {
+    _.log(package.info, "enforceEntities", context);
     _.assert.instance(context, package.enforce.Context);
     const { param } = _.private(context);
     const target = (await package.info.findAsset({ param: param.target }))[0].result;

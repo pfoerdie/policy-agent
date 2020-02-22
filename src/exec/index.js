@@ -10,4 +10,4 @@ package.exec._load("mergeAction", "./mergeAction.cyp", package.repo.bindQuery);
 package.exec._require("Action", "./Action.js");
 package.exec._require("register", "./register.js");
 package.exec._require("define", "./define.js");
-package.exec._require("enforce", "./enforce.js");
+package.exec._require("enforceActions", "./enforceActions.js");

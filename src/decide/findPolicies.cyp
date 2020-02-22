@@ -8,16 +8,33 @@ MATCH (action:Action { id: actionID })
 
 WITH action, target
 MATCH (policy:Entity:Policy)
-MATCH (policy)-[:permission]->(rule:Rule)
+MATCH (policy)-[rel:permission|:prohibition|:obligation]->(rule:Rule)
 WHERE (rule)-[:target]->(target)
   AND (rule)-[:action]->(action)
 
-WITH policy, rule
+// TODO differ rules in Permission, Duty and Prohibition
+// TODO apply different relations (failure, duty, remedy, consequence)
+// TODO maybe: inheritFrom Policy
+
+WITH policy, rule, rel
 OPTIONAL MATCH (rule)-[:constraint]->(constraint:Constraint)
 OPTIONAL MATCH (constraint)-[:leftOperand]->(leftOperand:Operand)
 OPTIONAL MATCH (constraint)-[:rightOperand]->(rightOperand:Operand)
 
-RETURN policy, rule, constraint, leftOperand, rightOperand
-// RETURN properties(policy) AS policy, extract(rule IN rules | properties(rule)) AS rules
+WITH policy, rule, rel, 
+  properties(constraint) AS constraint, 
+  properties(leftOperand) AS leftOperand, 
+  properties(rightOperand) AS rightOperand
 
-// TODO just basic so far
+WITH policy, 
+  type(rel) AS type, 
+  properties(rule) AS rule, 
+  collect({ constraint:constraint, leftOperand:leftOperand, rightOperand:rightOperand }) AS constraints
+
+WITH 
+  properties(policy) AS policy, 
+  collect({ type:type, rule:rule, constraints:constraints }) AS rules
+
+RETURN DISTINCT policy, rules
+
+// TODO maybe a good method. needs testing. 

@@ -28,7 +28,11 @@ exports.now = function () {
 // };
 
 exports.minimizeStr = function (input) {
-    return input.trim()
+    return input
         .replace(/\/\/.*$/mg, "")
-        .replace(/\s+/g, " ");
+        // .replace(/\s+/g, " ");
+        .replace(/[^\S\n]+/g, " ")
+        .replace(/(?:^ | $)/mg, "")
+        // .replace(/ $/mg, "")
+        .replace(/\n+/g, "\n");
 };

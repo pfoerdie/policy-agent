@@ -10,4 +10,4 @@ package.info._require("Entity", "./Entity.js");
 package.info._require("Asset", "./Asset.js");
 package.info._require("Party", "./Party.js");
 
-package.info._require("enforce", "./enforce.js");
+package.info._require("enforceEntities", "./enforceEntities.js");

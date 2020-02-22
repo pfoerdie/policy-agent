@@ -1,15 +1,15 @@
 const { util: _ } = package = require("..");
-module.exports = enforce;
+module.exports = enforceActions;
 
 /** 
- * @function exec.enforce
+ * @function enforceActions
  * @param {Context}
  * @returns {undefined} 
  * @async
  * @private
  */
-async function enforce(context) {
-    _.log(package.exec, "enforce", context);
+async function enforceActions(context) {
+    _.log(package.exec, "enforceActions", context);
     _.assert.instance(context, package.enforce.Context);
     const { param } = _.private(context);
     _.assert.string(param.action, 1);
