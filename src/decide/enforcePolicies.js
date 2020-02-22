@@ -19,6 +19,8 @@ async function enforcePolicies(context) {
         assigner: assigner ? assigner.uid : null
     });
     _.log(policyRecords);
-    policyRecords.every(record => _.log(record));
+    policyRecords.every(record =>
+        _.log(record)
+    );
     // TODO
 }
