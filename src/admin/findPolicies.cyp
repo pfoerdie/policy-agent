@@ -63,7 +63,7 @@ WITH properties(policy) AS policy,
         rule: rule, 
         constraints: CASE 
             WHEN constraints[0].constraint IS NULL 
-            THEN null ELSE constraints 
+            THEN [] ELSE constraints 
         END
     }) AS rules
 

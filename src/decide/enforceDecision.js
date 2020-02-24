@@ -12,5 +12,6 @@ async function enforceDecision(context) {
     _.log(package.decide, "enforceDecision", context);
     _.assert.instance(context, package.enforce.Context);
     const { policies, decision } = data = _.private(context);
+    policies.every(policy => console.log(policy));
     // TODO
 }

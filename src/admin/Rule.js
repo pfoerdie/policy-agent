@@ -3,7 +3,7 @@ const { util: _ } = _package = require("..");
 
 class Rule {
 
-    constructor(param, constraints = []) {
+    constructor(param, constraints) {
         _.log(this, "constructor", param, constraints);
         _.assert.object(param, true);
         _.assert.array(constraints, undefined, undefined, _.is.object.notempty);
@@ -14,7 +14,7 @@ class Rule {
         );
 
         Object.assign(this, param);
-        _.private(this, { constraints });
+        _.enumerate(this, "_constraints", constraints);
     }
 
 }

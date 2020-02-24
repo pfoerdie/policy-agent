@@ -18,6 +18,7 @@ module.exports = function (instance, input = null) {
     if (input) {
         const keys = Object.keys(input);
         _.assert(keys.every(key => !Reflect.has(data, key)), "override not possible");
+        // _.assert(keys.every(key => !data[key]), "override not possible");
         Object.assign(data, input);
         for (let key of keys) { data[key] = input[key]; }
     }

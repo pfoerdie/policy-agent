@@ -3,7 +3,7 @@ const { util: _ } = _package = require("..");
 
 class Policy {
 
-    constructor(param, rules = []) {
+    constructor(param, rules) {
         _.log(this, "constructor", param, rules);
         _.assert.object(param, true);
         _.assert.string(param.uid, 1);
@@ -19,7 +19,8 @@ class Policy {
         }
 
         Object.assign(this, param);
-        _.private(this, { permissions, prohibitions });
+        _.enumerate(this, "_permissions", permissions);
+        _.enumerate(this, "_prohibitions", prohibitions);
     }
 
 }

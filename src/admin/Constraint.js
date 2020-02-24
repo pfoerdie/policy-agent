@@ -9,7 +9,8 @@ class Constraint {
         _.assert.object(rightOperand);
 
         Object.assign(this, param);
-        _.private(this, { leftOperand, rightOperand });
+        _.enumerate(this, "_leftOperand", leftOperand);
+        _.enumerate(this, "_rightOperand", rightOperand);
     }
 
 }
