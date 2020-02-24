@@ -1,6 +1,6 @@
 .vscode
 node_modules
-**/mongodb-*/*
-**/neo4j-*/*
-!**/mongodb-*/data
-!**/neo4j-*/data
+mongodb-*/*
+neo4j-*/*
+!mongodb-*/data
+!neo4j-*/data
