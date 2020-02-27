@@ -1,4 +1,4 @@
-const { util: _ } = package = require("..");
+const { util: _ } = _package = require("..");
 module.exports = bindQuery;
 
 /** 
@@ -13,7 +13,7 @@ function bindQuery(cypher) {
     cypher = _.minimizeStr(cypher);
     function sendQuery(param) {
         _.log(sendQuery, "call", param);
-        return package.repo.query(cypher, param);
+        return _package.repo.query(cypher, param);
     }
     return sendQuery;
 }

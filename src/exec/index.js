@@ -1,13 +1,13 @@
 /** @module PolicyAgent.exec */
 
-const { util: _ } = package = require("..");
-module.exports = package._construct("exec", __dirname);
+const { util: _ } = _package = require("..");
+module.exports = _package._construct("exec", __dirname);
 
-package.exec._load("findAction", "./findAction.cyp", package.repo.bindQuery);
-package.exec._load("mergeAction", "./mergeAction.cyp", package.repo.bindQuery);
-// package.exec._load("createAction", "./createAction.cyp", package.repo.bindQuery);
+_package.exec._load("findAction", "./findAction.cyp", _package.repo.bindQuery);
+_package.exec._load("mergeAction", "./mergeAction.cyp", _package.repo.bindQuery);
+// _package.exec._load("createAction", "./createAction.cyp", _package.repo.bindQuery);
 
-package.exec._require("Action", "./Action.js");
-package.exec._require("register", "./register.js");
-package.exec._require("define", "./define.js");
-package.exec._require("enforceActions", "./enforceActions.js");
+_package.exec._require("Action", "./Action.js");
+_package.exec._require("register", "./register.js");
+_package.exec._require("define", "./define.js");
+_package.exec._require("enforceActions", "./enforceActions.js");

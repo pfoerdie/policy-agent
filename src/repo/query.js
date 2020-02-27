@@ -1,4 +1,4 @@
-const { util: _ } = package = require("..");
+const { util: _ } = _package = require("..");
 module.exports = query;
 
 /** 
@@ -9,8 +9,8 @@ module.exports = query;
  */
 async function query(cypher, param = null) {
 
-    _.log(package.repo, "query");
-    const _private = _.private(package.repo);
+    _.log(_package.repo, "query");
+    const _private = _.private(_package.repo);
     _.assert(_private.driver, "not connected");
     _.assert.string(cypher, 3);
     _.assert.object(param);
@@ -25,8 +25,8 @@ async function query(cypher, param = null) {
         session.close();
         // TODO maybe optimize the following by not using map and keeping the original array
         return multi
-            ? result.map(res => res.records.map(record => new package.repo.Record(record)))
-            : result.records.map(record => new package.repo.Record(record));
+            ? result.map(res => res.records.map(record => new _package.repo.Record(record)))
+            : result.records.map(record => new _package.repo.Record(record));
     } catch (err) {
         _.log(err);
         session.close();

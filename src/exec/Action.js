@@ -1,4 +1,4 @@
-const { util: _ } = package = require("..");
+const { util: _ } = _package = require("..");
 
 class Action {
 

@@ -1,5 +1,5 @@
 const { util: _ } = _package = require("..");
-// NOTE mysterious error when naming it package without _
+// NOTE mysterious error when naming it _package without _
 
 class Rule {
 

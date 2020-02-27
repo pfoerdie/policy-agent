@@ -1,7 +1,7 @@
-const { util: _ } = package = require("..");
+const { util: _ } = _package = require("..");
 module.exports = define;
 
-_.private(package.exec, {
+_.private(_package.exec, {
     actionMap: new Map([
         ["use", async function (...args) {
             console.log(`use.call(${this}, ${args.join(", ")})`);
@@ -17,11 +17,11 @@ _.private(package.exec, {
  * @public
  */
 function define(id, callback) {
-    _.log(package.exec, "define", id, callback);
+    _.log(_package.exec, "define", id, callback);
     _.assert.string(id, 1);
     _.assert(id !== "use" && id !== "transfer", "use and transfer are reserved actions");
     _.assert.function(callback);
-    const { actionMap } = _.private(package.exec);
+    const { actionMap } = _.private(_package.exec);
     _.assert(!actionMap.has(id), "id already used");
     actionMap.set(id, callback);
 }

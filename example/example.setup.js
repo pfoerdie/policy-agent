@@ -4,7 +4,7 @@ module.exports = (async (/* async iife */) => {
 
     // PolicyAgent.repo.connect("localhost", "neo4j", "odrl");
 
-    await package.repo.query("MATCH (n) DETACH DELETE n");
+    await _package.repo.query("MATCH (n) DETACH DELETE n");
 
     await PolicyAgent.admin.setup();
 

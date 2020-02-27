@@ -1,5 +1,5 @@
 const Neo4j = require("neo4j-driver").v1;
-const { util: _ } = package = require("..");
+const { util: _ } = _package = require("..");
 module.exports = connect;
 
 /** 
@@ -11,8 +11,8 @@ module.exports = connect;
  */
 function connect(hostname = "localhost", username = "neo4j", password = "neo4j") {
 
-    _.log(package.repo, "connect", hostname, username, password);
-    const data = _.private(package.repo);
+    _.log(_package.repo, "connect", hostname, username, password);
+    const data = _.private(_package.repo);
     _.assert(!data.driver, "already connected");
     _.assert(_.is.string(hostname) && _.is.string(username) && _.is.string(password), "invalid arguments");
 

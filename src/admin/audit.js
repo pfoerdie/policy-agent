@@ -1,4 +1,4 @@
-const { util: _ } = package = require("..");
+const { util: _ } = _package = require("..");
 module.exports = audit;
 
 /**
@@ -7,7 +7,7 @@ module.exports = audit;
  */
 async function audit(...args) {
 
-    // _.log(package.admin, "audit", ...args);
+    // _.log(_package.admin, "audit", ...args);
     let log = _.log(...args);
     // console.log(log);
     // TODO

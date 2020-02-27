@@ -1,12 +1,12 @@
 /** @module PolicyAgent.info */
 
-const { util: _ } = package = require("..");
-module.exports = package._construct("info", __dirname);
+const { util: _ } = _package = require("..");
+module.exports = _package._construct("info", __dirname);
 
-package.info._load("findAsset", "./findAsset.cyp", package.repo.bindQuery);
-package.info._load("findParty", "./findParty.cyp", package.repo.bindQuery);
+_package.info._load("findAsset", "./findAsset.cyp", _package.repo.bindQuery);
+_package.info._load("findParty", "./findParty.cyp", _package.repo.bindQuery);
 
-package.info._require("Asset", "./Asset.js");
-package.info._require("Party", "./Party.js");
+_package.info._require("Asset", "./Asset.js");
+_package.info._require("Party", "./Party.js");
 
-package.info._require("enforceEntities", "./enforceEntities.js");
+_package.info._require("enforceEntities", "./enforceEntities.js");

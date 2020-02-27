@@ -1,4 +1,4 @@
-const { util: _ } = package = require("..");
+const { util: _ } = _package = require("..");
 module.exports = setup;
 
 /**
@@ -7,12 +7,12 @@ module.exports = setup;
  */
 async function setup() {
 
-    _.log(package.admin, "setup");
+    _.log(_package.admin, "setup");
 
     _.log("Setup indices and constraints.");
-    await package.admin.setupConstraints();
+    await _package.admin.setupConstraints();
 
     _.log("Setup basic nodes.");
-    await package.admin.setupNodes();
+    await _package.admin.setupNodes();
 
 }

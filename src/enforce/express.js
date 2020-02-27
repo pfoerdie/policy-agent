@@ -1,4 +1,4 @@
-const { util: _ } = package = require("..");
+const { util: _ } = _package = require("..");
 module.exports = express;
 
 /**
@@ -13,12 +13,12 @@ module.exports = express;
 async function express(request, response, next) {
     try {
 
-        _.log(package.enforce, "express", request, response, next);
+        _.log(_package.enforce, "express", request, response, next);
         _.assert(_.is.object.notnull(request) && _.is.object.notnull(response) && _.is.function(next), "invalid arguments");
         _.assert(_.is.object.notnull(request.session), "invalid session");
 
 
-        const context = await package.enforce.request({
+        const context = await _package.enforce.request({
             action: "http:" + request.method,
             target: {
                 "type": "File",

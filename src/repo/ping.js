@@ -1,4 +1,4 @@
-const { util: _ } = package = require("..");
+const { util: _ } = _package = require("..");
 module.exports = ping;
 
 /** 
@@ -9,8 +9,8 @@ module.exports = ping;
  */
 async function ping() {
 
-    _.log(package.repo, "ping");
-    const _private = _.private(package.repo);
+    _.log(_package.repo, "ping");
+    const _private = _.private(_package.repo);
     _.assert(_private.driver, "not connected");
 
     const session = _private.driver.session();

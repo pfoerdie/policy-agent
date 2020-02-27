@@ -1,17 +1,19 @@
-const { util: _ } = package = require("..");
+const { util: _ } = _package = require("..");
 module.exports = enforceDecision;
 
 /** 
  * @function enforceDecision
- * @param {Context}
+ * @param {Context} context
  * @returns {undefined}
- * @async
  * @private
  */
-async function enforceDecision(context) {
-    _.log(package.decide, "enforceDecision", context);
-    _.assert.instance(context, package.enforce.Context);
+function enforceDecision(context) {
+    _.log(_package.decide, "enforceDecision", context);
+    _.assert.instance(context, _package.enforce.Context);
     const { policies, decision } = data = _.private(context);
-    policies.every(policy => console.log(policy));
+    for (let policy of policies) {
+        const tmp = _package.decide.evalPolicy(context, policy);
+        // TODO
+    }
     // TODO
 }

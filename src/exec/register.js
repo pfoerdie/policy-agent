@@ -1,4 +1,4 @@
-const { util: _ } = package = require("..");
+const { util: _ } = _package = require("..");
 module.exports = register;
 
 /**
@@ -12,13 +12,13 @@ module.exports = register;
  */
 async function register(id, includedIn = "use", implies = []) {
 
-    _.log(package.exec, "register", id, includedIn, implies);
+    _.log(_package.exec, "register", id, includedIn, implies);
     _.assert.string(id, 1);
     _.assert(id !== "use" && id !== "transfer", "use and transfer are reserved actions");
     _.assert.string(includedIn, 1);
     _.assert.array(implies, undefined, undefined, _.is.string.nonempty);
 
-    const result = await package.exec.mergeAction({ id, includedIn, implies });
+    const result = await _package.exec.mergeAction({ id, includedIn, implies });
     _.assert(result.length === 1 && result[0].id === id, "invalid result");
 
 }

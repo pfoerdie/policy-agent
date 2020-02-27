@@ -1,9 +1,9 @@
 /** @module PolicyAgent.enforce */
 
-const { util: _ } = package = require("..");
-module.exports = package._construct("enforce", __dirname);
+const { util: _ } = _package = require("..");
+module.exports = _package._construct("enforce", __dirname);
 
-package.enforce._require("Context", "./Context.js");
-package.enforce._require("request", "./request.js");
-package.enforce._require("express", "./express.js");
-package.enforce._require("io", "./io.js");
+_package.enforce._require("Context", "./Context.js");
+_package.enforce._require("request", "./request.js");
+_package.enforce._require("express", "./express.js");
+_package.enforce._require("io", "./io.js");
