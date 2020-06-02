@@ -1,5 +1,3 @@
-// const $ = require("../index.js");
-
 exports.boolean = function (value) {
     return typeof value === "boolean";
 };

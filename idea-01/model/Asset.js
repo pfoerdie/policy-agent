@@ -1,6 +1,6 @@
 const { util: _ } = $ = require("../index.js");
 const { entities } = _.cache.match($.model);
-const create_asset = $.repo.bindQuery(_.file(__dirname, "./Asset/create_asset.cyp").openSync());
+const create_asset = $.repo.requireQuery(__dirname, "./Asset/create_asset.cyp");
 
 class Asset extends $.model.Entity {
 

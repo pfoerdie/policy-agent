@@ -1,5 +1,6 @@
 const { util: _ } = $ = require("../index.js");
 const { entities } = _.cache.match($.model);
+const TYPES = Object.freeze(["Asset", "AssetCollection"]);
 
 class Entity {
 
@@ -31,6 +32,7 @@ class Entity {
         _.assert(_.is.array(typeArr) && typeArr.length === 2);
         /** @type {String} */
         const type = typeArr.find(val => val !== "Entity");
+        _.assert(TYPES.includes(type));
 
         if (entities.has(uid))
             return entities.get(uid);
