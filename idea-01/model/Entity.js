@@ -37,7 +37,7 @@ class Entity {
         if (entities.has(uid))
             return entities.get(uid);
         const typeClass = $.model[type];
-        assert(typeClass);
+        assert(_.is.function(typeClass));
         return new typeClass(uid);
     }
 
