@@ -1,4 +1,4 @@
-# PolicyAgent
+# @pfoerdie/policy-agent
 
 ## Structure
 
